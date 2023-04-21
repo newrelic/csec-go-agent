@@ -4,10 +4,15 @@
 
 The New Relic csec-go-agent is in preview and is not generally available.  To participate in the preview follow the steps outlined here.
 
-## Installing and using [project name]
+## Installation
 
-> [Link to the relevant information for this agent on docs.newrelic.com. Create a bulleted list with links to install, usage, and getting started info on docs. Avoid duplicating information from docs in the open source content to ensure there's no inconsistency between the two.]
+> [Include a step-by-step procedure on how to get your code installed. Be sure to include any third-party dependencies that need to be installed separately]
 
+## Getting Started
+>[Simple steps to start working with the software similar to a "Hello World"]
+
+## Usage
+>[**Optional** - Include more thorough instructions on how to use the software. This section might not be needed if the Getting Started section is enough. Remove this section if it's not needed.]
 
 ## Building
 
