@@ -7,7 +7,7 @@ on: [push, pull_request]
 
 jobs:
   go-agent-v3:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
   
     strategy:
       # if one test fails, do not abort the rest
