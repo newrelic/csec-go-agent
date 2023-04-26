@@ -1,4 +1,5 @@
-// Copyright 2022 New Relic Corporation. All rights reserved.
+// Copyright 2023 New Relic Corporation. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 package csec_grpc
 
@@ -22,7 +23,7 @@ func (k *SecGrpcServe) secServe_s(l net.Listener) error {
 		return k.secServe_s(l)
 	}
 	logger.Debugln("------------ Port Detection----------")
-	// K2 Process start
+	//Process start
 	if l != nil {
 		ipString := l.Addr().String()
 		logger.Debugln("ipString : ", ipString)

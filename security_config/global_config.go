@@ -1,10 +1,12 @@
-// Copyright 2022 New Relic Corporation. All rights reserved.
+// Copyright 2023 New Relic Corporation. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 package security_config
 
 import (
 	"os"
 
+	logging "github.com/newrelic/csec-go-agent/internal/security_logs"
 	secUtils "github.com/newrelic/csec-go-agent/internal/security_utils"
 )
 
@@ -100,7 +102,11 @@ func InitDefaultConfig() {
 
 }
 
-func UpdateGlobalConf(policy Policy) Policy {
+func UpdateGlobalConf(policy Policy, arg string) Policy {
+	logging.NewStage("7", "POLICY", "Policy Applied :")
+	logging.PrintInitlog(arg, "MODULE")
+	logging.EndStage("7", "POLICY")
+
 	GlobalInfo.DefaultPolicy = policy
 	if !GlobalInfo.CurrentPolicy.Enforce {
 		GlobalInfo.CurrentPolicy = policy

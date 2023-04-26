@@ -1,4 +1,5 @@
-// Copyright 2022 New Relic Corporation. All rights reserved.
+// Copyright 2023 New Relic Corporation. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 package security_handlers
 
@@ -85,7 +86,7 @@ func parseControlCommand(arg []byte) (error, bool) {
 			logger.Errorln("Unable to unmarshall cc100 ", err)
 		} else {
 			logger.Debugln("defaultPolicy", defaultPolicy.Data)
-			policy := secConfig.UpdateGlobalConf(defaultPolicy.Data)
+			policy := secConfig.UpdateGlobalConf(defaultPolicy.Data, string(arg))
 			eventGeneration.SendUpdatedPolicy(policy)
 
 		}

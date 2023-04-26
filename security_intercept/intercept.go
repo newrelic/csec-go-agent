@@ -1,4 +1,5 @@
-// Copyright 2022 New Relic Corporation. All rights reserved.
+// Copyright 2023 New Relic Corporation. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 package security_intercept
 
@@ -42,10 +43,7 @@ const (
  */
 
 func InitSyms() {
-	err := secConfig.Secure.InitSyms()
-	if err != nil {
-		logger.Errorln(err)
-	}
+	secConfig.Secure.InitSyms()
 }
 
 func HookWrap(from, to, toc interface{}) error {

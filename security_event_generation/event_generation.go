@@ -1,4 +1,5 @@
-// Copyright 2022 New Relic Corporation. All rights reserved.
+// Copyright 2023 New Relic Corporation. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 package security_event_generation
 
@@ -38,6 +39,9 @@ var (
 )
 
 func InitHcScheduler() {
+	logging.NewStage("6", "MODULE", "Started Threads/pools/scheduler")
+	logging.PrintInitlog("Starting Healthcheck Thread", "MODULE")
+	logging.EndStage("6", "MODULE")
 	SendSecHealthCheck()
 	t := time.NewTicker(5 * time.Minute)
 	for {
@@ -287,10 +291,10 @@ func SendVulnerableEvent(req *secUtils.Info_req, category string, args interface
 	}
 
 	if firstEvent {
-		logging.NewStage("7", "EVENT", "First Event processed & sent")
+		logging.NewStage("8", "EVENT", "First Event processed & sent")
 		logging.PrintInitlog("First event intercepted : "+category, "EVENT")
 		logging.PrintInitlog("First event processed : "+string(event_json), "EVENT")
-		logging.EndStage("7", "EVENT")
+		logging.EndStage("8", "EVENT")
 		firstEvent = false
 		logging.Disableinitlogs()
 	}

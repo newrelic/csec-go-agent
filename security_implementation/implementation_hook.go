@@ -1,4 +1,5 @@
-// Copyright 2022 New Relic Corporation. All rights reserved.
+// Copyright 2023 New Relic Corporation. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 package security_implementation
 
@@ -30,7 +31,7 @@ func (k Secureimpl) HookWrap(from, to, toc interface{}) error {
 	} else {
 		setAddrMapInterface(from, to, toc)
 	}
-	
+
 	return err
 }
 
