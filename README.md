@@ -1,9 +1,11 @@
-# The @newrelic/csec-go-agent is in preview and licensed under the New Relic Pre-Release Software Notice.
+# The New Relic Security Agent for Go is in preview and licensed under the New Relic Pre-Release Software Notice.
 
-# @newrelic/csec-go-agent 
+##### Repo : [newrelic/csec-go-agent ](https://github.com/newrelic/csec-node-agent)
 
-The New Relic @newrelic-csec-go-agent is in preview and is not generally available.This module enables instrumentation of golang application for interactive application security analysis (IAST) and exposes exploitable vulnerabilities. 
-The IAST capability should only be used in pre-production environments and never in production.
+##### Package Name: newrelic_security_agent
+#
+The New Relic security agent for Go is in preview and is not generally available.This module enables instrumentation of golang application for interactive application security analysis (IAST) and exposes exploitable vulnerabilities. 
+The IAST capability should only be used in pre-production environments as the application is tested for real exploitable vulnerabilities.
 
 # Installation
 #### Compatibility and Requirements
@@ -58,5 +60,5 @@ If you believe you have found a security vulnerability in this project or any of
 If you would like to contribute to this project, review these guidelines.
 # License
 
-@newrelic/csec-go-agent is licensed under the New Relic Software Notice. 
-The @newrelic/csec-go-agent also uses source code from third-party libraries. You can find full details on which libraries are used and the terms under which they are licensed in the third-party notices document.
+newrelic/csec-go-agent is licensed under the New Relic Software Notice. 
+The newrelic/csec-go-agent also uses source code from third-party libraries. You can find full details on which libraries are used and the terms under which they are licensed in the third-party notices document.

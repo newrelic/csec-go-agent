@@ -12,7 +12,7 @@ import (
 	"os"
 	"sync"
 
-	"github.com/newrelic/go-agent/v3/integrations/nrcsecagent"
+	"github.com/newrelic/go-agent/v3/integrations/nrsecurityagent"
 	_ "github.com/newrelic/go-agent/v3/integrations/nrsqlite3"
 	"github.com/newrelic/go-agent/v3/newrelic"
 )
@@ -90,11 +90,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	err = nrcsecagent.InitSecurityAgent(
+	err = nrsecurityagent.InitSecurityAgent(
 		app,
-		nrcsecagent.ConfigSecurityMode("IAST"),
-		nrcsecagent.ConfigSecurityValidatorServiceEndPointUrl("wss://csec-staging.nr-data.net"),
-		nrcsecagent.ConfigSecurityEnable(true),
+		nrsecurityagent.ConfigSecurityMode("IAST"),
+		nrsecurityagent.ConfigSecurityValidatorServiceEndPointUrl("wss://csec-staging.nr-data.net"),
+		nrsecurityagent.ConfigSecurityEnable(true),
 	)
 	if err != nil {
 		fmt.Println(err)
