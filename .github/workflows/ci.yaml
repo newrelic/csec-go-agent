@@ -1,0 +1,48 @@
+# Copyright 2023 New Relic Corporation. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+name: Go Security Agent CI
+
+on: [push, pull_request]
+
+jobs:
+  go-agent-v3:
+    runs-on: ubuntu-latest
+  
+    strategy:
+      # if one test fails, do not abort the rest
+      fail-fast: false
+      matrix:
+        include:
+          - go-version: 1.17.x
+            dirs: instrumentation/csec_antchfx_htmlquery
+          - go-version: 1.17.x
+            dirs: instrumentation/csec_antchfx_xpath
+          - go-version: 1.17.x
+            dirs: instrumentation/csec_ldap_v3
+          - go-version: 1.17.x
+            dirs: instrumentation/csec_sql
+          - go-version: 1.17.x
+            dirs: instrumentation/csec_antchfx_jsonquery
+          - go-version: 1.17.x
+            dirs: instrumentation/csec_mongodb_mongo
+          - go-version: 1.17.x
+            dirs: instrumentation/csec_antchfx_xmlquery
+          - go-version: 1.17.x
+            dirs: instrumentation/csec_robertkrimen_otto
+
+    steps:
+    - name: Install Go
+      uses: actions/setup-go@v1
+      with:
+        go-version: ${{ matrix.go-version }}
+    
+    - name: Checkout Code
+      uses: actions/checkout@v1
+
+    - name: Run Tests
+      run: bash ./build-script.sh
+      env:
+        DIRS: ${{ matrix.dirs }}
+        EXTRATESTING: ${{ matrix.extratesting }}
+        PIN: ${{ matrix.pin }}
