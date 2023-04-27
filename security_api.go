@@ -1,7 +1,7 @@
 // Copyright 2023 New Relic Corporation. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package newrelic
+package newrelic_security_agent
 
 import (
 	"net/http"
