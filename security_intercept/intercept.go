@@ -532,12 +532,12 @@ func createFuzzFile(fuzzheaders string) {
 				if dir != "" {
 					err := os.MkdirAll(dir, os.ModePerm)
 					if err != nil {
-						logger.Errorln("Error while creating file : ", err.Error())
+						logger.Info("Error while creating file : ", err.Error())
 					}
 				}
 				emptyFile, err := os.Create(fileName)
 				if err != nil {
-					logger.Errorln("Error while creating file : ", err.Error(), fileName)
+					logger.Info("Error while creating file : ", err.Error(), fileName)
 				}
 				emptyFile.Close()
 			}

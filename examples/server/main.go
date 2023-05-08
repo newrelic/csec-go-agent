@@ -104,6 +104,6 @@ func main() {
 	http.HandleFunc(newrelic.WrapHandleFunc(app, "/", index))
 	http.HandleFunc(newrelic.WrapHandleFunc(app, "/mysql", mysql))
 	http.HandleFunc(newrelic.WrapHandleFunc(app, "/rxss", rxss))
-	http.HandleFunc(newrelic.WrapHandleFunc(app, "/", async))
+	http.HandleFunc(newrelic.WrapHandleFunc(app, "/async", async))
 	http.ListenAndServe(newrelic.WrapListen(":8000"), nil)
 }
