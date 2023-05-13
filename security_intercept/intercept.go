@@ -323,13 +323,14 @@ func TraceIncommingRequest(url, host string, hdrMap map[string][]string, method 
 	secConfig.Secure.AssociateInboundRequest(infoReq)
 }
 
-func AssociateResponseBody(b string) {
+func AssociateResponseBody(body, contentType string) {
 	if !isAgentInitialized() {
 		return
 	}
 	r := secConfig.Secure.GetRequest()
 	if r != nil {
-		r.ResponseBody = r.ResponseBody + b
+		r.ResponseBody = r.ResponseBody + body
+		r.ResponseContentType = contentType
 		secConfig.Secure.CalculateOutboundApiId()
 	}
 }
@@ -497,6 +498,21 @@ func XssCheck() {
 	r := secConfig.Secure.GetRequest()
 	if r != nil && r.ResponseBody != "" {
 
+		if r.ResponseContentType != "" && !secUtils.IsContentTypeSupported(r.ResponseContentType) {
+			logger.Debugln("No need to send RXSS event ContentType not supported for rxss event validation", r.ResponseContentType)
+			return
+		}
+
+		// Double check befor rxss event validation becouse in some case we don't have contentType in response header.
+		cType := http.DetectContentType([]byte(r.ResponseBody))
+		if !secUtils.IsContentTypeSupported(cType) {
+			logger.Debugln("No need to send RXSS event ContentType not supported for rxss event validation", cType)
+			return
+		}
+		if r.ResponseContentType != "" {
+			r.ResponseContentType = cType
+		}
+
 		out := secUtils.CheckForReflectedXSS(r)
 		logger.Debugln("CheckForReflectedXSS out value is : ", out)
 
@@ -656,7 +672,7 @@ func SendEvent(caseType string, data ...interface{}) interface{} {
 		XssCheck()
 		DissociateInboundRequest()
 	case "INBOUND_WRITE":
-		httpresponseHandler(data[0])
+		httpresponseHandler(data...)
 	case "OUTBOUND":
 		return outboundcallHandler(data[0])
 	case "GRPC":
@@ -710,12 +726,26 @@ func outboundcallHandler(req interface{}) *secUtils.EventTracker {
 	return event
 }
 
-func httpresponseHandler(res interface{}) {
+func httpresponseHandler(data ...interface{}) {
+	if len(data) < 2 {
+		return
+	}
+	res := data[0]
+	header := data[1]
+
 	if res == nil || !isAgentInitialized() {
 		return
 	}
+	contentType := ""
+	if hdr, ok := header.(http.Header); ok {
+		for key, values := range hdr {
+			if secUtils.CaseInsensitiveEquals(key, "content-type") {
+				contentType = strings.Join(values, ",")
+			}
+		}
+	}
 	if responseBody, ok := res.(string); ok {
-		AssociateResponseBody(responseBody)
+		AssociateResponseBody(responseBody, contentType)
 	}
 }
 
