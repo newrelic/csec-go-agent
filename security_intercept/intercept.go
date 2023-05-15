@@ -744,7 +744,20 @@ func httpresponseHandler(data ...interface{}) {
 			}
 		}
 	}
+
+	if contentType != "" && !secUtils.IsContentTypeSupported(contentType) {
+		logger.Debugln("No need to send RXSS event ContentType not supported for rxss event validation", contentType)
+		return
+	}
+
 	if responseBody, ok := res.(string); ok {
+		// Double check befor rxss event validation becouse in some case we don't have contentType in response header.
+		cType := http.DetectContentType([]byte(responseBody))
+		if !secUtils.IsContentTypeSupported(cType) {
+			logger.Debugln("No need to send RXSS event ContentType not supported for rxss event validation", cType)
+			return
+		}
+
 		AssociateResponseBody(responseBody, contentType)
 	}
 }
