@@ -475,14 +475,6 @@ func AssociateGoRoutine(caller, callee int64) {
 	secConfig.Secure.AssociateGoRoutine(caller, callee)
 }
 
-// DissociateGoRoutine cleans incoming request data associated with current Go Routine.
-func DissociateGoRoutine(caller int64) {
-	if secConfig.Secure == nil {
-		return
-	}
-	secConfig.Secure.DissociateGoRoutine(caller)
-}
-
 func DissociateInboundRequest() {
 	secConfig.Secure.DissociateInboundRequest()
 	removeFuzzFile()
@@ -688,9 +680,7 @@ func SendEvent(caseType string, data ...interface{}) interface{} {
 	case "NEW_GOROUTINE_LINKER":
 		secConfig.Secure.NewGoroutineLinker(data[0])
 	case "NEW_GOROUTINE":
-		secConfig.Secure.NewGoroutine(data[0])
-	case "NEW_GOROUTINE_TR_END":
-		secConfig.Secure.DissociateGoroutine(data[0])
+		return secConfig.Secure.NewGoroutine()
 	case "NEW_GOROUTINE_END":
 		secConfig.Secure.DissociateInboundRequest()
 	case "APP_INFO":

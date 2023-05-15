@@ -19,7 +19,6 @@ type Secureiface interface {
 	HookWrapRaw(uintptr, interface{}, interface{}) error
 	HookWrapRawNamed(string, interface{}, interface{}) (string, error)
 	AssociateGoRoutine(caller, callee int64)
-	DissociateGoRoutine(caller int64)
 	AssociateGrpcDataBytes([]byte) bool
 	InitSyms() error
 	CalculateOutboundApiId()
@@ -33,8 +32,7 @@ type Secureiface interface {
 	SendEvent(category string, args interface{}) *EventTracker
 	GetFuzzHeader() string
 	NewGoroutineLinker(interface{})
-	NewGoroutine(interface{})
-	DissociateGoroutine(interface{})
+	NewGoroutine() interface{}
 }
 
 // ---------------------------------------------------
