@@ -256,8 +256,8 @@ func TestMongoUpdateOneHook(t *testing.T) {
 	mt.Run("success", func(mt *mtest.T) {
 		userCollection = mt.Coll
 		mt.AddMockResponses(bson.D{
-			{"ok", 1},
-			{"nModified", 1},
+			{Key: "ok", Value: 1},
+			{Key: "nModified", Value: 1},
 		})
 
 		filter := bson.D{{Key: "name", Value: "tom"}}
@@ -285,8 +285,8 @@ func TestMongoUpdateManyHook(t *testing.T) {
 	mt.Run("success", func(mt *mtest.T) {
 		userCollection = mt.Coll
 		mt.AddMockResponses(bson.D{
-			{"ok", 1},
-			{"nModified", 3},
+			{Key: "ok", Value: 1},
+			{Key: "nModified", Value: 3},
 		})
 
 		filter := bson.D{{Key: "name", Value: "tom"}}
@@ -315,8 +315,8 @@ func TestMongoReplaceOneHook(t *testing.T) {
 	mt.Run("success", func(mt *mtest.T) {
 		userCollection = mt.Coll
 		mt.AddMockResponses(bson.D{
-			{"ok", 1},
-			{"nModified", 1},
+			{Key: "ok", Value: 1},
+			{Key: "nModified", Value: 1},
 		})
 
 		filter := bson.D{{Key: "name", Value: "kevin"}}
@@ -345,8 +345,8 @@ func TestMongoDeleteOneHook(t *testing.T) {
 	mt.Run("success", func(mt *mtest.T) {
 		userCollection = mt.Coll
 		mt.AddMockResponses(bson.D{
-			{"ok", 1},
-			{"n", 1},
+			{Key: "ok", Value: 1},
+			{Key: "n", Value: 1},
 		})
 
 		filter := bson.D{{Key: "name", Value: "kevin"}}
@@ -374,8 +374,8 @@ func TestMongoDeleteManyHook(t *testing.T) {
 	mt.Run("success", func(mt *mtest.T) {
 		userCollection = mt.Coll
 		mt.AddMockResponses(bson.D{
-			{"ok", 1},
-			{"n", 3},
+			{Key: "ok", Value: 1},
+			{Key: "n", Value: 3},
 		})
 
 		filter := bson.D{{Key: "name", Value: "kevin"}}
