@@ -145,53 +145,41 @@ func InitLogger() *logrus.Logger {
 	return initlog
 }
 
-func NewStage(stageId, code, stage string) {
+func EndStage(stageId, logs interface{}) {
 	if disable {
 		return
 	}
 	logger1 := InitLogger()
-	print := fmt.Sprintf("[STEP-%s][BEGIN][%s] %s", stageId, code, stage)
+	print := fmt.Sprintf("[STEP-%s] %s", stageId, logs)
 	logger1.Infoln(print)
 }
-
-func EndStage(stageId, code string) {
-	if disable {
-		return
-	}
-	logger1 := InitLogger()
-	print := fmt.Sprintf("[STEP-%s][%s][COMPLETE]", stageId, code)
-	logger1.Infoln(print)
-}
-func PrintInitlog(logs interface{}, stagecode string) {
+func PrintInitlog(logs interface{}) {
 	if disable {
 		return
 	}
 	if initlog == nil {
 		initlog = logrus.New()
 	}
-	print := fmt.Sprintf("[%s]: %s", stagecode, logs)
-	initlog.Infoln(print)
+	initlog.Infoln(logs)
 }
 
-func PrintInitErrolog(logs string, stagecode string) {
+func PrintInitErrolog(logs string) {
 	if disable {
 		return
 	}
 	if initlog == nil {
 		initlog = logrus.New()
 	}
-	print := fmt.Sprintf("[%s]: %s", stagecode, logs)
-	initlog.Errorln(print)
+	initlog.Errorln(logs)
 }
-func PrintWarnlog(logs string, stagecode string) {
+func PrintWarnlog(logs string) {
 	if disable {
 		return
 	}
 	if initlog == nil {
 		initlog = logrus.New()
 	}
-	print := fmt.Sprintf("[%s]: %s", stagecode, logs)
-	initlog.Warnln(print)
+	initlog.Warnln(logs)
 }
 
 func Disableinitlogs() {

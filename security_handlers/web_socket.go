@@ -74,7 +74,7 @@ func (ws *websocket) read() ([]byte, error) {
 
 func (ws *websocket) makeConnection() (bool, bool) {
 	if ws.isWsConnected() {
-		logging.PrintInitlog("Websocket connection already initialized : Skip", "WS")
+		logger.Debugln("Websocket connection already initialized : Skip")
 		eventGeneration.SendApplicationInfo() // sending updated appinfo
 		return true, false
 	}
@@ -110,7 +110,7 @@ func (ws *websocket) makeConnection() (bool, bool) {
 
 	conn, res, err := wsDialer.Dial(validatorEndpoint, connectionHeader)
 	if err != nil || conn == nil {
-		logging.PrintInitErrolog("Failed to connect Validator ", validatorEndpoint)
+		logging.PrintInitErrolog("Failed to connect Validator " + validatorEndpoint)
 		logger.Errorln("Failed to connect Validator  : ", err, validatorEndpoint)
 		ws.conn = nil
 		ws.Unlock()
@@ -122,14 +122,14 @@ func (ws *websocket) makeConnection() (bool, bool) {
 		}
 		return false, true
 	} else {
-		logging.PrintInitlog("Connected to Prevent-Web service at : "+validatorEndpoint, "WS")
+		logging.PrintInitlog("Connected to Prevent-Web service at : " + validatorEndpoint)
 		logger.Infoln("K.Reconnect init k.Conn successful", validatorEndpoint)
 		ws.conn = conn
 		ws.Unlock()
 
-		logger.Infoln("Collector is now active for", secConfig.GlobalInfo.ApplicationInfo.AppUUID)
+		logger.Infoln("Security Agent is now ACTIVE for ", secConfig.GlobalInfo.ApplicationInfo.AppUUID)
 		logger.Infoln("!!! Websocket worker goroutine starting...")
-		logging.EndStage("4", "WS")
+		logging.EndStage("4", "Web socket connection to SaaS validator established successfully")
 
 		go writeThread(ws)
 		go readThread(ws)
@@ -257,7 +257,6 @@ func (ws *websocket) ReconnectAtAgentRefresh() {
 }
 
 func InitializeWsConnecton() {
-	logging.NewStage("4", "WS", "Websocket connection")
 	ws := new(websocket)
 	ws.eventBuffer = make(chan []byte, 10240)
 	ws.readcontroller = make(chan string, 10)

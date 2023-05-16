@@ -103,10 +103,8 @@ func InitDefaultConfig() {
 }
 
 func UpdateGlobalConf(policy Policy, arg string) Policy {
-	logging.NewStage("7", "POLICY", "Policy Applied :")
-	logging.PrintInitlog(arg, "MODULE")
-	logging.EndStage("7", "POLICY")
-
+	logging.EndStage("7", "Received and applied policy/configuration")
+	logging.PrintInitlog(arg)
 	GlobalInfo.DefaultPolicy = policy
 	if !GlobalInfo.CurrentPolicy.Enforce {
 		GlobalInfo.CurrentPolicy = policy

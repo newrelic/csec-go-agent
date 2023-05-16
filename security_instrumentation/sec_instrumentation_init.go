@@ -83,7 +83,7 @@ func locateImports() {
 	for wrapper, secWrapper := range constant {
 		if _, ok := dependencieMap[wrapper]; ok {
 			if _, ok := dependencieMap[secWrapper]; !ok {
-				logging.PrintWarnlog("Suggested Sec protect imports :"+secWrapper+" for: "+wrapper, "INSTRUMENTATION")
+				logging.PrintWarnlog("Suggested Sec protect imports :" + secWrapper + " for: " + wrapper)
 			}
 		}
 	}
