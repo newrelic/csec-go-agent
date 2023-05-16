@@ -24,7 +24,6 @@ var prepareQuery = sync.Map{}
 var logger = logging.GetLogger("impl")
 var grpcMap = sync.Map{}
 var fastHttpMap = sync.Map{}
-var goroutineLinker = sync.Map{}
 var requestMap = sync.Map{}
 
 const (
@@ -186,30 +185,19 @@ func (k Secureimpl) AssociateGoRoutine(caller, callee int64) {
 	associateGoroutine(cr, ce)
 }
 
-func (k Secureimpl) DissociateGoRoutine(caller int64) {
-	//Note: cannot place any Logging in this method - called from newproc
-	cr := strconv.FormatInt(caller, 10)
-	disassociate(cr)
-}
-
-func (k Secureimpl) NewGoroutine(data interface{}) {
+func (k Secureimpl) NewGoroutine() interface{} {
 	//Note: cannot place any Logging in this method - called from newproc
 	req, ok := requestMap.Load(getID())
 	if ok && req != nil {
-		goroutineLinker.Store(data, req)
+		return req
 	}
+	return nil
 }
 
-func (k Secureimpl) NewGoroutineLinker(data interface{}) {
-	//Note: cannot place any Logging in this method - called from newproc
-	req, ok := goroutineLinker.Load(data)
-	if ok {
+func (k Secureimpl) NewGoroutineLinker(req interface{}) {
+	if req != nil {
 		associateGoroutine(getID(), req)
 	}
-}
-
-func (k Secureimpl) DissociateGoroutine(data interface{}) {
-	goroutineLinker.Delete(data)
 }
 
 /**
