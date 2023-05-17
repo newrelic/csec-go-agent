@@ -39,9 +39,7 @@ var (
 )
 
 func InitHcScheduler() {
-	logging.NewStage("6", "MODULE", "Started Threads/pools/scheduler")
-	logging.PrintInitlog("Starting Healthcheck Thread", "MODULE")
-	logging.EndStage("6", "MODULE")
+	logging.EndStage("5", "Security agent threads started")
 	SendSecHealthCheck()
 	t := time.NewTicker(5 * time.Minute)
 	for {
@@ -113,9 +111,6 @@ func SendSecHealthCheck() {
 func SendApplicationInfo() {
 	if secConfig.GlobalInfo.IsForceDisable {
 		return
-	}
-	if initlogs {
-		logging.NewStage("5", "APP_INFO", "Gathering application info for current process")
 	}
 	var appInfo applicationInfo
 	appInfo.ApplicationIdentifiers = getApplicationIdentifiers("applicationinfo")
@@ -220,12 +215,12 @@ func SendApplicationInfo() {
 
 	app, err := sendEvent(appInfo)
 	if err != nil && initlogs {
-		logging.PrintInitErrolog("Error while Sending ApplicationInfo "+err.Error(), "APP_INFO")
+		logging.PrintInitErrolog("Error while Sending ApplicationInfo " + err.Error())
 		return
 	}
 	if initlogs {
-		logging.PrintInitlog("Application info generated  "+app, "APP_INFO")
-		logging.EndStage("5", "APP_INFO")
+		logging.EndStage("3", "Gathering information about the application")
+		logging.PrintInitlog("Application info generated  " + app)
 		initlogs = false
 	}
 
@@ -291,10 +286,8 @@ func SendVulnerableEvent(req *secUtils.Info_req, category string, args interface
 	}
 
 	if firstEvent {
-		logging.NewStage("8", "EVENT", "First Event processed & sent")
-		logging.PrintInitlog("First event intercepted : "+category, "EVENT")
-		logging.PrintInitlog("First event processed : "+string(event_json), "EVENT")
-		logging.EndStage("8", "EVENT")
+		logging.EndStage("8", "First event sent for validation. Security agent started successfully.")
+		logging.PrintInitlog("First event processed : " + string(event_json))
 		firstEvent = false
 		logging.Disableinitlogs()
 	}

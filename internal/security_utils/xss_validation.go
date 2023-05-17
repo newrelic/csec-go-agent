@@ -45,6 +45,30 @@ const (
 	REGEX_SPACE                       = "\\s+"
 )
 
+func IsContentTypeSupported(type1 string) bool {
+	supportedContentType := []string{
+		"text/css",
+		"text/csv",
+		"text/html",
+		"text/javascript",
+		"application/json",
+		"application/ld+json",
+		"text/javascript",
+		"application/vnd.oasis.opendocument.text",
+		"application/x-httpd-php",
+		"application/rtf",
+		"image/svg+xml",
+		"text/plain",
+		"application/xhtml+xml",
+		"application/xml",
+		"multipart/form-data",
+		"application/x-www-form-urlencoded",
+		"application/octet-stream",
+	}
+
+	return ContainsInArray(supportedContentType, strings.ToLower(type1))
+}
+
 var tagNameRegex = regexp.MustCompile(`(?ims)<([a-zA-Z_\\-]+[0-9]*|!--)`)
 var attribRegex = regexp2.MustCompile("(?ims)([^(\\/\\s<'\">)]+?)(?:\\s*)=\\s*(('|\")([\\s\\S]*?)(?:(?=(\\\\?))\\5.)*?\\3|.+?(?=\\/>|>|\\?>|\\s|<\\/|$))", 0)
 

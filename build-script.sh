@@ -24,8 +24,15 @@ for dir in $DIRS; do
   # manage dependencies
   go mod tidy
 
+  go get
   # run tests
-  go test -race -benchtime=1ms -bench=. ./...
+  if [[ $dir  ==  "instrumentation/csec_mongodb_mongo" ]]
+  then
+   go test -gcflags "-l" -race -benchtime=1ms -bench=. ./...
+  else
+   go test -race -benchtime=1ms -bench=. ./...
+  fi
+  
   go vet ./...
   verify_go_fmt
 

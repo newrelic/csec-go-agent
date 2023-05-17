@@ -323,13 +323,14 @@ func TraceIncommingRequest(url, host string, hdrMap map[string][]string, method 
 	secConfig.Secure.AssociateInboundRequest(infoReq)
 }
 
-func AssociateResponseBody(b string) {
+func AssociateResponseBody(body, contentType string) {
 	if !isAgentInitialized() {
 		return
 	}
 	r := secConfig.Secure.GetRequest()
 	if r != nil {
-		r.ResponseBody = r.ResponseBody + b
+		r.ResponseBody = r.ResponseBody + body
+		r.ResponseContentType = contentType
 		secConfig.Secure.CalculateOutboundApiId()
 	}
 }
@@ -474,14 +475,6 @@ func AssociateGoRoutine(caller, callee int64) {
 	secConfig.Secure.AssociateGoRoutine(caller, callee)
 }
 
-// DissociateGoRoutine cleans incoming request data associated with current Go Routine.
-func DissociateGoRoutine(caller int64) {
-	if secConfig.Secure == nil {
-		return
-	}
-	secConfig.Secure.DissociateGoRoutine(caller)
-}
-
 func DissociateInboundRequest() {
 	secConfig.Secure.DissociateInboundRequest()
 	removeFuzzFile()
@@ -496,6 +489,21 @@ func XssCheck() {
 	}
 	r := secConfig.Secure.GetRequest()
 	if r != nil && r.ResponseBody != "" {
+
+		if r.ResponseContentType != "" && !secUtils.IsContentTypeSupported(r.ResponseContentType) {
+			logger.Debugln("No need to send RXSS event ContentType not supported for rxss event validation", r.ResponseContentType)
+			return
+		}
+
+		// Double check befor rxss event validation becouse in some case we don't have contentType in response header.
+		cType := http.DetectContentType([]byte(r.ResponseBody))
+		if !secUtils.IsContentTypeSupported(cType) {
+			logger.Debugln("No need to send RXSS event ContentType not supported for rxss event validation", cType)
+			return
+		}
+		if r.ResponseContentType != "" {
+			r.ResponseContentType = cType
+		}
 
 		out := secUtils.CheckForReflectedXSS(r)
 		logger.Debugln("CheckForReflectedXSS out value is : ", out)
@@ -532,12 +540,12 @@ func createFuzzFile(fuzzheaders string) {
 				if dir != "" {
 					err := os.MkdirAll(dir, os.ModePerm)
 					if err != nil {
-						logger.Errorln("Error while creating file : ", err.Error())
+						logger.Info("Error while creating file : ", err.Error())
 					}
 				}
 				emptyFile, err := os.Create(fileName)
 				if err != nil {
-					logger.Errorln("Error while creating file : ", err.Error(), fileName)
+					logger.Info("Error while creating file : ", err.Error(), fileName)
 				}
 				emptyFile.Close()
 			}
@@ -656,7 +664,7 @@ func SendEvent(caseType string, data ...interface{}) interface{} {
 		XssCheck()
 		DissociateInboundRequest()
 	case "INBOUND_WRITE":
-		httpresponseHandler(data[0])
+		httpresponseHandler(data...)
 	case "OUTBOUND":
 		return outboundcallHandler(data[0])
 	case "GRPC":
@@ -672,9 +680,7 @@ func SendEvent(caseType string, data ...interface{}) interface{} {
 	case "NEW_GOROUTINE_LINKER":
 		secConfig.Secure.NewGoroutineLinker(data[0])
 	case "NEW_GOROUTINE":
-		secConfig.Secure.NewGoroutine(data[0])
-	case "NEW_GOROUTINE_TR_END":
-		secConfig.Secure.DissociateGoroutine(data[0])
+		return secConfig.Secure.NewGoroutine()
 	case "NEW_GOROUTINE_END":
 		secConfig.Secure.DissociateInboundRequest()
 	case "APP_INFO":
@@ -710,12 +716,39 @@ func outboundcallHandler(req interface{}) *secUtils.EventTracker {
 	return event
 }
 
-func httpresponseHandler(res interface{}) {
+func httpresponseHandler(data ...interface{}) {
+	if len(data) < 2 {
+		return
+	}
+	res := data[0]
+	header := data[1]
+
 	if res == nil || !isAgentInitialized() {
 		return
 	}
+	contentType := ""
+	if hdr, ok := header.(http.Header); ok {
+		for key, values := range hdr {
+			if secUtils.CaseInsensitiveEquals(key, "content-type") {
+				contentType = strings.Join(values, ",")
+			}
+		}
+	}
+
+	if contentType != "" && !secUtils.IsContentTypeSupported(contentType) {
+		logger.Debugln("No need to send RXSS event ContentType not supported for rxss event validation", contentType)
+		return
+	}
+
 	if responseBody, ok := res.(string); ok {
-		AssociateResponseBody(responseBody)
+		// Double check befor rxss event validation becouse in some case we don't have contentType in response header.
+		cType := http.DetectContentType([]byte(responseBody))
+		if !secUtils.IsContentTypeSupported(cType) {
+			logger.Debugln("No need to send RXSS event ContentType not supported for rxss event validation", cType)
+			return
+		}
+
+		AssociateResponseBody(responseBody, contentType)
 	}
 }
 

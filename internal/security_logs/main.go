@@ -19,11 +19,11 @@ func IsHooked(name string, e error) {
 		return
 	}
 	if e != nil {
-		print := fmt.Sprintf("[%s]: %s", "INSTRUMENTATION", "Not able to hook function")
+		print := fmt.Sprintf("%s", "Not able to hook function")
 		logger.WithField("functionName", name).WithField("error", e.Error()).Errorln("Not able to hook function")
 		initlogs.WithField("functionName", name).WithField("error", e.Error()).Errorln(print)
 	} else {
-		print := fmt.Sprintf("[%s]: %s", "INSTRUMENTATION", "Function successfully hooked")
+		print := fmt.Sprintf("%s", "Function successfully hooked")
 		logger.WithField("functionName", name).Infoln("Function successfully hooked")
 		initlogs.WithField("functionName", name).Infoln(print)
 	}
@@ -40,7 +40,8 @@ func Error(name string, e error) {
 
 func printInitLog() {
 	isInitilized = true
-	NewStage("1", "INSTRUMENTATION", "Applying instrumentation")
+	EndStage("6", "Application instrumentation applied successfully")
+
 	traceHook.Range(func(k, v interface{}) bool {
 		if v == nil {
 			IsHooked(k.(string), nil)

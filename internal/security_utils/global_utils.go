@@ -5,6 +5,7 @@ package security_utils
 
 type Info_req struct {
 	ResponseBody         string
+	ResponseContentType  string
 	GrpcByte             [][]byte
 	GrpcBody             []interface{}
 	ReqTraceData         string

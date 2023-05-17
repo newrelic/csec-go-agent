@@ -59,10 +59,10 @@ func initApplicationInfo(appName string) {
 	secConfig.GlobalInfo.ApplicationInfo.Starttimestr = secUtils.Int64ToString(startTime)
 	secConfig.GlobalInfo.ApplicationInfo.Size = secUtils.CalculateFileSize(binaryPath)
 
-	logger.Infoln("Collector is now inactive for ", secConfig.GlobalInfo.ApplicationInfo.AppUUID)
+	logger.Infoln("Security Agent is now INACTIVE for ", secConfig.GlobalInfo.ApplicationInfo.AppUUID)
 	printlogs := fmt.Sprintf("go secure agent attached to process: PID = %s, with generated applicationUID = %s by STATIC attachment", secUtils.IntToString(os.Getpid()), secConfig.GlobalInfo.ApplicationInfo.AppUUID)
-	logging.NewStage("3", "PROTECTION", printlogs)
-	logging.EndStage("3", "PROTECTION")
+	logging.EndStage("2", "Generating unique identifier "+secConfig.GlobalInfo.ApplicationInfo.AppUUID)
+	logging.PrintInitlog(printlogs)
 }
 
 func initEnvironmentInfo() {
@@ -102,10 +102,6 @@ func initEnvironmentInfo() {
 			secConfig.GlobalInfo.EnvironmentInfo.RunningEnv = "CONTAINER"
 		}
 	}
-	logging.NewStage("2", "ENV", "Current environment variables")
-	logging.PrintInitlog("Current environment variables : "+secUtils.StructToString(secConfig.GlobalInfo.EnvironmentInfo), "ENV")
-	//logging.PrintInitlog("Current securety config/policy : "+secUtils.StructToString(security), "ENV")
-	logging.EndStage("2", "ENV")
 }
 
 func initSecurityAgent(applicationName, licenseKey string, isDebugLog bool, securityAgentConfig secConfig.Security) {
@@ -117,6 +113,7 @@ func initSecurityAgent(applicationName, licenseKey string, isDebugLog bool, secu
 	secConfig.GlobalInfo.Security.SecurityHomePath = secUtils.GetCurrentWorkingDir()
 	checkDefaultConfig()
 	initLogger(secConfig.GlobalInfo.Security.SecurityHomePath, isDebugLog)
+	logging.EndStage("1", "Security agent is starting")
 	initEnvironmentInfo()
 	initApplicationInfo(applicationName)
 
