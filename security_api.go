@@ -30,7 +30,7 @@ func (t securityAgent) SendExitEvent(secureAgentevent interface{}, err error) {
 }
 
 func (t securityAgent) IsSecurityActive() bool {
-	return sec_intercept.IsDisable() || sec_intercept.IsForceDisable()
+	return !sec_intercept.IsDisable() || !sec_intercept.IsForceDisable()
 }
 
 func (t securityAgent) DistributedTraceHeaders(hdrs *http.Request, secureAgentevent interface{}) {
