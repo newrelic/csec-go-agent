@@ -1,7 +1,7 @@
 //go:build !windows
 
 // Copyright 2023 New Relic Corporation. All rights reserved.
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: New Relic Pre-Release
 package security_sysinfo
 
 import "syscall"

@@ -1,5 +1,5 @@
 // Copyright 2023 New Relic Corporation. All rights reserved.
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: New Relic Pre-Release
 
 package security_event_generation
 
@@ -39,7 +39,7 @@ var (
 )
 
 func InitHcScheduler() {
-	logging.EndStage("5", "Security agent threads started")
+	logging.EndStage("5", "Security agent components started")
 	SendSecHealthCheck()
 	t := time.NewTicker(5 * time.Minute)
 	for {
