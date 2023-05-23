@@ -625,6 +625,15 @@ func ProcessInit(server_name string) {
 func UpdateLinkData(linkingMetadata map[string]string) {
 	logger.Info("UpdateLinkData", linkingMetadata)
 
+	if value, ok := linkingMetadata["entityName"]; ok {
+		linkingMetadata["entity.name"] = value
+		delete(linkingMetadata, "entityName")
+	}
+
+	if value, ok := linkingMetadata["entityGUID"]; ok {
+		linkingMetadata["entity.guid"] = value
+		delete(linkingMetadata, "entityGUID")
+	}
 	if secConfig.GlobalInfo.AgentRunId == "" {
 		secConfig.GlobalInfo.LinkingMetadata = linkingMetadata
 		accountId, ok := linkingMetadata["accountId"]
@@ -640,6 +649,11 @@ func UpdateLinkData(linkingMetadata map[string]string) {
 			go secWs.InitializeWsConnecton()
 		}
 	} else {
+		secConfig.GlobalInfo.LinkingMetadata = linkingMetadata
+		agentRunId, ok := linkingMetadata["agentRunId"]
+		if ok {
+			secConfig.GlobalInfo.AgentRunId = agentRunId
+		}
 		secConfig.SecureWS.ReconnectAtAgentRefresh()
 	}
 
