@@ -23,7 +23,33 @@ examples/server/main.go is an example that will appear as "Example App" in your 
 env NEW_RELIC_LICENSE_KEY=__YOUR_NEW_RELIC_LICENSE_KEY__LICENSE__ \
     go run examples/server/main.go
 ```
-## Usage
+## Support Matrix
+
+### Go Versions
+
+For the latest version of the agent, Go 1.17+ is required.
+
+### Service Frameworks
+
+* net/http
+* gin-gonic/gin
+* gorilla/mux
+* google.golang.org/grpc
+* labstack/echo
+* julienschmidt/httprouter
+* micro/go-micro
+
+### Databases
+
+* database/sql
+* mattn/go-sqlite3
+* jmoiron/sqlx
+* go-mssqldb
+* mongodb/mongo-go-driver
+* go-sql-driver/mysql
+* lib/pq
+* jackc/pgx
+* jackc/pgx/v5
 
 ### Instrumentation Packages
 
