@@ -10,7 +10,6 @@ import (
 	"syscall"
 
 	"github.com/mackerelio/go-osstat/loadavg"
-	"github.com/pbnjay/memory"
 	"github.com/struCoder/pidusage"
 )
 
@@ -26,9 +25,12 @@ func GetStats(pid, applicationPath string) map[string]interface{} {
 	stats["nCores"] = runtime.NumCPU()
 	stats["rootDiskFreeSpaceMB"] = byteToMb(float64(DiskFreeSpace("/")))                   // byte to mb
 	stats["processDirDiskFreeSpaceMB"] = byteToMb(float64(DiskFreeSpace(applicationPath))) // byte to mb
-	stats["systemFreeMemoryMB"] = byteToMb(float64(memory.FreeMemory()))                   // byte to mb no impl in NR code
-	stats["systemTotalMemoryMB"] = byteToMb(float64(memory.TotalMemory()))                 // byte to mb  // can be get from NR code
-	avg, err := loadavg.Get()                                                              //don't have support for windows
+	systemFreeMemoryMB, _ := FreePhysicalMemoryBytes()
+	stats["systemFreeMemoryMB"] = byteToMb(float64(systemFreeMemoryMB)) // byte to mb
+	systemTotalMemoryMB, _ := PhysicalMemoryBytes()
+	stats["systemTotalMemoryMB"] = byteToMb(float64(systemTotalMemoryMB)) // byte to mb
+
+	avg, err := loadavg.Get() //don't have support for windows
 	if err == nil {
 		stats["systemCpuLoad"] = avg.Loadavg5
 	}
