@@ -9,7 +9,6 @@ import (
 	"strconv"
 	"syscall"
 
-	"github.com/mackerelio/go-osstat/loadavg"
 	"github.com/struCoder/pidusage"
 )
 
@@ -30,9 +29,9 @@ func GetStats(pid, applicationPath string) map[string]interface{} {
 	systemTotalMemoryMB, _ := PhysicalMemoryBytes()
 	stats["systemTotalMemoryMB"] = byteToMb(float64(systemTotalMemoryMB)) // byte to mb
 
-	avg, err := loadavg.Get() //don't have support for windows
+	avg, err := GetLoadavg() //don't have support for windows
 	if err == nil {
-		stats["systemCpuLoad"] = avg.Loadavg5
+		stats["systemCpuLoad"] = avg
 	}
 	sysinfo, err := pidusage.GetStat(syscall.Getpid())
 	if err == nil {

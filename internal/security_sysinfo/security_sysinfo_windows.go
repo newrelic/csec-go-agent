@@ -31,3 +31,7 @@ func DiskFreeSpace(volumePath string) uint64 {
 
 	return uint64(diskusage.freeBytes)
 }
+
+func GetLoadavg() (string, error) {
+	return "0", errors.New("GetLoadavg not supported for windows")
+}
