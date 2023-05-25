@@ -11,9 +11,10 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
-	"github.com/juju/fslock"
+	secUtils "github.com/newrelic/csec-go-agent/internal/security_utils"
 )
 
 type RotateFileConfig struct {
@@ -26,6 +27,7 @@ type RotateFileConfig struct {
 type RotateFileHook struct {
 	Config    RotateFileConfig
 	logWriter os.File
+	rotate    sync.Mutex
 }
 
 func NewRotateFileHook(config RotateFileConfig) (*RotateFileHook, *os.File, error) {
@@ -61,13 +63,40 @@ func (hook *RotateFileHook) Fire(logMessege, mode string) string {
 
 func (hook *RotateFileHook) logrollover() error {
 
-	lock := fslock.New(hook.Config.Filename)
-	lockErr := lock.TryLock()
-	if lockErr != nil {
-		//some other process has a lock on the log file so no need to rollover this
+	if !hook.rotate.TryLock() {
 		return nil
+	} else {
+		defer hook.rotate.Unlock()
 	}
 
+	lockFile := hook.Config.Filename + ".lock"
+	pid := secUtils.IntToString(os.Getpid())
+
+	if !secUtils.IsFileExist(lockFile) {
+		err := os.WriteFile(lockFile, []byte(pid), 777)
+		if err != nil {
+			return err
+		}
+	}
+	lockPid, err := os.ReadFile(lockFile)
+	if err == nil && string(lockPid) == pid {
+		err := hook.filerollover()
+		os.Remove(lockFile)
+		return err
+	} else if err == nil && string(lockPid) != pid {
+		info, err := os.Stat(lockFile)
+		if err != nil {
+			return err
+		}
+		difference := time.Now().Sub(info.ModTime())
+		if difference.Minutes() > 10 {
+			os.Remove(lockFile)
+		}
+	}
+	return err
+}
+
+func (hook *RotateFileHook) filerollover() error {
 	logFile, err := os.Open(hook.Config.Filename)
 
 	if err != nil {
@@ -91,10 +120,6 @@ func (hook *RotateFileHook) logrollover() error {
 	if err != nil {
 		return err
 	}
-	err = lock.Unlock()
-	if err != nil {
-		return err
-	}
 	return hook.DeleteFileIdNeeded(hook.Config.BaseLogFilename, filepath.Dir(hook.Config.Filename))
 
 }
@@ -110,7 +135,7 @@ func (hook *RotateFileHook) DeleteFileIdNeeded(filename, dirpath string) error {
 			dir = append(dir, file.Name())
 		}
 	}
-	if len(dir) > hook.Config.MaxBackups {
+	if len(dir) > hook.Config.MaxBackups+1 {
 		err := os.Remove(filepath.Join(dirpath, dir[0]))
 		if err != nil {
 			return err
