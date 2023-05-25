@@ -7,9 +7,6 @@ import (
 	"fmt"
 	"runtime"
 	"strconv"
-	"syscall"
-
-	"github.com/struCoder/pidusage"
 )
 
 func GetStats(pid, applicationPath string) map[string]interface{} {
@@ -32,10 +29,6 @@ func GetStats(pid, applicationPath string) map[string]interface{} {
 	avg, err := GetLoadavg() //don't have support for windows
 	if err == nil {
 		stats["systemCpuLoad"] = avg
-	}
-	sysinfo, err := pidusage.GetStat(syscall.Getpid())
-	if err == nil {
-		stats["processCpuUsage"] = toFixed(sysinfo.CPU)
 	}
 	return stats
 }
