@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"github.com/juju/fslock"
-	"github.com/sirupsen/logrus"
 )
 
 type RotateFileConfig struct {
@@ -22,7 +21,6 @@ type RotateFileConfig struct {
 	BaseLogFilename string
 	MaxSize         int64
 	MaxBackups      int
-	Level           logrus.Level
 }
 
 type RotateFileHook struct {
@@ -30,7 +28,7 @@ type RotateFileHook struct {
 	logWriter os.File
 }
 
-func NewRotateFileHook(config RotateFileConfig) (logrus.Hook, *os.File, error) {
+func NewRotateFileHook(config RotateFileConfig) (*RotateFileHook, *os.File, error) {
 
 	logfile, err := os.OpenFile(config.Filename, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0777)
 
@@ -46,27 +44,19 @@ func NewRotateFileHook(config RotateFileConfig) (logrus.Hook, *os.File, error) {
 	return &hook, logfile, nil
 }
 
-func (hook *RotateFileHook) Levels() []logrus.Level {
-	return logrus.AllLevels[:hook.Config.Level+1]
-}
-
-func (hook *RotateFileHook) Fire(entry *logrus.Entry) (err error) {
+func (hook *RotateFileHook) Fire(logMessege, mode string) string {
 	re := regexp.MustCompile(`license_key=[a-fA-F0-9.]+`)
-	sanitized := re.ReplaceAllLiteralString(entry.Message, "license_key=[redacted]")
-	entry.Message = sanitized
-	if entry.Level == logrus.ErrorLevel {
-		trackError(entry.Message)
+	logMessege = re.ReplaceAllLiteralString(logMessege, "license_key=[redacted]")
+
+	if mode == "ERROR" {
+		trackError(logMessege)
 	}
 
 	info, err := os.Stat(hook.Config.Filename)
 	if err == nil && info.Size() > hook.Config.MaxSize*1024*1024 {
-		err := hook.logrollover()
-		if err != nil {
-			return err
-		}
-		return nil
+		hook.logrollover()
 	}
-	return nil
+	return logMessege
 }
 
 func (hook *RotateFileHook) logrollover() error {

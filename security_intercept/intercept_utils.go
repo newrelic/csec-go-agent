@@ -16,7 +16,6 @@ import (
 	logging "github.com/newrelic/csec-go-agent/internal/security_logs"
 	secUtils "github.com/newrelic/csec-go-agent/internal/security_utils"
 	secConfig "github.com/newrelic/csec-go-agent/security_config"
-	"github.com/sirupsen/logrus"
 )
 
 func IsForceDisable() bool {
@@ -77,7 +76,7 @@ func IsHookedLog(name string, e error) {
 	logging.IsHooked(name, e)
 }
 
-func GetLogger(loggerName string) *logrus.Entry {
+func GetLogger(loggerName string) logging.Logger {
 	return logging.GetLogger(loggerName)
 }
 
