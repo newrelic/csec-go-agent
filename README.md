@@ -1,6 +1,6 @@
 # The New Relic Security Agent for Go is in preview and licensed under the New Relic Pre-Release Software Notice.
 
-##### Repo : [newrelic/csec-go-agent ](https://github.com/newrelic/csec-node-agent)
+##### Repo : [newrelic/csec-go-agent ](https://github.com/newrelic/csec-go-agent)
 
 ##### Package Name: newrelic_security_agent
 #
@@ -80,10 +80,14 @@ Any feedback provided to New Relic about the New Relic csec-go-agent, including 
 Keep in mind that when you submit a pull request or other feedback, you’ll need to sign the CLA via the click-through using CLA-Assistant. You only have to sign the CLA one time per project.
 If you have any questions drop us an email at opensource@newrelic.com.
 
-# A note about vulnerabilities
-As noted in our security policy, New Relic is committed to the privacy and security of our customers and their data. We believe that providing coordinated disclosure by security researchers and engaging with the security community are important means to achieve our security goals.
-If you believe you have found a security vulnerability in this project or any of New Relic's products or websites, we welcome and greatly appreciate you reporting it to New Relic through HackerOne.
-If you would like to contribute to this project, review these guidelines.
+**A note about vulnerabilities**
+
+As noted in our [security policy](https://github.com/newrelic/csec-go-agent/security/policy), New Relic is committed to the privacy and security of our customers and their data. We believe that providing coordinated disclosure by security researchers and engaging with the security community are important means to achieve our security goals.
+
+If you believe you have found a security vulnerability in this project or any of New Relic's products or websites, we welcome and greatly appreciate you reporting it to New Relic through [HackerOne](https://hackerone.com/newrelic).
+
+If you would like to contribute to this project, review [these guidelines](https://github.com/newrelic/csec-go-agent/blob/main/Contributing%20Feedback.md).
+
 # License
 
 newrelic/csec-go-agent is licensed under the New Relic Software Notice. 
