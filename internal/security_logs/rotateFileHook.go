@@ -71,7 +71,8 @@ func (hook *RotateFileHook) Fire(entry *logrus.Entry) (err error) {
 
 func (hook *RotateFileHook) logrollover() error {
 
-	lock := fslock.New(hook.Config.Filename)
+	lockFileName := hook.Config.Filename + ".lock"
+	lock := fslock.New(lockFileName)
 	lockErr := lock.TryLock()
 	if lockErr != nil {
 		//some other process has a lock on the log file so no need to rollover this
@@ -102,6 +103,7 @@ func (hook *RotateFileHook) logrollover() error {
 		return err
 	}
 	err = lock.Unlock()
+	os.Remove(lockFileName)
 	if err != nil {
 		return err
 	}
