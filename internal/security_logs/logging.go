@@ -5,12 +5,12 @@ package security_logs
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
 	"runtime"
 	"strings"
-	"syscall"
 
 	"github.com/sirupsen/logrus"
 )
@@ -25,7 +25,6 @@ func Init(logFileName, initlogFileName, logFilepath string, pid int) {
 	if log == nil {
 		log = logrus.New()
 	}
-	syscall.Umask(0)
 	err := os.MkdirAll(logFilepath, os.ModePerm)
 	if err != nil {
 		fmt.Println(err)
@@ -37,7 +36,12 @@ func Init(logFileName, initlogFileName, logFilepath string, pid int) {
 		fmt.Println(err)
 		return
 	}
-	//todo add exception handlin
+
+	err = os.Chmod(filepath.Dir(logFilepath), 0777)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 
 	formatter := logrus.TextFormatter{
 		ForceColors:     true,
@@ -184,4 +188,10 @@ func PrintWarnlog(logs string) {
 
 func Disableinitlogs() {
 	disable = true
+}
+
+func init() {
+	if log != nil {
+		log.SetOutput(ioutil.Discard)
+	}
 }
