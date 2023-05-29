@@ -8,7 +8,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"syscall"
 
 	secUtils "github.com/newrelic/csec-go-agent/internal/security_utils"
 )
@@ -19,7 +18,6 @@ var errorBuffer = secUtils.NewCring(5)
 
 func Init(logFileName, initlogFileName, logFilepath string, pid int) {
 	isInitilized = true
-	syscall.Umask(0)
 	err := os.MkdirAll(logFilepath, os.ModePerm)
 	if err != nil {
 		fmt.Println(err)
@@ -27,6 +25,11 @@ func Init(logFileName, initlogFileName, logFilepath string, pid int) {
 	}
 
 	err = os.Chmod(logFilepath, 0777)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	err = os.Chmod(filepath.Dir(logFilepath), 0777)
 	if err != nil {
 		fmt.Println(err)
 		return

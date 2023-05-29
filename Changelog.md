@@ -4,6 +4,7 @@
 - License update
 - Improved Logging
 - Fix for agent refresh
+- Fix agent initialization in Windows
 
 ## [1.0.2-limited-preview] - 2023-05-18
 - Fix for RXSS events.
