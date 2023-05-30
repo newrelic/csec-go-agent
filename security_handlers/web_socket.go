@@ -4,6 +4,7 @@
 package security_handlers
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
@@ -15,11 +16,11 @@ import (
 	"sync"
 	"time"
 
-	gorillaWS "github.com/gorilla/websocket"
 	logging "github.com/newrelic/csec-go-agent/internal/security_logs"
 	secUtils "github.com/newrelic/csec-go-agent/internal/security_utils"
 	secConfig "github.com/newrelic/csec-go-agent/security_config"
 	eventGeneration "github.com/newrelic/csec-go-agent/security_event_generation"
+	gorillaWS "nhooyr.io/websocket"
 )
 
 var logger = logging.GetLogger("wsclient")
@@ -49,7 +50,7 @@ func (ws *websocket) write(s []byte) bool {
 	if !ws.isWsConnected() {
 		return false
 	}
-	err := ws.conn.WriteMessage(gorillaWS.TextMessage, s)
+	err := ws.conn.Write(context.Background(), gorillaWS.MessageText, s)
 	if err != nil {
 		logger.Errorln("Failed to send event over websocket : ", err.Error())
 		increaseEventDropCount(s)
@@ -65,7 +66,7 @@ func (ws *websocket) read() ([]byte, error) {
 	if !ws.isWsConnected() {
 		return nil, errors.New("Failed to read CC over websocket ,ws is not connected")
 	}
-	_, message, err := ws.conn.ReadMessage()
+	_, message, err := ws.conn.Read(context.Background())
 	if err != nil && err != io.EOF {
 		return message, err
 	}
@@ -85,9 +86,8 @@ func (ws *websocket) makeConnection() (bool, bool) {
 	}
 	connectionHeader := getConnectionHeader()
 
-	var wsDialer = &gorillaWS.Dialer{
-		Proxy:            http.ProxyFromEnvironment,
-		HandshakeTimeout: 30 * time.Second,
+	httpClient := &http.Client{
+		Timeout: time.Second * 30,
 	}
 	caCertPool, err := x509.SystemCertPool()
 	if err != nil {
@@ -106,9 +106,16 @@ func (ws *websocket) makeConnection() (bool, bool) {
 		}
 	}
 	caCertPool.AppendCertsFromPEM(caCert)
-	wsDialer.TLSClientConfig = &tls.Config{RootCAs: caCertPool}
 
-	conn, res, err := wsDialer.Dial(validatorEndpoint, connectionHeader)
+	httpClient.Transport = &http.Transport{
+		TLSClientConfig: &tls.Config{RootCAs: caCertPool},
+	}
+	var wsDialer = &gorillaWS.DialOptions{
+		HTTPClient: httpClient,
+		HTTPHeader: connectionHeader,
+	}
+
+	conn, res, err := gorillaWS.Dial(context.Background(), validatorEndpoint, wsDialer)
 	if err != nil || conn == nil {
 		logging.PrintInitErrolog("Failed to connect Validator " + validatorEndpoint)
 		logger.Errorln("Failed to connect Validator  : ", err, validatorEndpoint)
@@ -189,7 +196,7 @@ func (ws *websocket) closeWs() {
 
 	ws.Lock()
 	if ws.conn != nil {
-		ws.conn.Close()
+		ws.conn.Close(gorillaWS.StatusNormalClosure, "close ws connection")
 	}
 	ws.conn = nil
 	ws.Unlock()
