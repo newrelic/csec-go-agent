@@ -6,4 +6,4 @@ Package `csec_mongodb_mongo` instruments go.mongodb.org/mongo-driver/mongo appli
 import _ "github.com/newrelic/csec-go-agent/instrumentation/csec_mongodb_mongo"
 ```
 
-For more information, see [go docs](). 
+For more information, see [go docs](https://godoc.org/github.com/newrelic/csec-go-agent/instrumentation/csec_mongodb_mongo). 
