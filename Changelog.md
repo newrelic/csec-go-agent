@@ -1,5 +1,5 @@
 # Changelog
-## [1.0.3-limited-preview] - 2023-05-23
+## [v0.1.0] - 2023-05-30
 
 - License update
 - Improved Logging
