@@ -31,6 +31,7 @@ type Secureiface interface {
 	GetFastHttpData() net.Conn
 	SendEvent(category string, args interface{}) *EventTracker
 	GetFuzzHeader() string
+	GetTmpFiles() []string
 	NewGoroutineLinker(interface{})
 	NewGoroutine() interface{}
 }
