@@ -72,10 +72,10 @@ func parseControlCommand(arg []byte) (error, bool) {
 			registerFuzzTask(&cc11, cc.Arguments[1])
 			break
 		}
-	case RECONNECT_AT_WILL:
-		logger.Info("Received WS 'reconnect' command from server. Initiating sequence.")
-		go secConfig.SecureWS.ReconnectAtWill()
-		return nil, true
+	//case RECONNECT_AT_WILL:
+	//	logger.Info("Received WS 'reconnect' command from server. Initiating sequence.")
+	//	//go secConfig.SecureWS.ReconnectAtWill()
+	//	return nil, true
 
 	case SEND_POLICY:
 		type policy struct {
