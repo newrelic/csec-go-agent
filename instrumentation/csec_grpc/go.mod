@@ -5,7 +5,7 @@ go 1.17
 require (
 	github.com/fullstorydev/grpcurl v1.8.7
 	github.com/jhump/protoreflect v1.14.1
-	github.com/newrelic/csec-go-agent v0.1.0
+	github.com/newrelic/csec-go-agent v0.2.0
 )
 
 require (
