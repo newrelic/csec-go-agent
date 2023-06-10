@@ -24,7 +24,7 @@ import (
 
 var logger = logging.GetLogger("wsclient")
 
-const validatorDefaultEndpoint = "ws://localhost:54321/"
+const validatorDefaultEndpoint = "wss://csec.nr-data.net"
 
 type websocket struct {
 	conn                 *gorillaWS.Conn

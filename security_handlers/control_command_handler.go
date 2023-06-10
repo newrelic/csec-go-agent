@@ -68,6 +68,7 @@ func parseControlCommand(arg []byte) (error, bool) {
 		if err != nil {
 			return errors.New("Unable to unmarshall cc11 : " + err.Error()), false
 		} else {
+			logger.Debugln("Fuzz request received")
 			logger.Debugln("will fuzz, parsedOK ..")
 			registerFuzzTask(&cc11, cc.Arguments[1])
 			break
