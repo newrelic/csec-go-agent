@@ -17,6 +17,7 @@ require (
 	golang.org/x/text v0.9.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
+	google.golang.org/protobuf v1.30.0
 )
 
 exclude (
@@ -150,4 +151,5 @@ exclude (
 	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c // indirect
 	golang.org/x/image v0.0.0-20190802002840-cff245a6509b // indirect
 	golang.org/x/image v0.0.0-20190227222117-0694c2d4d067 // indirect
+	google.golang.org/protobuf v1.28.1
 )
