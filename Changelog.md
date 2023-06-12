@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.2.1] - 2023-06-12
+
+- retract v0.2.0, protobuf cve fixed in v0.2.1
+
 ## [v0.2.0] - 2023-06-10
 
 - Fix for removing temporary files in IAST
