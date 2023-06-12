@@ -24,12 +24,14 @@ import (
 
 var logger = logging.GetLogger("wsclient")
 
-const validatorDefaultEndpoint = "ws://localhost:54321/"
+const validatorDefaultEndpoint = "wss://csec.nr-data.net"
 
 type websocket struct {
-	conn            *gorillaWS.Conn
-	readcontroller  chan string
-	writecontroller chan string
+	conn                 *gorillaWS.Conn
+	readcontroller       chan string
+	writecontroller      chan string
+	isReadThreadRunning  bool
+	isWriteThreadRunning bool
 	sync.Mutex
 	reconnectWill sync.Mutex
 	eventBuffer   chan []byte
@@ -130,7 +132,7 @@ func (ws *websocket) makeConnection() (bool, bool) {
 		logger.Infoln("Security Agent is now ACTIVE for ", secConfig.GlobalInfo.ApplicationInfo.AppUUID)
 		logger.Infoln("!!! Websocket worker goroutine starting...")
 		logging.EndStage("4", "Web socket connection to SaaS validator established successfully")
-
+		ws.flushWsController()
 		go writeThread(ws)
 		go readThread(ws)
 		eventGeneration.SendApplicationInfo()
@@ -183,10 +185,14 @@ func (ws *websocket) connect() bool {
 func (ws *websocket) closeWs() {
 	logger.Infoln("!!! Close Websocket Connection !!! ", len(ws.eventBuffer), " ", cap(ws.eventBuffer))
 	logger.Infoln("Close Read/Write Thread")
-	ws.writecontroller <- "close"
-	ws.readcontroller <- "close"
-	//close(ws.readcontroller)
-
+	if ws.isWriteThreadRunning {
+		logger.Infoln("Send closeWrite thread signal")
+		ws.writecontroller <- "close"
+	}
+	if ws.isReadThreadRunning {
+		logger.Infoln("Send closeRead thread signal")
+		ws.readcontroller <- "close"
+	}
 	ws.Lock()
 	if ws.conn != nil {
 		ws.conn.Close()
@@ -260,7 +266,7 @@ func InitializeWsConnecton() {
 	ws := new(websocket)
 	ws.eventBuffer = make(chan []byte, 10240)
 	ws.readcontroller = make(chan string, 10)
-	ws.writecontroller = make(chan string)
+	ws.writecontroller = make(chan string, 10)
 	secConfig.SecureWS = ws
 	if ws.connect() {
 		go eventGeneration.InitHcScheduler()
@@ -270,7 +276,11 @@ func InitializeWsConnecton() {
 // Read,Write Threads
 func writeThread(ws *websocket) {
 	logger.Info("Start ws write Thread")
-	defer logger.Info("Close ws write Thread")
+	ws.isWriteThreadRunning = true
+	defer func() {
+		ws.isWriteThreadRunning = false
+		logger.Info("Close ws write Thread")
+	}()
 	for {
 		select {
 		case <-ws.writecontroller:
@@ -284,12 +294,17 @@ func writeThread(ws *websocket) {
 
 func readThread(ws *websocket) {
 	logger.Info("Start ws read Thread")
-	defer logger.Info("Close ws read Thread")
+	ws.isReadThreadRunning = true
+	defer func() {
+		ws.isReadThreadRunning = false
+		logger.Info("Close ws read Thread")
+	}()
 	for {
 		buf, err := ws.read()
 		if err != nil {
 			select {
 			case <-ws.readcontroller:
+				logger.Debugln("Websocket err at agent restart " + err.Error())
 				return
 			default:
 				logger.Errorln("Failed to read CC over websocket err : " + err.Error())
@@ -349,5 +364,15 @@ func increaseEventEventSentCount(event []byte) {
 	secConfig.GlobalInfo.EventData.EventSentCount++
 	if secConfig.GlobalInfo.EventData.EventSentCount == 0 {
 		secConfig.GlobalInfo.EventData.EventSentCount = math.MaxUint64
+	}
+}
+
+func (ws *websocket) flushWsController() {
+	logger.Debugln("Flush flush Ws Controller Buffer", len(ws.readcontroller))
+	for ws.readcontroller != nil && len(ws.readcontroller) > 0 {
+		<-ws.readcontroller
+	}
+	for ws.writecontroller != nil && len(ws.writecontroller) > 0 {
+		<-ws.writecontroller
 	}
 }

@@ -6,6 +6,7 @@ package security_handlers
 import (
 	"encoding/json"
 	"errors"
+	"path/filepath"
 	"strings"
 
 	secConfig "github.com/newrelic/csec-go-agent/security_config"
@@ -57,8 +58,9 @@ func parseControlCommand(arg []byte) (error, bool) {
 		if len(cc.Arguments) <= 1 {
 			return errors.New("Unable to process cc11, need minimum 2 arguments "), false
 		}
-		arguments := strings.Replace(cc.Arguments[0], "{{NR_CSEC_VALIDATOR_HOME_TMP}}", secConfig.GlobalInfo.Security.SecurityHomePath, -1)
-		arguments = strings.Replace(arguments, "%7B%7BNR_CSEC_VALIDATOR_HOME_TMP%7D%7D", secConfig.GlobalInfo.Security.SecurityHomePath, -1)
+		dsFilePath := filepath.Join(secConfig.GlobalInfo.Security.SecurityHomePath, "nr-security-home", "tmp")
+		arguments := strings.Replace(cc.Arguments[0], "{{NR_CSEC_VALIDATOR_HOME_TMP}}", dsFilePath, -1)
+		arguments = strings.Replace(arguments, "%7B%7BNR_CSEC_VALIDATOR_HOME_TMP%7D%7D", dsFilePath, -1)
 
 		arg := []byte(arguments)
 		var cc11 FuzzRequrestHandler
@@ -66,6 +68,7 @@ func parseControlCommand(arg []byte) (error, bool) {
 		if err != nil {
 			return errors.New("Unable to unmarshall cc11 : " + err.Error()), false
 		} else {
+			logger.Debugln("Fuzz request received")
 			logger.Debugln("will fuzz, parsedOK ..")
 			registerFuzzTask(&cc11, cc.Arguments[1])
 			break

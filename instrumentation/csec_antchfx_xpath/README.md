@@ -6,4 +6,4 @@ Package `csec_antchfx_xpath` instruments github.com/antchfx/xpath applications.
 import _ "github.com/newrelic/csec-go-agent/instrumentation/csec_antchfx_xpath"
 ```
 
-For more information, see [go docs](). 
+For more information, see [go docs](https://godoc.org/github.com/newrelic/csec-go-agent/instrumentation/csec_antchfx_xpath). 

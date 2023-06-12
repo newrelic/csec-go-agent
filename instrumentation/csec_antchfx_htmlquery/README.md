@@ -6,4 +6,4 @@ Package `csec_antchfx_htmlquery` instruments github.com/antchfx/htmlquery applic
 import _ "github.com/newrelic/csec-go-agent/instrumentation/csec_antchfx_htmlquery"
 ```
 
-For more information, see [go docs]().
+For more information, see [go docs](https://godoc.org/github.com/newrelic/csec-go-agent/instrumentation/csec_antchfx_htmlquery).

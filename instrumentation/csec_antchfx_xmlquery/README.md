@@ -6,4 +6,4 @@ Package `csec_antchfx_xmlquery` instruments github.com/antchfx/xmlquery applicat
 import _ "github.com/newrelic/csec-go-agent/instrumentation/csec_antchfx_xmlquery"
 ```
 
-For more information, see [go docs](). 
+For more information, see [go docs](https://godoc.org/github.com/newrelic/csec-go-agent/instrumentation/csec_antchfx_xmlquery). 

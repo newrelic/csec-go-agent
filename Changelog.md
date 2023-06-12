@@ -1,4 +1,11 @@
 # Changelog
+
+## [v0.2.0] - 2023-06-10
+
+- Fix for removing temporary files in IAST
+- Fix for ws abnormal closure issue
+- Update handling for complete disabling of security agent.
+
 ## [v0.1.0] - 2023-05-30
 
 - License update
