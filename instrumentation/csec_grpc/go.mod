@@ -5,7 +5,7 @@ go 1.17
 require (
 	github.com/fullstorydev/grpcurl v1.8.7
 	github.com/jhump/protoreflect v1.14.1
-	github.com/newrelic/csec-go-agent v0.2.0
+	github.com/newrelic/csec-go-agent v0.2.1
 )
 
 require (
@@ -153,3 +153,5 @@ exclude (
 	golang.org/x/image v0.0.0-20190227222117-0694c2d4d067 // indirect
 	google.golang.org/protobuf v1.28.1
 )
+
+retract v0.2.0 //protobuf cve fixed in v0.2.1
