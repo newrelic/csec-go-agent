@@ -173,6 +173,15 @@ func (k Secureimpl) GetFuzzHeader() string {
 	}
 }
 
+func (k Secureimpl) GetTmpFiles() []string {
+	request := getRequest(getID())
+	if request == nil {
+		return make([]string, 0)
+	} else {
+		return request.TmpFiles
+	}
+}
+
 /**
  * Implementation for goroutines (created and deleted)
  */

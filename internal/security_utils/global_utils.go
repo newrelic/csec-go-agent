@@ -12,6 +12,7 @@ type Info_req struct {
 	RequestIdentifier    string
 	Request              RequestInfo
 	VulnerabilityDetails VulnerabilityDetails
+	TmpFiles             []string
 }
 
 type RequestInfo struct {

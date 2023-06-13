@@ -5,6 +5,7 @@ package security_config
 
 import (
 	"os"
+	"strconv"
 
 	logging "github.com/newrelic/csec-go-agent/internal/security_logs"
 	secUtils "github.com/newrelic/csec-go-agent/internal/security_utils"
@@ -118,16 +119,19 @@ func InstantiateDefaultPolicy() {
 	GlobalInfo.CurrentPolicy = GlobalInfo.DefaultPolicy
 }
 
-const forceDisable = "NEW_RELIC_SECURITY_FORCE_COMPLETE_DISABLE"
+const forceDisable = "NEW_RELIC_SECURITY_AGENT_ENABLED"
 
-func isForceDisable() bool {
-	return secUtils.CaseInsensitiveEquals(os.Getenv(forceDisable), "true")
+func isSecurityAgentEnabled() bool {
+	if env := os.Getenv(forceDisable); env != "" {
+		if b, err := strconv.ParseBool("false"); nil == err {
+			return b
+		}
+	}
+	return true
 }
 
 func init() {
 	InitDefaultConfig()
-	if isForceDisable() {
-		GlobalInfo.IsForceDisable = true
-		return
-	}
+	GlobalInfo.IsForceDisable = !isSecurityAgentEnabled()
+
 }

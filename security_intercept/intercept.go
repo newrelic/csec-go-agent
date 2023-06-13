@@ -319,7 +319,7 @@ func TraceIncommingRequest(url, host string, hdrMap map[string][]string, method 
 	(*infoReq).ReqTraceData = traceData
 	(*infoReq).RequestIdentifier = RequestIdentifier
 	(*infoReq).Request.ServerName = serverName
-	createFuzzFile(RequestIdentifier)
+	(*infoReq).TmpFiles = createFuzzFile(RequestIdentifier)
 	secConfig.Secure.AssociateInboundRequest(infoReq)
 }
 
@@ -455,7 +455,7 @@ func tracerpcRequestWithHeader(header map[string]string, data []byte) {
 	if (*infoReq).RequestIdentifier != "" {
 		header[NR_CSEC_FUZZ_REQUEST_ID] = (*infoReq).RequestIdentifier
 	}
-	createFuzzFile((*infoReq).RequestIdentifier)
+	(*infoReq).TmpFiles = createFuzzFile((*infoReq).RequestIdentifier)
 	if (*infoReq).Request.ServerName == "" {
 		(*infoReq).Request.ServerName = host
 	}
@@ -476,8 +476,9 @@ func AssociateGoRoutine(caller, callee int64) {
 }
 
 func DissociateInboundRequest() {
+	tmpFiles := secConfig.Secure.GetTmpFiles()
 	secConfig.Secure.DissociateInboundRequest()
-	removeFuzzFile()
+	removeFuzzFile(tmpFiles)
 }
 
 func XssCheck() {
@@ -526,7 +527,7 @@ func XssCheck() {
  */
 
 // create a remove fuzz file for verfy file acesss attack
-func createFuzzFile(fuzzheaders string) {
+func createFuzzFile(fuzzheaders string) (tmpFiles []string) {
 	DSON := true
 	if DSON && fuzzheaders != "" {
 		additionalData := strings.Split(fuzzheaders, IAST_SEP)
@@ -534,8 +535,10 @@ func createFuzzFile(fuzzheaders string) {
 		if len(additionalData) >= 7 {
 			for i := 6; i < len(additionalData); i++ {
 				fileName := additionalData[i]
-				fileName = strings.Replace(fileName, "{{NR_CSEC_VALIDATOR_HOME_TMP}}", secConfig.GlobalInfo.Security.SecurityHomePath, -1)
-				fileName = strings.Replace(fileName, "%7B%7BNR_CSEC_VALIDATOR_HOME_TMP%7D%7D", secConfig.GlobalInfo.Security.SecurityHomePath, -1)
+				dsFilePath := filepath.Join(secConfig.GlobalInfo.Security.SecurityHomePath, "nr-security-home", "tmp")
+				fileName = strings.Replace(fileName, "{{NR_CSEC_VALIDATOR_HOME_TMP}}", dsFilePath, -1)
+				fileName = strings.Replace(fileName, "%7B%7BNR_CSEC_VALIDATOR_HOME_TMP%7D%7D", dsFilePath, -1)
+				tmpFiles = append(tmpFiles, fileName)
 				dir := filepath.Dir(fileName)
 				if dir != "" {
 					err := os.MkdirAll(dir, os.ModePerm)
@@ -551,23 +554,14 @@ func createFuzzFile(fuzzheaders string) {
 			}
 		}
 	}
+	return tmpFiles
 }
 
-func removeFuzzFile() {
-	fuzzheaders := secConfig.Secure.GetFuzzHeader()
-	if secConfig.GlobalInfo.CurrentPolicy.VulnerabilityScan.Enabled && secConfig.GlobalInfo.CurrentPolicy.VulnerabilityScan.IastScan.Enabled && fuzzheaders != "" {
-		additionalData := strings.Split(fuzzheaders, IAST_SEP)
-		logger.Debugln("additionalData:", additionalData)
-		if len(additionalData) >= 7 {
-			for i := 6; i < len(additionalData); i++ {
-				fileName := additionalData[i]
-				fileName = strings.Replace(fileName, "{{NR_CSEC_VALIDATOR_HOME_TMP}}", secConfig.GlobalInfo.Security.SecurityHomePath, -1)
-				fileName = strings.Replace(fileName, "%7B%7BNR_CSEC_VALIDATOR_HOME_TMP%7D%7D", secConfig.GlobalInfo.Security.SecurityHomePath, -1)
-				err := os.Remove(fileName)
-				if err != nil {
-					logger.Errorln("Error while removing created file : ", err.Error(), fileName)
-				}
-			}
+func removeFuzzFile(tmpFiles []string) {
+	for _, path := range tmpFiles {
+		err := os.Remove(path)
+		if err != nil {
+			logger.Errorln("Error while removing created file : ", err.Error(), path)
 		}
 	}
 }
