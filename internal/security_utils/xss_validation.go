@@ -45,33 +45,56 @@ const (
 	REGEX_SPACE                       = "\\s+"
 )
 
-func IsContentTypeSupported(type1 string) bool {
-	supportedContentType := []string{
-		"text/css",
-		"text/csv",
-		"text/html",
-		"text/javascript",
-		"application/json",
-		"application/ld+json",
-		"text/javascript",
-		"application/vnd.oasis.opendocument.text",
-		"application/x-httpd-php",
-		"application/rtf",
-		"image/svg+xml",
-		"text/plain",
-		"application/xhtml+xml",
-		"application/xml",
-		"multipart/form-data",
-		"application/x-www-form-urlencoded",
-		"application/octet-stream",
-	}
-
-	return ContainsInArray(supportedContentType, strings.ToLower(type1))
-}
-
 var tagNameRegex = regexp.MustCompile(`(?ims)<([a-zA-Z_\\-]+[0-9]*|!--)`)
 var attribRegex = regexp2.MustCompile("(?ims)([^(\\/\\s<'\">)]+?)(?:\\s*)=\\s*(('|\")([\\s\\S]*?)(?:(?=(\\\\?))\\5.)*?\\3|.+?(?=\\/>|>|\\?>|\\s|<\\/|$))", 0)
 
+func IsContentTypeSupported(ctype string) bool {
+	ctype = strings.ToLower(ctype)
+
+	if !isMIMETypeSupported(ctype) {
+		return false
+	}
+	if !isMediaTypesSupported(ctype) {
+		return false
+	}
+
+	return true
+}
+
+func isMIMETypeSupported(ctype string) bool {
+	exclusiveMIMEType := map[string]int{
+		"video": 1,
+		"image": 1,
+		"audio": 1,
+	}
+	mimeType := getMIMEType(ctype)
+	if _, ok := exclusiveMIMEType[mimeType]; ok {
+		return false
+	}
+	return true
+}
+
+func isMediaTypesSupported(ctype string) bool {
+	exclusiveMediaTypes := []string{
+		"application/mp4",
+		"application/x-cdlink",
+	}
+	for arr := range exclusiveMediaTypes {
+		if strings.HasPrefix(ctype, exclusiveMediaTypes[arr]) {
+			return false
+		}
+	}
+	return true
+}
+
+func getMIMEType(type1 string) string {
+
+	if cType := strings.Split(type1, "/"); len(cType) >= 2 {
+		return cType[0]
+	}
+	return ""
+
+}
 func safeDecode(data string) string {
 	decodedData, err := url.Parse(data)
 	if err != nil {
