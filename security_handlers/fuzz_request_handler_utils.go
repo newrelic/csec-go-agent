@@ -3,16 +3,50 @@
 
 package security_handlers
 
-import threadpool "github.com/newrelic/csec-go-agent/internal/security_threadpool"
+import (
+	threadpool "github.com/newrelic/csec-go-agent/internal/security_threadpool"
+	"time"
+)
 
 type SecureFuzz interface {
 	ExecuteFuzzRequest(*FuzzRequrestHandler, string)
 }
 
 type RestRequestThreadPool struct {
-	httpFuzzRestClient SecureFuzz
-	grpsFuzzRestClient SecureFuzz
-	threadPool         *threadpool.ThreadPool
+	httpFuzzRestClient  SecureFuzz
+	grpsFuzzRestClient  SecureFuzz
+	threadPool          *threadpool.ThreadPool
+	completedRequestIds map[string]int
+	coolDownSleepTime   time.Time
+}
+
+func (r *RestRequestThreadPool) CoolDownSleepTime() time.Time {
+	return r.coolDownSleepTime
+}
+
+func (r *RestRequestThreadPool) SetCoolDownSleepTime(coolDownSleepTimeInSecond int) {
+	coolDownSleepTime := time.Now().Add(time.Duration(coolDownSleepTimeInSecond) * time.Second)
+	r.coolDownSleepTime = coolDownSleepTime
+}
+
+func (r *RestRequestThreadPool) CompletedRequestIds() []string {
+	keys := make([]string, 0, len(r.completedRequestIds))
+	for k := range r.completedRequestIds {
+		keys = append(keys, k)
+	}
+	return keys
+}
+
+func (r *RestRequestThreadPool) SetCompletedRequestIds(completedRequestIds map[string]int) {
+	r.completedRequestIds = completedRequestIds
+}
+
+func (r *RestRequestThreadPool) AppendCompletedRequestIds(requestId string) {
+	r.completedRequestIds[requestId] = 1
+}
+
+func (r *RestRequestThreadPool) RemoveCompletedRequestIds(requestId string) {
+	delete(r.completedRequestIds, requestId)
 }
 
 func (r *RestRequestThreadPool) InitHttpFuzzRestClient(rest SecureFuzz) {

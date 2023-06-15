@@ -23,12 +23,15 @@ const (
 	RECONNECT_AT_WILL                            = 12
 	SEND_POLICY                                  = 100
 	POLICY_UPDATE_FAILED_DUE_TO_VALIDATION_ERROR = 102
+	ENTER_IAST_COOLDOWN                          = 13
+	IAST_RECORD_DELETE_CONFIRMATION              = 14
 )
 
 type CCData struct {
 	Data interface{} `json:"data"`
 }
 type ControlComand struct {
+	Id             string   `json:"id"`
 	ControlCommand int      `json:"controlCommand"`
 	Arguments      []string `json:"arguments"`
 }
@@ -70,7 +73,7 @@ func parseControlCommand(arg []byte) (error, bool) {
 		} else {
 			logger.Debugln("Fuzz request received")
 			logger.Debugln("will fuzz, parsedOK ..")
-			registerFuzzTask(&cc11, cc.Arguments[1])
+			registerFuzzTask(&cc11, cc.Arguments[1], cc.Id)
 			break
 		}
 	case RECONNECT_AT_WILL:
@@ -96,6 +99,14 @@ func parseControlCommand(arg []byte) (error, bool) {
 	case POLICY_UPDATE_FAILED_DUE_TO_VALIDATION_ERROR:
 		logger.Warnln("Updated policy failed validation. Reverting to default policy for the mode", cc.Data)
 		secConfig.InstantiateDefaultPolicy()
+	case ENTER_IAST_COOLDOWN:
+		coolDownSleepTime, ok := cc.Data.(int)
+		if ok {
+			FuzzHandler.SetCoolDownSleepTime(coolDownSleepTime)
+		}
+	case IAST_RECORD_DELETE_CONFIRMATION:
+		removeRequestID(cc.Arguments)
+
 	}
 	return nil, false
 }

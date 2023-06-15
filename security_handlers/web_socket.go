@@ -136,6 +136,7 @@ func (ws *websocket) makeConnection() (bool, bool) {
 		go writeThread(ws)
 		go readThread(ws)
 		eventGeneration.SendApplicationInfo()
+		go InitFuzzScheduler()
 		return true, false
 	}
 }
@@ -323,16 +324,17 @@ func readThread(ws *websocket) {
 // Utils
 func getConnectionHeader() http.Header {
 	return http.Header{
-		"NR-CSEC-CONNECTION-TYPE": []string{"LANGUAGE_COLLECTOR"},
-		"NR-LICENSE-KEY":          []string{secConfig.GlobalInfo.ApplicationInfo.ApiAccessorToken},
-		"NR-AGENT-RUN-TOKEN":      []string{secConfig.GlobalInfo.AgentRunId},
-		"NR-CSEC-VERSION":         []string{secUtils.CollectorVersion},
-		"NR-CSEC-COLLECTOR-TYPE":  []string{secUtils.CollectorType},
-		"NR-CSEC-MODE":            []string{secConfig.GlobalInfo.Security.Mode},
-		"NR-CSEC-APP-UUID":        []string{secConfig.GlobalInfo.ApplicationInfo.AppUUID},
-		"NR-CSEC-BUILD-NUMBER":    []string{secUtils.BuildNumber},
-		"NR-CSEC-JSON-VERSION":    []string{secUtils.JsonVersion},
-		"NR-ACCOUNT-ID":           []string{secConfig.GlobalInfo.AccountID},
+		"NR-CSEC-CONNECTION-TYPE":         []string{"LANGUAGE_COLLECTOR"},
+		"NR-LICENSE-KEY":                  []string{secConfig.GlobalInfo.ApplicationInfo.ApiAccessorToken},
+		"NR-AGENT-RUN-TOKEN":              []string{secConfig.GlobalInfo.AgentRunId},
+		"NR-CSEC-VERSION":                 []string{secUtils.CollectorVersion},
+		"NR-CSEC-COLLECTOR-TYPE":          []string{secUtils.CollectorType},
+		"NR-CSEC-MODE":                    []string{secConfig.GlobalInfo.Security.Mode},
+		"NR-CSEC-APP-UUID":                []string{secConfig.GlobalInfo.ApplicationInfo.AppUUID},
+		"NR-CSEC-BUILD-NUMBER":            []string{secUtils.BuildNumber},
+		"NR-CSEC-JSON-VERSION":            []string{secUtils.JsonVersion},
+		"NR-ACCOUNT-ID":                   []string{secConfig.GlobalInfo.AccountID},
+		"NR-CSEC-IAST-DATA-TRANSFER-MODE": []string{"PULL"},
 	}
 
 }

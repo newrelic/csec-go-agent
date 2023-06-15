@@ -322,6 +322,18 @@ func SendUpdatedPolicy(policy secConfig.Policy) {
 	}
 }
 
+func IASTDataRequest(batchSize int, completedRequestIds []string) {
+	var tmp_event IASTDataRequestBeen
+	tmp_event.CompletedRequestIds = completedRequestIds
+	tmp_event.BatchSize = batchSize
+	tmp_event.ApplicationUUID = secConfig.GlobalInfo.ApplicationInfo.AppUUID
+	tmp_event.JSONName = "iast-data-request"
+	_, err := sendEvent(tmp_event)
+	if err != nil {
+		logger.Errorln(err)
+	}
+}
+
 func sendEvent(event interface{}) (string, error) {
 	event_json, err := json.Marshal(event)
 	if err != nil {

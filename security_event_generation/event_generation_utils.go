@@ -153,6 +153,13 @@ type FuzzFailBean struct {
 	FuzzHeader string `json:"fuzzHeader"`
 }
 
+type IASTDataRequestBeen struct {
+	JSONName            string   `json:"jsonName"`
+	ApplicationUUID     string   `json:"applicationUUID"`
+	BatchSize           int      `json:"batchSize"`
+	CompletedRequestIds []string `json:"completedRequestIds"`
+}
+
 //status utils function
 /////
 

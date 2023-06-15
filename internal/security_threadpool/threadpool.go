@@ -45,6 +45,9 @@ func (tr *ThreadPool) PendingTask() int {
 func (tr *ThreadPool) IsTaskPoolEmpty() bool {
 	return len(tr.jobs) == 0
 }
+func (tr *ThreadPool) RemainingCapacity() int {
+	return cap(tr.jobs) - len(tr.jobs)
+}
 func (tr *ThreadPool) createThreadPool(noOfThreads int) {
 	for i := 0; i < noOfThreads; i++ {
 		go tr.createThread(i)
