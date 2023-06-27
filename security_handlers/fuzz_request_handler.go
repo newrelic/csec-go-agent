@@ -5,6 +5,7 @@ package security_handlers
 
 import (
 	threadpool "github.com/newrelic/csec-go-agent/internal/security_threadpool"
+	secConfig "github.com/newrelic/csec-go-agent/security_config"
 	eventGeneration "github.com/newrelic/csec-go-agent/security_event_generation"
 	"time"
 )
@@ -47,6 +48,7 @@ func registerFuzzTask(kcc11 *FuzzRequrestHandler, caseType, requestID string) {
 		initRestRequestThreadPool()
 	}
 	FuzzHandler.threadPool.RegisterTask(task)
+	FuzzHandler.SetLastFuzzRequestTime()
 }
 
 func removeRequestID(requestID []string) {
@@ -64,18 +66,32 @@ func initRestRequestThreadPool() {
 }
 
 func InitFuzzScheduler() {
+	if !(secConfig.GlobalInfo.CurrentPolicy.VulnerabilityScan.Enabled && secConfig.GlobalInfo.CurrentPolicy.VulnerabilityScan.IastScan.Enabled) {
+		return
+	}
 	if FuzzHandler.threadPool == nil {
 		initRestRequestThreadPool()
 	}
-	eventGeneration.IASTDataRequest(200, FuzzHandler.CompletedRequestIds())
 	for {
-		logger.Infoln("Called test ")
-		currentTime := time.Now()
-		coolDownSleepTime := int64(FuzzHandler.CoolDownSleepTime().Sub(currentTime).Minutes())
-		logger.Infoln("cooldownSleepTime", coolDownSleepTime)
-		if coolDownSleepTime > 0 {
-			time.Sleep(time.Duration(coolDownSleepTime) * time.Minute)
+		time.Sleep(1 * time.Second)
+		if !secConfig.SecureWS.GetStatus() {
+			logger.Infoln("WS not connected sleep FuzzScheduler for 5 sec")
+			time.Sleep(5 * time.Second)
+			continue
 		}
+		currentTime := time.Now()
+		coolDownSleepTime := int64(FuzzHandler.CoolDownSleepTime().Sub(currentTime).Seconds())
+		if coolDownSleepTime > 0 {
+			logger.Infoln("coolDown SleepTime", coolDownSleepTime)
+			time.Sleep(time.Duration(coolDownSleepTime) * time.Second)
+		}
+		currentTime = time.Now()
+
+		if currentTime.Sub(FuzzHandler.LastFuzzRequestTime()).Seconds() < 5 {
+			//logger.Debugln("LastFuzzRequestTime", FuzzHandler.LastFuzzRequestTime(), currentTime)
+			continue
+		}
+
 		currentFetchThreshold := 300 //SECURITY_POLICY_VULNERABILITY_SCAN_IAST_SCAN_PROBING_THRESHOLD
 		remainingRecordCapacity := FuzzHandler.threadPool.RemainingCapacity()
 		currentRecordBacklog := FuzzHandler.threadPool.PendingTask()
@@ -87,8 +103,5 @@ func InitFuzzScheduler() {
 			logger.Infoln("InitFuzzScheduler", batchSize*2)
 			eventGeneration.IASTDataRequest(batchSize*2, FuzzHandler.CompletedRequestIds())
 		}
-		time.Sleep(5 * time.Minute)
 	}
 }
-
-// INFO   [14-Jun-2023 11:05:41 IST]50820:fuzz_request_handler.go:82 InitFuzzScheduler test  300 1000 0 300        logger="wsclient"

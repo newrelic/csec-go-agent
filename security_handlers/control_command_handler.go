@@ -94,16 +94,15 @@ func parseControlCommand(arg []byte) (error, bool) {
 			logger.Debugln("defaultPolicy", defaultPolicy.Data)
 			policy := secConfig.UpdateGlobalConf(defaultPolicy.Data, string(arg))
 			eventGeneration.SendUpdatedPolicy(policy)
-
 		}
+		FuzzHandler.InitFuzzScheduler()
 	case POLICY_UPDATE_FAILED_DUE_TO_VALIDATION_ERROR:
 		logger.Warnln("Updated policy failed validation. Reverting to default policy for the mode", cc.Data)
 		secConfig.InstantiateDefaultPolicy()
 	case ENTER_IAST_COOLDOWN:
-		coolDownSleepTime, ok := cc.Data.(int)
-		if ok {
-			FuzzHandler.SetCoolDownSleepTime(coolDownSleepTime)
-		}
+		coolDownSleepTime := int(cc.Data.(float64))
+		logger.Debugln("coolDownSleepTime", coolDownSleepTime)
+		FuzzHandler.SetCoolDownSleepTime(coolDownSleepTime)
 	case IAST_RECORD_DELETE_CONFIRMATION:
 		removeRequestID(cc.Arguments)
 

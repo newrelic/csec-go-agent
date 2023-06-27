@@ -136,7 +136,6 @@ func (ws *websocket) makeConnection() (bool, bool) {
 		go writeThread(ws)
 		go readThread(ws)
 		eventGeneration.SendApplicationInfo()
-		go InitFuzzScheduler()
 		return true, false
 	}
 }

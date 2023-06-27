@@ -13,11 +13,28 @@ type SecureFuzz interface {
 }
 
 type RestRequestThreadPool struct {
-	httpFuzzRestClient  SecureFuzz
-	grpsFuzzRestClient  SecureFuzz
-	threadPool          *threadpool.ThreadPool
-	completedRequestIds map[string]int
-	coolDownSleepTime   time.Time
+	httpFuzzRestClient         SecureFuzz
+	grpsFuzzRestClient         SecureFuzz
+	threadPool                 *threadpool.ThreadPool
+	completedRequestIds        map[string]int
+	coolDownSleepTime          time.Time
+	lastFuzzRequestTime        time.Time
+	isFuzzSchedulerInitialized bool
+}
+
+func (r *RestRequestThreadPool) InitFuzzScheduler() {
+	if !r.isFuzzSchedulerInitialized {
+		go InitFuzzScheduler()
+		r.isFuzzSchedulerInitialized = true
+	}
+}
+
+func (r *RestRequestThreadPool) LastFuzzRequestTime() time.Time {
+	return r.lastFuzzRequestTime
+}
+
+func (r *RestRequestThreadPool) SetLastFuzzRequestTime() {
+	r.lastFuzzRequestTime = time.Now()
 }
 
 func (r *RestRequestThreadPool) CoolDownSleepTime() time.Time {
