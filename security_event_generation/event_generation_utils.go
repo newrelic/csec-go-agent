@@ -160,27 +160,27 @@ func populateStatusLogs(service, process map[string]interface{}) {
 
 	status := fmt.Sprintf(statusTemplate,
 		time.Now(),
-		secConfig.GlobalInfo.ApplicationInfo.Starttimestr,
-		secConfig.GlobalInfo.ApplicationInfo.AppUUID,
-		secConfig.GlobalInfo.Security.SecurityHomePath,
+		secConfig.GlobalInfo.ApplicationInfo.GetStarttimestr(),
+		secConfig.GlobalInfo.ApplicationInfo.GetAppUUID(),
+		secConfig.GlobalInfo.SecurityHomePath(),
 		secConfig.GlobalInfo.EnvironmentInfo.Gopath,
 		runtime.Version(),
-		secConfig.GlobalInfo.ApplicationInfo.Pid,
+		secConfig.GlobalInfo.ApplicationInfo.GetPid(),
 		"Go",
 		os.Args[0],
-		filepath.Dir(secConfig.GlobalInfo.ApplicationInfo.BinaryPath),
+		filepath.Dir(secConfig.GlobalInfo.ApplicationInfo.GetBinaryPath()),
 		secUtils.GetCurrentWorkingDir(),
-		secConfig.GlobalInfo.Security.Mode,
-		secConfig.GlobalInfo.ApplicationInfo.ServerName,
+		secConfig.GlobalInfo.SecurityMode(),
+		secConfig.GlobalInfo.ApplicationInfo.GetServerName(),
 		"",
-		secConfig.GlobalInfo.Security.Validator_service_url,
+		secConfig.GlobalInfo.ValidatorServiceUrl(),
 		wsStatus(),
-		secConfig.GlobalInfo.CurrentPolicy.Version,
+		secConfig.GlobalInfo.GetCurrentPolicy().Version,
 		secUtils.MapToString(process),
 		secUtils.MapToString(service),
 		logging.GetErrorLogs(),
 		HcBuffer.Get())
-	statusFilePath := filepath.Join(secConfig.GlobalInfo.Security.SecurityHomePath, "nr-security-home", "logs", "snapshots")
+	statusFilePath := filepath.Join(secConfig.GlobalInfo.SecurityHomePath(), "nr-security-home", "logs", "snapshots")
 	err := os.MkdirAll(statusFilePath, os.ModePerm)
 	if err != nil {
 		logger.Errorln(err)
@@ -189,7 +189,7 @@ func populateStatusLogs(service, process map[string]interface{}) {
 	if err != nil {
 		logger.Errorln(err)
 	}
-	statusFilePath1 := filepath.Join(statusFilePath, fmt.Sprintf("go-security-collector-status-%s.log", secConfig.GlobalInfo.ApplicationInfo.AppUUID))
+	statusFilePath1 := filepath.Join(statusFilePath, fmt.Sprintf("go-security-collector-status-%s.log", secConfig.GlobalInfo.ApplicationInfo.GetAppUUID()))
 	f, err := os.OpenFile(statusFilePath1, os.O_RDWR|os.O_CREATE, 0777)
 	if err != nil {
 		logger.Errorln(err)
@@ -246,7 +246,7 @@ func isLogAccessible(fileName string) string {
 }
 
 func isAgentActiveState() string {
-	if secConfig.GlobalInfo != nil && secConfig.GlobalInfo.Security.Enabled {
+	if secConfig.GlobalInfo != nil && secConfig.GlobalInfo.IsSecurityEnabled() {
 		return "OK"
 	} else {
 		return "ERROR"

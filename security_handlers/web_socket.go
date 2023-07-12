@@ -9,7 +9,6 @@ import (
 	"errors"
 	"io"
 	"io/ioutil"
-	"math"
 	"net/http"
 	"os"
 	"sync"
@@ -82,7 +81,7 @@ func (ws *websocket) makeConnection() (bool, bool) {
 	}
 	ws.Lock()
 	validatorEndpoint := ""
-	if validatorEndpoint = secConfig.GlobalInfo.Security.Validator_service_url; validatorEndpoint == "" {
+	if validatorEndpoint = secConfig.GlobalInfo.ValidatorServiceUrl(); validatorEndpoint == "" {
 		validatorEndpoint = validatorDefaultEndpoint
 	}
 	connectionHeader := getConnectionHeader()
@@ -129,7 +128,7 @@ func (ws *websocket) makeConnection() (bool, bool) {
 		ws.conn = conn
 		ws.Unlock()
 
-		logger.Infoln("Security Agent is now ACTIVE for ", secConfig.GlobalInfo.ApplicationInfo.AppUUID)
+		logger.Infoln("Security Agent is now ACTIVE for ", secConfig.GlobalInfo.ApplicationInfo.GetAppUUID())
 		logger.Infoln("!!! Websocket worker goroutine starting...")
 		logging.EndStage("4", "Web socket connection to SaaS validator established successfully")
 		ws.flushWsController()
@@ -232,13 +231,13 @@ func (ws *websocket) ReconnectAtWill() {
 	 * Post reconnect: reset 'reconnecting phase' in WSClient.
 	 */
 	ws.reconnectWill.Lock()
-	if secConfig.GlobalInfo.CurrentPolicy.VulnerabilityScan.Enabled && secConfig.GlobalInfo.CurrentPolicy.VulnerabilityScan.IastScan.Enabled {
+	if secConfig.GlobalInfo.IsIASTEnable() {
 		for FuzzHandler.threadPool != nil && !FuzzHandler.threadPool.IsTaskPoolEmpty() {
 			logger.Debugln("wait for fuzz threadPool empty")
 			time.Sleep(100 * time.Millisecond)
 		}
 	}
-	secConfig.GlobalInfo.Security.Enabled = false
+	secConfig.GlobalInfo.SetSecurityEnabled(false)
 
 	for ws.pendingEvent() > 0 {
 		logger.Debugln("wait for event threadPool empty")
@@ -250,7 +249,7 @@ func (ws *websocket) ReconnectAtWill() {
 	ws.closeWs()
 	ws.reconnect()
 
-	secConfig.GlobalInfo.Security.Enabled = true
+	secConfig.GlobalInfo.SetSecurityEnabled(true)
 	ws.reconnectWill.Unlock()
 }
 
@@ -324,15 +323,15 @@ func readThread(ws *websocket) {
 func getConnectionHeader() http.Header {
 	return http.Header{
 		"NR-CSEC-CONNECTION-TYPE": []string{"LANGUAGE_COLLECTOR"},
-		"NR-LICENSE-KEY":          []string{secConfig.GlobalInfo.ApplicationInfo.ApiAccessorToken},
-		"NR-AGENT-RUN-TOKEN":      []string{secConfig.GlobalInfo.AgentRunId},
+		"NR-LICENSE-KEY":          []string{secConfig.GlobalInfo.ApplicationInfo.GetApiAccessorToken()},
+		"NR-AGENT-RUN-TOKEN":      []string{secConfig.GlobalInfo.MetaData.GetAccountID()},
 		"NR-CSEC-VERSION":         []string{secUtils.CollectorVersion},
 		"NR-CSEC-COLLECTOR-TYPE":  []string{secUtils.CollectorType},
-		"NR-CSEC-MODE":            []string{secConfig.GlobalInfo.Security.Mode},
-		"NR-CSEC-APP-UUID":        []string{secConfig.GlobalInfo.ApplicationInfo.AppUUID},
+		"NR-CSEC-MODE":            []string{secConfig.GlobalInfo.SecurityMode()},
+		"NR-CSEC-APP-UUID":        []string{secConfig.GlobalInfo.ApplicationInfo.GetAppUUID()},
 		"NR-CSEC-BUILD-NUMBER":    []string{secUtils.BuildNumber},
 		"NR-CSEC-JSON-VERSION":    []string{secUtils.JsonVersion},
-		"NR-ACCOUNT-ID":           []string{secConfig.GlobalInfo.AccountID},
+		"NR-ACCOUNT-ID":           []string{secConfig.GlobalInfo.MetaData.GetAccountID()},
 	}
 
 }
@@ -341,30 +340,21 @@ func increaseEventProcessed(event []byte) {
 	if !secUtils.CaseInsensitiveContains(string(event), `"jsonName":"Event"`) {
 		return
 	}
-	secConfig.GlobalInfo.EventData.EventProcessed++
-	if secConfig.GlobalInfo.EventData.EventProcessed == 0 {
-		secConfig.GlobalInfo.EventData.EventProcessed = math.MaxUint64
-	}
+	secConfig.GlobalInfo.EventData.IncreaseEventProcessed()
 }
 
 func increaseEventDropCount(event []byte) {
 	if !secUtils.CaseInsensitiveContains(string(event), `"jsonName":"Event"`) {
 		return
 	}
-	secConfig.GlobalInfo.EventData.EventDropCount++
-	if secConfig.GlobalInfo.EventData.EventDropCount == 0 {
-		secConfig.GlobalInfo.EventData.EventDropCount = math.MaxUint64
-	}
+	secConfig.GlobalInfo.EventData.IncreaseEventDropCount()
 }
 
 func increaseEventEventSentCount(event []byte) {
 	if !secUtils.CaseInsensitiveContains(string(event), `"jsonName":"Event"`) {
 		return
 	}
-	secConfig.GlobalInfo.EventData.EventSentCount++
-	if secConfig.GlobalInfo.EventData.EventSentCount == 0 {
-		secConfig.GlobalInfo.EventData.EventSentCount = math.MaxUint64
-	}
+	secConfig.GlobalInfo.EventData.IncreaseEventSentCount()
 }
 
 func (ws *websocket) flushWsController() {

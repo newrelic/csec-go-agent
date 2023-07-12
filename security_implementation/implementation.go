@@ -67,7 +67,7 @@ func (k Secureimpl) AssociateInboundRequest(r *secUtils.Info_req) {
 	if !isAgentReady() {
 		return
 	}
-	secConfig.GlobalInfo.EventData.HTTPRequestCount++
+	secConfig.GlobalInfo.EventData.IncreaseHttpRequestCount()
 	goroutineID := getID()
 	if r.Request.IsGRPC {
 		data, err := grpcMap.Load(goroutineID)
@@ -226,7 +226,7 @@ func (k Secureimpl) SendExitEvent(event *secUtils.EventTracker) {
 	if event == nil {
 		return
 	}
-	if !(secConfig.GlobalInfo.CurrentPolicy.VulnerabilityScan.Enabled && secConfig.GlobalInfo.CurrentPolicy.VulnerabilityScan.IastScan.Enabled) {
+	if !secConfig.GlobalInfo.IsIASTEnable() {
 		return
 	}
 	requestIdentifier := event.RequestIdentifier
