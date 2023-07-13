@@ -4,10 +4,11 @@
 package security_handlers
 
 import (
+	"time"
+
 	threadpool "github.com/newrelic/csec-go-agent/internal/security_threadpool"
 	secConfig "github.com/newrelic/csec-go-agent/security_config"
 	eventGeneration "github.com/newrelic/csec-go-agent/security_event_generation"
-	"time"
 )
 
 const (
@@ -96,7 +97,6 @@ func InitFuzzScheduler() {
 		remainingRecordCapacity := FuzzHandler.threadPool.RemainingCapacity()
 		currentRecordBacklog := FuzzHandler.threadPool.PendingTask()
 		batchSize := currentFetchThreshold - currentRecordBacklog
-		batchSize = 200
 		logger.Infoln("InitFuzzScheduler test ", batchSize, remainingRecordCapacity, currentRecordBacklog, currentFetchThreshold)
 
 		if batchSize > 100 && remainingRecordCapacity > batchSize {
