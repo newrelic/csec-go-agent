@@ -157,11 +157,7 @@ func (ws *websocket) reconnect() {
 }
 
 func (ws *websocket) connect() bool {
-	waitTime := 1
 	for !ws.isWsConnected() {
-		if waitTime >= 6 {
-			return false
-		}
 		if ws.isWsConnected() {
 			break
 		}
@@ -172,11 +168,10 @@ func (ws *websocket) connect() bool {
 		if !reconnect {
 			return false
 		}
-		sleeptimeForReconnect := time.Duration(waitTime) * time.Minute
+		sleeptimeForReconnect := 15 * time.Second
 		logger.Infoln("sleeping before reconnecting", sleeptimeForReconnect)
 		time.Sleep(sleeptimeForReconnect)
 		logger.Infoln("sleep end, retrying to connect with validator")
-		waitTime++
 	}
 	return true
 }
@@ -202,6 +197,11 @@ func (ws *websocket) closeWs() {
 
 func (ws *websocket) RegisterEvent(s []byte) {
 	increaseEventProcessed(s)
+	if !ws.isWsConnected() {
+		increaseEventDropCount(s)
+		logger.Debugln("Drop event WS not connected or Reconnecting", len(ws.eventBuffer), cap(ws.eventBuffer))
+		return
+	}
 	select {
 	case ws.eventBuffer <- s:
 		logger.Debugln("Added EVENT", len(ws.eventBuffer), " ", cap(ws.eventBuffer))
@@ -239,10 +239,10 @@ func (ws *websocket) ReconnectAtWill() {
 	}
 	secConfig.GlobalInfo.SetSecurityEnabled(false)
 
-	for ws.pendingEvent() > 0 {
-		logger.Debugln("wait for event threadPool empty")
-		time.Sleep(100 * time.Millisecond)
-	}
+	// for ws.pendingEvent() > 0 {
+	// 	logger.Debugln("wait for event threadPool empty")
+	// 	time.Sleep(100 * time.Millisecond)
+	// }
 
 	//reset ws connection
 
@@ -255,9 +255,11 @@ func (ws *websocket) ReconnectAtWill() {
 
 func (ws *websocket) ReconnectAtAgentRefresh() {
 	ws.reconnectWill.Lock()
+	secConfig.GlobalInfo.SetSecurityEnabled(false)
 	//reset ws connection
 	ws.closeWs()
 	ws.reconnect()
+	secConfig.GlobalInfo.SetSecurityEnabled(true)
 	ws.reconnectWill.Unlock()
 }
 
