@@ -58,11 +58,12 @@ type eventJson struct {
 }
 
 type metaData struct {
-	TriggerViaRCI             bool `json:"triggerViaRCI"`
-	TriggerViaDeserialisation bool `json:"triggerViaDeserialisation"`
-	TriggerViaXXE             bool `json:"triggerViaXXE"`
-	IsClientDetectedFromXFF   bool `json:"isClientDetectedFromXFF"`
-	APIBlocked                bool `json:"apiBlocked"`
+	TriggerViaRCI             bool        `json:"triggerViaRCI"`
+	TriggerViaDeserialisation bool        `json:"triggerViaDeserialisation"`
+	TriggerViaXXE             bool        `json:"triggerViaXXE"`
+	IsClientDetectedFromXFF   bool        `json:"isClientDetectedFromXFF"`
+	APIBlocked                bool        `json:"apiBlocked"`
+	ReflectedMetaData         interface{} `json:"reflectedMetaData"`
 }
 
 // ---------------------------------------------------

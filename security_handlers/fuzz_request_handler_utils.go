@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	threadpool "github.com/newrelic/csec-go-agent/internal/security_threadpool"
+	secUtils "github.com/newrelic/csec-go-agent/internal/security_utils"
 )
 
 type SecureFuzz interface {
@@ -61,4 +62,5 @@ type FuzzRequrestHandler struct {
 	ParameterMap     map[string]interface{} `json:"parameterMap"`
 	IsGRPC           bool                   `json:"isGrpc"`
 	ServerName       string                 `json:"serverName"`
+	MetaData         secUtils.ReflectedMetaData
 }

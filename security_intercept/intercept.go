@@ -273,7 +273,7 @@ func AssociateApplicationPort(data string) {
 
 // TraceIncommingRequest - interception of incoming request
 
-func TraceIncommingRequest(url, host string, hdrMap map[string][]string, method string, body []byte, queryparam map[string][]string, protocol, serverName string) {
+func TraceIncommingRequest(url, host string, hdrMap map[string][]string, method string, body []byte, queryparam map[string][]string, protocol, serverName, type1 string) {
 	if !isAgentInitialized() {
 		return
 	}
@@ -322,6 +322,9 @@ func TraceIncommingRequest(url, host string, hdrMap map[string][]string, method 
 	(*infoReq).RequestIdentifier = RequestIdentifier
 	(*infoReq).Request.ServerName = serverName
 	(*infoReq).TmpFiles = createFuzzFile(RequestIdentifier)
+	if type1 == "gRPC" {
+		(*infoReq).Request.IsGRPC = true
+	}
 	secConfig.Secure.AssociateInboundRequest(infoReq)
 }
 
@@ -680,7 +683,9 @@ func SendEvent(caseType string, data ...interface{}) interface{} {
 	case "OUTBOUND":
 		return outboundcallHandler(data[0])
 	case "GRPC":
-		grpcRequestHandler(data[0])
+		grpcRequestHandler(data...)
+	case "GRPC_INFO":
+		grpcInfoHandler(data...)
 	case "MONGO":
 		return mongoHandler(data...)
 	case "SQL":
@@ -711,7 +716,7 @@ func inboundcallHandler(request interface{}) {
 	if clientHost == "" {
 		clientHost = r.GetHost()
 	}
-	TraceIncommingRequest(r.GetURL().String(), clientHost, r.GetHeader(), r.GetMethod(), r.GetBody(), queryparam, r.GetTransport(), r.GetServerName())
+	TraceIncommingRequest(r.GetURL().String(), clientHost, r.GetHeader(), r.GetMethod(), r.GetBody(), queryparam, r.GetTransport(), r.GetServerName(), r.Type1())
 }
 
 func outboundcallHandler(req interface{}) *secUtils.EventTracker {
@@ -764,11 +769,33 @@ func httpresponseHandler(data ...interface{}) {
 	}
 }
 
-func grpcRequestHandler(data interface{}) {
+func grpcRequestHandler(data ...interface{}) {
 	if data == nil || !isAgentInitialized() {
 		return
 	}
-	secConfig.Secure.AssociateGrpcQueryParam(data)
+	if len(data) >= 3 {
+		messageType, _ := data[1].(string)
+		version, _ := data[2].(string)
+		secConfig.Secure.AssociateGrpcQueryParam(data[0], messageType, version)
+	} else {
+		secConfig.Secure.AssociateGrpcQueryParam(data[0], "", "v2")
+	}
+
+}
+
+func grpcInfoHandler(data ...interface{}) {
+	if data == nil || !isAgentInitialized() {
+		return
+	}
+	if len(data) < 2 {
+		return
+	}
+
+	isClientStream, ok := data[0].(bool)
+	isServerStream, ok1 := data[1].(bool)
+	if ok && ok1 {
+		secConfig.Secure.AssociateGrpcInfo(isClientStream, isServerStream)
+	}
 }
 
 func sqlHandler(data ...interface{}) *secUtils.EventTracker {

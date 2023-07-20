@@ -260,6 +260,14 @@ func SendVulnerableEvent(req *secUtils.Info_req, category string, args interface
 	// if (*req).RequestIdentifier != "" {
 	// 	tmp_event.Stacktrace = []string{}
 	// }
+	if req.Request.IsGRPC {
+		tmp_event.MetaData.ReflectedMetaData = secUtils.ReflectedMetaData{
+			IsGrpcClientStream: req.ReflectedMetaData.IsGrpcClientStream,
+			IsServerStream:     req.ReflectedMetaData.IsServerStream,
+			GrcpMessageType:    req.ReflectedMetaData.GrcpMessageType,
+			GrcpMessageVersion: req.ReflectedMetaData.GrcpMessageVersion,
+		}
+	}
 
 	if secConfig.GlobalInfo.GetCurrentPolicy().VulnerabilityScan.Enabled && secConfig.GlobalInfo.GetCurrentPolicy().VulnerabilityScan.IastScan.Enabled {
 		if fuzzHeader != "" {

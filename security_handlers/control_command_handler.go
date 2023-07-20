@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	secUtils "github.com/newrelic/csec-go-agent/internal/security_utils"
 	secConfig "github.com/newrelic/csec-go-agent/security_config"
 	eventGeneration "github.com/newrelic/csec-go-agent/security_event_generation"
 )
@@ -29,8 +30,9 @@ type CCData struct {
 	Data interface{} `json:"data"`
 }
 type ControlComand struct {
-	ControlCommand int      `json:"controlCommand"`
-	Arguments      []string `json:"arguments"`
+	ControlCommand    int                        `json:"controlCommand"`
+	Arguments         []string                   `json:"arguments"`
+	ReflectedMetaData secUtils.ReflectedMetaData `json:"reflectedMetaData"`
 }
 type ControlComandHandler struct {
 	ControlComand
@@ -70,6 +72,7 @@ func parseControlCommand(arg []byte) (error, bool) {
 		} else {
 			logger.Debugln("Fuzz request received")
 			logger.Debugln("will fuzz, parsedOK ..")
+			cc11.MetaData = cc.ReflectedMetaData
 			registerFuzzTask(&cc11, cc.Arguments[1])
 			break
 		}
