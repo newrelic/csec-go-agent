@@ -92,7 +92,7 @@ func (grpcFuzz SecGrpcFuzz) ExecuteFuzzRequest(fuzzRequest *sechandler.FuzzRequr
 	}
 	gPort := strconv.Itoa(fuzzRequest.ServerPort)
 	h := &secGrpcHandler{reqMessages: finalData}
-	error := rungrpc(fuzzRequest.Protocol, secConfig.GlobalInfo.ApplicationInfo.ServerIp+":"+gPort, fuzzRequest.Url, h, headers, fuzzRequest.ServerName)
+	error := rungrpc(fuzzRequest.Protocol, secConfig.GlobalInfo.ApplicationInfo.ServerIp+":"+gPort, fuzzRequest.Method, h, headers, fuzzRequest.ServerName)
 	if error != nil {
 		logger.Errorln("Failed fuzz req while doing : ", fuzzRequest.Url, fuzzRequest.Method, error.Error())
 		secevent.SendFuzzFailEvent(fuzzRequestID)
@@ -130,7 +130,9 @@ func rungrpc(proto string, client string, url string, h *secGrpcHandler, headers
 		url = url[1:]
 	}
 	err = grpccurl.InvokeRpc(context.Background(), refSource, grpc_client, url, headers, h, h.getRequestData)
-	logger.Errorln("rungrpc ERR : ", err)
+	if err != nil {
+		logger.Errorln("rungrpc ERR : ", err)
+	}
 	logger.Debugln("rungrpc Responce : ", h.respMessages)
 	return err
 }
@@ -162,7 +164,6 @@ func (h *secGrpcHandler) OnReceiveHeaders(md metadata.MD) {
 }
 
 func (h *secGrpcHandler) OnReceiveResponse(msg proto.Message) {
-	//TODO
 	jsm := jsonpb.Marshaler{Indent: "  "}
 	respStr, err := jsm.MarshalToString(msg)
 	if err != nil {

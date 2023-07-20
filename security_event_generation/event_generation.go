@@ -70,13 +70,13 @@ func getApplicationIdentifiers(jsonName string) ApplicationIdentifiers {
 	applicationIdentifier.Language = language
 	applicationIdentifier.BuildNumber = secUtils.BuildNumber
 	applicationIdentifier.Framework = ""
-	applicationIdentifier.GroupName = secConfig.GlobalInfo.Security.Mode
-	applicationIdentifier.ApplicationUUID = secConfig.GlobalInfo.ApplicationInfo.AppUUID
+	applicationIdentifier.GroupName = secConfig.GlobalInfo.SecurityMode()
+	applicationIdentifier.ApplicationUUID = secConfig.GlobalInfo.ApplicationInfo.GetAppUUID()
 	applicationIdentifier.NodeID = secConfig.GlobalInfo.EnvironmentInfo.NodeId
-	applicationIdentifier.PolicyVersion = secConfig.GlobalInfo.CurrentPolicy.Version
-	applicationIdentifier.Pid = secConfig.GlobalInfo.ApplicationInfo.Pid
-	applicationIdentifier.StartTime = secConfig.GlobalInfo.ApplicationInfo.Starttimestr
-	applicationIdentifier.LinkingMetadata = secConfig.GlobalInfo.LinkingMetadata
+	applicationIdentifier.PolicyVersion = secConfig.GlobalInfo.GetCurrentPolicy().Version
+	applicationIdentifier.Pid = secConfig.GlobalInfo.ApplicationInfo.GetPid()
+	applicationIdentifier.StartTime = secConfig.GlobalInfo.ApplicationInfo.GetStarttimestr()
+	applicationIdentifier.LinkingMetadata = secConfig.GlobalInfo.MetaData.GetLinkingMetadata()
 	return applicationIdentifier
 
 }
@@ -88,12 +88,12 @@ func SendSecHealthCheck() {
 	var hc healthcheck
 	hc.EventType = "sec_health_check_lc"
 	hc.ApplicationIdentifiers = getApplicationIdentifiers("LAhealthcheck")
-	hc.ProtectedServer = secConfig.GlobalInfo.ApplicationInfo.ProtectedServer
-	hc.EventDropCount = secConfig.GlobalInfo.EventData.EventDropCount
-	hc.EventProcessed = secConfig.GlobalInfo.EventData.EventProcessed
-	hc.EventSentCount = secConfig.GlobalInfo.EventData.EventSentCount
-	hc.HTTPRequestCount = secConfig.GlobalInfo.EventData.HTTPRequestCount
-	stats := sysInfo.GetStats(secConfig.GlobalInfo.ApplicationInfo.Pid, secConfig.GlobalInfo.ApplicationInfo.BinaryPath)
+	hc.ProtectedServer = secConfig.GlobalInfo.ApplicationInfo.GetProtectedServer()
+	hc.EventDropCount = secConfig.GlobalInfo.EventData.GetEventDropCount()
+	hc.EventProcessed = secConfig.GlobalInfo.EventData.GetEventProcessed()
+	hc.EventSentCount = secConfig.GlobalInfo.EventData.GetEventSentCount()
+	hc.HTTPRequestCount = secConfig.GlobalInfo.EventData.GetHttpRequestCount()
+	stats := sysInfo.GetStats(secConfig.GlobalInfo.ApplicationInfo.GetPid(), secConfig.GlobalInfo.ApplicationInfo.GetBinaryPath())
 	hc.Stats = stats
 	serviceStatus := getServiceStatus()
 	hc.ServiceStatus = serviceStatus
@@ -102,14 +102,14 @@ func SendSecHealthCheck() {
 	HcBuffer.ForceInsert(healthCheck)
 	populateStatusLogs(serviceStatus, stats)
 
-	secConfig.GlobalInfo.EventData.EventDropCount = 0
-	secConfig.GlobalInfo.EventData.EventProcessed = 0
-	secConfig.GlobalInfo.EventData.EventSentCount = 0
-	secConfig.GlobalInfo.EventData.HTTPRequestCount = 0
+	secConfig.GlobalInfo.EventData.SetEventDropCount(0)
+	secConfig.GlobalInfo.EventData.SetEventProcessed(0)
+	secConfig.GlobalInfo.EventData.SetEventSentCount(0)
+	secConfig.GlobalInfo.EventData.SetHttpRequestCount(0)
 }
 
 func SendApplicationInfo() {
-	if secConfig.GlobalInfo.IsForceDisable {
+	if secConfig.GlobalInfo.IsForceDisable() {
 		return
 	}
 	var appInfo applicationInfo
@@ -167,24 +167,24 @@ func SendApplicationInfo() {
 	appInfo.Identifier = identifier
 	// configer deployedApplications and serverInfo
 
-	bin := filepath.Base(secConfig.GlobalInfo.ApplicationInfo.Cmd)
+	bin := filepath.Base(secConfig.GlobalInfo.ApplicationInfo.GetCmd())
 
-	if secConfig.GlobalInfo.ApplicationInfo.Ports != nil && len(secConfig.GlobalInfo.ApplicationInfo.Ports) > 0 {
-		secConfig.GlobalInfo.ApplicationInfo.ContextPath = bin + ":" + strconv.Itoa(secConfig.GlobalInfo.ApplicationInfo.Ports[0]) + "/"
+	applicationPort := secConfig.GlobalInfo.ApplicationInfo.GetPorts()
+	if applicationPort != nil && len(applicationPort) > 0 {
+		secConfig.GlobalInfo.ApplicationInfo.SetContextPath(bin + ":" + strconv.Itoa(applicationPort[0]) + "/")
 	} else {
-		secConfig.GlobalInfo.ApplicationInfo.ContextPath = bin
+		secConfig.GlobalInfo.ApplicationInfo.SetContextPath(bin)
 	}
-	applicationPort := secConfig.GlobalInfo.ApplicationInfo.Ports
 	if applicationPort == nil {
 		applicationPort = make([]int, 0)
 		applicationPort = append(applicationPort, -1)
 	}
 	deployedApplications := map[string]interface{}{
-		"deployedPath": secConfig.GlobalInfo.ApplicationInfo.BinaryPath,
+		"deployedPath": secConfig.GlobalInfo.ApplicationInfo.GetBinaryPath(),
 		"appName":      bin,
-		"sha256":       secConfig.GlobalInfo.ApplicationInfo.Sha256,
-		"size":         secConfig.GlobalInfo.ApplicationInfo.Size,
-		"contextPath":  secConfig.GlobalInfo.ApplicationInfo.ContextPath,
+		"sha256":       secConfig.GlobalInfo.ApplicationInfo.GetSha256(),
+		"size":         secConfig.GlobalInfo.ApplicationInfo.GetSize(),
+		"contextPath":  secConfig.GlobalInfo.ApplicationInfo.GetContextPath(),
 		"isEmbedded":   false,
 		"ports":        applicationPort,
 	}
@@ -192,7 +192,7 @@ func SendApplicationInfo() {
 	var arg11 []interface{}
 	arg11 = append(arg11, deployedApplications)
 
-	serverName := strings.Join(secConfig.GlobalInfo.ApplicationInfo.ServerName, ",")
+	serverName := strings.Join(secConfig.GlobalInfo.ApplicationInfo.GetServerName(), ",")
 	serverInfo := map[string]interface{}{
 		"name":                 serverName,
 		"deployedApplications": arg11,
@@ -201,16 +201,16 @@ func SendApplicationInfo() {
 	appInfo.ServerInfo = serverInfo
 	appInfo.JSONName = "applicationinfo"
 	appInfo.JSONVersion = secUtils.JsonVersion
-	appInfo.Sha256 = secConfig.GlobalInfo.ApplicationInfo.Sha256
-	appInfo.Pid = secConfig.GlobalInfo.ApplicationInfo.Pid
+	appInfo.Sha256 = secConfig.GlobalInfo.ApplicationInfo.GetSha256()
+	appInfo.Pid = secConfig.GlobalInfo.ApplicationInfo.GetPid()
 
-	appInfo.Cmdline = secConfig.GlobalInfo.ApplicationInfo.Cmdline
-	appInfo.RunCommand = strings.Join(secConfig.GlobalInfo.ApplicationInfo.Cmdline, " ")
+	appInfo.Cmdline = secConfig.GlobalInfo.ApplicationInfo.GetCmdline()
+	appInfo.RunCommand = strings.Join(secConfig.GlobalInfo.ApplicationInfo.GetCmdline(), " ")
 	appInfo.UserDir = secConfig.GlobalInfo.EnvironmentInfo.Wd
 	appInfo.BinaryName = bin
 	appInfo.OsArch = secConfig.GlobalInfo.EnvironmentInfo.Goarch
 	appInfo.OsName = secConfig.GlobalInfo.EnvironmentInfo.Goos
-	appInfo.BinaryPath = secConfig.GlobalInfo.ApplicationInfo.BinaryPath
+	appInfo.BinaryPath = secConfig.GlobalInfo.ApplicationInfo.GetBinaryPath()
 	appInfo.AgentAttachmentType = "STATIC"
 
 	app, err := sendEvent(appInfo)
@@ -261,7 +261,7 @@ func SendVulnerableEvent(req *secUtils.Info_req, category string, args interface
 	// 	tmp_event.Stacktrace = []string{}
 	// }
 
-	if secConfig.GlobalInfo.CurrentPolicy.VulnerabilityScan.Enabled && secConfig.GlobalInfo.CurrentPolicy.VulnerabilityScan.IastScan.Enabled {
+	if secConfig.GlobalInfo.GetCurrentPolicy().VulnerabilityScan.Enabled && secConfig.GlobalInfo.GetCurrentPolicy().VulnerabilityScan.IastScan.Enabled {
 		if fuzzHeader != "" {
 			tmp_event.IsIASTRequest = true
 		}
@@ -342,9 +342,9 @@ func getServiceStatus() map[string]interface{} {
 	ServiceStatus := map[string]interface{}{}
 	ServiceStatus["websocket"] = wsStatus()
 	ServiceStatus["agentActiveStat"] = isAgentActiveState()
-	ServiceStatus["logWriter"] = isLogAccessible(filepath.Join(secConfig.GlobalInfo.Security.SecurityHomePath, "nr-security-home", "logs", LOG_FILE))
-	ServiceStatus["initLogWriter"] = isLogAccessible(filepath.Join(secConfig.GlobalInfo.Security.SecurityHomePath, "nr-security-home", "logs", INIT_LOG_FILE))
-	ServiceStatus["statusLogWriter"] = isLogAccessible(filepath.Join(secConfig.GlobalInfo.Security.SecurityHomePath, "nr-security-home", "logs", "snapshots", fmt.Sprintf(STATUS_LOG_FILE, secConfig.GlobalInfo.ApplicationInfo.AppUUID)))
+	ServiceStatus["logWriter"] = isLogAccessible(filepath.Join(secConfig.GlobalInfo.SecurityHomePath(), "nr-security-home", "logs", LOG_FILE))
+	ServiceStatus["initLogWriter"] = isLogAccessible(filepath.Join(secConfig.GlobalInfo.SecurityHomePath(), "nr-security-home", "logs", INIT_LOG_FILE))
+	ServiceStatus["statusLogWriter"] = isLogAccessible(filepath.Join(secConfig.GlobalInfo.SecurityHomePath(), "nr-security-home", "logs", "snapshots", fmt.Sprintf(STATUS_LOG_FILE, secConfig.GlobalInfo.ApplicationInfo.GetAppUUID())))
 	ServiceStatus["iastRestClient"] = iastRestClientStatus()
 	return ServiceStatus
 

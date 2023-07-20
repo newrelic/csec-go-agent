@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	secConfig "github.com/newrelic/csec-go-agent/security_config"
@@ -19,9 +20,9 @@ import (
 )
 
 var (
-	httpTransport *http.Transport
-	httpClient    *http.Client
-	httpsClient   *http.Client
+	clientMu    sync.Mutex
+	httpClient  *http.Client
+	httpsClient *http.Client
 )
 
 const (
@@ -34,22 +35,38 @@ const (
 type SecHttpFuzz struct {
 }
 
+func getHttpClient() *http.Client {
+	clientMu.Lock()
+	defer clientMu.Unlock()
+	if httpClient == nil {
+		httpClient = &http.Client{Timeout: time.Second * 10}
+	}
+	return httpClient
+}
+
+func getHttpsClient() *http.Client {
+	clientMu.Lock()
+	defer clientMu.Unlock()
+	if httpsClient == nil {
+		httpsClient = &http.Client{Timeout: time.Second * 10}
+	}
+	return httpsClient
+}
+
 func (httpFuzz SecHttpFuzz) ExecuteFuzzRequest(fuzzRequest *sechandler.FuzzRequrestHandler, caseType string) {
-	// initialize httpClient and httpClient client
-	intiClients()
 
 	fuzzRequestID := fmt.Sprintf("%v", fuzzRequest.Headers[secIntercept.NR_CSEC_FUZZ_REQUEST_ID])
 	applicationPort := ":" + strconv.Itoa(fuzzRequest.ServerPort)
-	fuzzRequestURL := secConfig.GlobalInfo.ApplicationInfo.ServerIp + applicationPort + fuzzRequest.Url
+	fuzzRequestURL := secConfig.GlobalInfo.ApplicationInfo.GetServerIp() + applicationPort + fuzzRequest.Url
 	var fuzzRequestClient *http.Client
 
 	if fuzzRequest.Protocol == "https" {
 		fuzzRequestURL = HTTPS + fuzzRequestURL
-		fuzzRequestClient = httpsClient
+		fuzzRequestClient = getHttpsClient()
 		fuzzRequestClient.Transport = getTransport(fuzzRequest.ServerName)
 	} else {
 		fuzzRequestURL = HTTP + fuzzRequestURL
-		fuzzRequestClient = httpClient
+		fuzzRequestClient = getHttpClient()
 	}
 
 	var req *http.Request = nil
@@ -89,19 +106,8 @@ func (httpFuzz SecHttpFuzz) ExecuteFuzzRequest(fuzzRequest *sechandler.FuzzRequr
 	}
 }
 
-func intiClients() {
-
-	if httpClient == nil {
-		httpClient = &http.Client{Timeout: time.Second * 10}
-	}
-	if httpsClient == nil {
-		httpsClient = &http.Client{Timeout: time.Second * 10}
-	}
-
-}
-
 func getTransport(serverName string) *http.Transport {
-	httpTransport = &http.Transport{
+	httpTransport := &http.Transport{
 		Dial:                (&net.Dialer{Timeout: 5 * time.Second}).Dial,
 		TLSHandshakeTimeout: 6 * time.Second,
 		MaxIdleConns:        10,

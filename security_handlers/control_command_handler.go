@@ -58,7 +58,7 @@ func parseControlCommand(arg []byte) (error, bool) {
 		if len(cc.Arguments) <= 1 {
 			return errors.New("Unable to process cc11, need minimum 2 arguments "), false
 		}
-		dsFilePath := filepath.Join(secConfig.GlobalInfo.Security.SecurityHomePath, "nr-security-home", "tmp")
+		dsFilePath := filepath.Join(secConfig.GlobalInfo.SecurityHomePath(), "nr-security-home", "tmp")
 		arguments := strings.Replace(cc.Arguments[0], "{{NR_CSEC_VALIDATOR_HOME_TMP}}", dsFilePath, -1)
 		arguments = strings.Replace(arguments, "%7B%7BNR_CSEC_VALIDATOR_HOME_TMP%7D%7D", dsFilePath, -1)
 
