@@ -25,7 +25,7 @@ type Secureiface interface {
 	CalculateOutboundApiId()
 	AssociateGrpcData(string, string)
 	DisassociateGrpcData()
-	AssociateGrpcQueryParam(interface{}, string)
+	AssociateGrpcQueryParam(interface{}, string, string)
 	SendExitEvent(*EventTracker)
 	AssociateFastHttpData(net.Conn)
 	DisassociateFastHttpData()

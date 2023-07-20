@@ -773,11 +773,12 @@ func grpcRequestHandler(data ...interface{}) {
 	if data == nil || !isAgentInitialized() {
 		return
 	}
-	if len(data) >= 2 {
+	if len(data) >= 3 {
 		messageType, _ := data[1].(string)
-		secConfig.Secure.AssociateGrpcQueryParam(data[0], messageType)
+		version, _ := data[2].(string)
+		secConfig.Secure.AssociateGrpcQueryParam(data[0], messageType, version)
 	} else {
-		secConfig.Secure.AssociateGrpcQueryParam(data[0], "")
+		secConfig.Secure.AssociateGrpcQueryParam(data[0], "", "v2")
 	}
 
 }

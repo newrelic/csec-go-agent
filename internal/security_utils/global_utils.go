@@ -20,6 +20,7 @@ type ReflectedMetaData struct {
 	IsGrpcClientStream bool   `json:"isGrpcClientStream"`
 	IsServerStream     bool   `json:"isGrpcServerStream"`
 	GrcpMessageType    string `json:"grcpMessageType"`
+	GrcpMessageVersion string `json:"grcpMessageVersion"`
 }
 
 type RequestInfo struct {

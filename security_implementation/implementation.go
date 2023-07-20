@@ -113,7 +113,7 @@ func (k Secureimpl) GetRequest() *secUtils.Info_req {
  * Implementation for gRPC frameworks
  */
 
-func (k Secureimpl) AssociateGrpcQueryParam(body interface{}, messageType string) {
+func (k Secureimpl) AssociateGrpcQueryParam(body interface{}, messageType, version string) {
 
 	request := getRequest(getID())
 	if request == nil {
@@ -122,6 +122,7 @@ func (k Secureimpl) AssociateGrpcQueryParam(body interface{}, messageType string
 	}
 	request.Request.IsGRPC = true
 	request.ReflectedMetaData.GrcpMessageType = messageType
+	request.ReflectedMetaData.GrcpMessageVersion = version
 	request.GrpcBody = append(request.GrpcBody, body)
 
 }

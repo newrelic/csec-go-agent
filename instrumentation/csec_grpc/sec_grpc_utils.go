@@ -13,6 +13,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	protoV1 "github.com/golang/protobuf/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -22,13 +23,14 @@ import (
 )
 
 type secGrpcHandler struct {
-	reqMessagesCount int
-	reqMessages      []string
-	isClientStream   bool
-	isServerStream   bool
-	grcpMessageType  string
-	method           string
-	reqheaders       []string
+	reqMessagesCount   int
+	reqMessages        []string
+	isClientStream     bool
+	isServerStream     bool
+	grcpMessageType    string
+	grcpMessageVersion string
+	method             string
+	reqheaders         []string
 }
 
 func (h *secGrpcHandler) getRequestData() ([]byte, error) {
@@ -264,6 +266,9 @@ func requestData(handler *secGrpcHandler) (proto.Message, error) {
 		err = protojson.Unmarshal([]byte(data), req1)
 		if err != nil {
 			return nil, fmt.Errorf("grpc call for %q failed: %v", data, err)
+		}
+		if handler.grcpMessageVersion == "v1" {
+			return protoV1.MessageV1(req1), nil
 		}
 		return req1, nil
 	}

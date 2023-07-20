@@ -54,7 +54,7 @@ func (grpcFuzz SecGrpcFuzz) ExecuteFuzzRequest(fuzzRequest *sechandler.FuzzRequr
 	client, err := getFuzzClient(fuzzRequest.Protocol, secConfig.GlobalInfo.ApplicationInfo.ServerIp+":"+gPort, fuzzRequest.ServerName)
 
 	if err != nil {
-		logger.Errorln("Failed to create fuzz client : ", secConfig.GlobalInfo.ApplicationInfo.ServerIp, gPort, err.Error())
+		logger.Errorln("ERROR: Failed to create fuzz client : ", secConfig.GlobalInfo.ApplicationInfo.ServerIp, gPort, err.Error())
 		secevent.SendFuzzFailEvent(fuzzRequestID)
 	}
 
@@ -64,12 +64,13 @@ func (grpcFuzz SecGrpcFuzz) ExecuteFuzzRequest(fuzzRequest *sechandler.FuzzRequr
 	}
 
 	h := &secGrpcHandler{
-		reqMessages:     finalData,
-		isClientStream:  fuzzRequest.MetaData.IsGrpcClientStream,
-		isServerStream:  fuzzRequest.MetaData.IsServerStream,
-		grcpMessageType: fuzzRequest.MetaData.GrcpMessageType,
-		reqheaders:      headers,
-		method:          url,
+		reqMessages:        finalData,
+		isClientStream:     fuzzRequest.MetaData.IsGrpcClientStream,
+		isServerStream:     fuzzRequest.MetaData.IsServerStream,
+		grcpMessageType:    fuzzRequest.MetaData.GrcpMessageType,
+		grcpMessageVersion: fuzzRequest.MetaData.GrcpMessageVersion,
+		reqheaders:         headers,
+		method:             url,
 	}
 
 	error := h.invokeRpc(client)

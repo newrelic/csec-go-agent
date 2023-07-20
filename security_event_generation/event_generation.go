@@ -265,6 +265,7 @@ func SendVulnerableEvent(req *secUtils.Info_req, category string, args interface
 			IsGrpcClientStream: req.ReflectedMetaData.IsGrpcClientStream,
 			IsServerStream:     req.ReflectedMetaData.IsServerStream,
 			GrcpMessageType:    req.ReflectedMetaData.GrcpMessageType,
+			GrcpMessageVersion: req.ReflectedMetaData.GrcpMessageVersion,
 		}
 	}
 
