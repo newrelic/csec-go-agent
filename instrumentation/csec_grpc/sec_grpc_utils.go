@@ -17,7 +17,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/encoding/protojson"
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/reflect/protoregistry"
 )
@@ -95,7 +94,7 @@ func (h *secGrpcHandler) invokeClientStream(cc *grpc.ClientConn) error {
 	}
 
 	for err == nil {
-		var req proto.Message
+		var req interface{}
 		req, err = requestData(h)
 
 		if err == io.EOF {
@@ -202,7 +201,7 @@ func (h *secGrpcHandler) invokeBidi(cc *grpc.ClientConn) error {
 			defer wg.Done()
 			var err error
 			for err == nil {
-				var req proto.Message
+				var req interface{}
 				req, err = requestData(h)
 				if err == io.EOF {
 					err = str.CloseSend()
@@ -250,7 +249,7 @@ func (h *secGrpcHandler) invokeBidi(cc *grpc.ClientConn) error {
 
 }
 
-func requestData(handler *secGrpcHandler) (proto.Message, error) {
+func requestData(handler *secGrpcHandler) (interface{}, error) {
 	if handler != nil {
 		data, err := handler.getRequestData()
 		if err != nil {
