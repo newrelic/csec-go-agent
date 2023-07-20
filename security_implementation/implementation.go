@@ -113,14 +113,28 @@ func (k Secureimpl) GetRequest() *secUtils.Info_req {
  * Implementation for gRPC frameworks
  */
 
-func (k Secureimpl) AssociateGrpcQueryParam(body interface{}) {
+func (k Secureimpl) AssociateGrpcQueryParam(body interface{}, messageType string) {
+
 	request := getRequest(getID())
 	if request == nil {
 		logger.Debugln("(AssociateGrpcQueryParam) GRPC Request Not Found")
 		return
 	}
 	request.Request.IsGRPC = true
+	request.ReflectedMetaData.GrcpMessageType = messageType
 	request.GrpcBody = append(request.GrpcBody, body)
+
+}
+
+func (k Secureimpl) AssociateGrpcInfo(isClientStream, isServerStream bool) {
+	request := getRequest(getID())
+	if request == nil {
+		logger.Debugln("(AssociateGrpcInfo) GRPC Request Not Found")
+		return
+	}
+	request.ReflectedMetaData.IsGrpcClientStream = isClientStream
+	request.ReflectedMetaData.IsServerStream = isServerStream
+
 }
 
 func (k Secureimpl) AssociateGrpcDataBytes(data []byte) bool {

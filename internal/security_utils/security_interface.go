@@ -20,11 +20,12 @@ type Secureiface interface {
 	HookWrapRawNamed(string, interface{}, interface{}) (string, error)
 	AssociateGoRoutine(caller, callee int64)
 	AssociateGrpcDataBytes([]byte) bool
+	AssociateGrpcInfo(bool, bool)
 	InitSyms() error
 	CalculateOutboundApiId()
 	AssociateGrpcData(string, string)
 	DisassociateGrpcData()
-	AssociateGrpcQueryParam(interface{})
+	AssociateGrpcQueryParam(interface{}, string)
 	SendExitEvent(*EventTracker)
 	AssociateFastHttpData(net.Conn)
 	DisassociateFastHttpData()
