@@ -48,7 +48,7 @@ func parseControlCommand(arg []byte) (error, bool) {
 		logger.Errorln("Unable to unmarshall cc ", err)
 		return errors.New("Unable to unmarshall cc "), false
 	}
-	logger.Debugln("Recived control command", cc.ControlCommand)
+	logger.Debugln("Received control command", cc.ControlCommand)
 
 	switch cc.ControlCommand {
 	case STARTUP_WELCOME_MSG:
@@ -70,7 +70,7 @@ func parseControlCommand(arg []byte) (error, bool) {
 		if err != nil {
 			return errors.New("Unable to unmarshall cc11 : " + err.Error()), false
 		} else {
-			logger.Debugln("Fuzz request received")
+			logger.Debugln("Fuzz request received :",string(arg))
 			logger.Debugln("will fuzz, parsedOK ..")
 			cc11.MetaData = cc.ReflectedMetaData
 			registerFuzzTask(&cc11, cc.Arguments[1])
