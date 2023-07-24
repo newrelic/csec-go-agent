@@ -1,5 +1,14 @@
 # Changelog
 
+## [v0.3.0] - 2023-07-24
+
+- Fix for data race issue observed with race detector.
+- Update WS handler
+   - Drop event when WS is not connected.
+   - Updated reconnection time to 15 sec.
+- New Log messages for IAST Scan
+- New implementation for gRPC fuzz client.
+
 ## [v0.2.1] - 2023-06-12
 
 - retract v0.2.0, protobuf cve fixed in v0.2.1
