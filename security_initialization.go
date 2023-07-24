@@ -27,8 +27,8 @@ const (
 )
 
 func checkDefaultConfig() {
-	if secConfig.GlobalInfo.Security.Validator_service_url == "" {
-		secConfig.GlobalInfo.Security.Validator_service_url = "wss://csec.nr-data.net"
+	if secConfig.GlobalInfo.ValidatorServiceUrl() == "" {
+		secConfig.GlobalInfo.SetValidatorServiceUrl("wss://csec.nr-data.net")
 	}
 }
 
@@ -44,24 +44,25 @@ func initLogger(logFilePath string, isDebugLog bool) {
 }
 
 func initApplicationInfo(appName string) {
-	secConfig.GlobalInfo.ApplicationInfo.AppUUID = secUtils.GetUniqueUUID()
-	secConfig.GlobalInfo.ApplicationInfo.AppName = appName
-	secConfig.GlobalInfo.ApplicationInfo.Pid = secUtils.IntToString(os.Getpid())
+	secConfig.GlobalInfo.ApplicationInfo.SetAppUUID(secUtils.GetUniqueUUID())
+	secConfig.GlobalInfo.ApplicationInfo.SetAppName(appName)
+	secConfig.GlobalInfo.ApplicationInfo.SetPid(secUtils.IntToString(os.Getpid()))
 	binaryPath, err := os.Executable()
 	if err != nil {
 		binaryPath = os.Args[0]
 	}
-	secConfig.GlobalInfo.ApplicationInfo.BinaryPath = binaryPath
-	secConfig.GlobalInfo.ApplicationInfo.Sha256 = secUtils.CalculateSha256(binaryPath)
-	secConfig.GlobalInfo.ApplicationInfo.Cmd = os.Args[0]
-	secConfig.GlobalInfo.ApplicationInfo.Cmdline = os.Args[0:]
+	secConfig.GlobalInfo.ApplicationInfo.SetBinaryPath(binaryPath)
+	secConfig.GlobalInfo.ApplicationInfo.SetSha256(secUtils.CalculateSha256(binaryPath))
+	secConfig.GlobalInfo.ApplicationInfo.SetCmd(os.Args[0])
+	secConfig.GlobalInfo.ApplicationInfo.SetCmdline(os.Args[0:])
 	startTime := time.Now().Unix() * 1000
-	secConfig.GlobalInfo.ApplicationInfo.Starttimestr = secUtils.Int64ToString(startTime)
-	secConfig.GlobalInfo.ApplicationInfo.Size = secUtils.CalculateFileSize(binaryPath)
 
-	logger.Infoln("Security Agent is now INACTIVE for ", secConfig.GlobalInfo.ApplicationInfo.AppUUID)
-	printlogs := fmt.Sprintf("go secure agent attached to process: PID = %s, with generated applicationUID = %s by STATIC attachment", secUtils.IntToString(os.Getpid()), secConfig.GlobalInfo.ApplicationInfo.AppUUID)
-	logging.EndStage("2", "Generating unique identifier "+secConfig.GlobalInfo.ApplicationInfo.AppUUID)
+	secConfig.GlobalInfo.ApplicationInfo.SetStarttimestr(secUtils.Int64ToString(startTime))
+	secConfig.GlobalInfo.ApplicationInfo.SetSize(secUtils.CalculateFileSize(binaryPath))
+
+	logger.Infoln("Security Agent is now INACTIVE for ", secConfig.GlobalInfo.ApplicationInfo.GetAppUUID())
+	printlogs := fmt.Sprintf("go secure agent attached to process: PID = %s, with generated applicationUID = %s by STATIC attachment", secUtils.IntToString(os.Getpid()), secConfig.GlobalInfo.ApplicationInfo.GetAppUUID())
+	logging.EndStage("2", "Generating unique identifier "+secConfig.GlobalInfo.ApplicationInfo.GetAppUUID())
 	logging.PrintInitlog(printlogs)
 }
 
@@ -105,14 +106,14 @@ func initEnvironmentInfo() {
 }
 
 func initSecurityAgent(applicationName, licenseKey string, isDebugLog bool, securityAgentConfig secConfig.Security) {
-	if secConfig.GlobalInfo.IsForceDisable {
+	if secConfig.GlobalInfo.IsForceDisable() {
 		return
 	}
-	secConfig.GlobalInfo.Security = securityAgentConfig
-	secConfig.GlobalInfo.ApplicationInfo.ApiAccessorToken = licenseKey
-	secConfig.GlobalInfo.Security.SecurityHomePath = secUtils.GetCurrentWorkingDir()
+	secConfig.GlobalInfo.SetSecurity(securityAgentConfig)
+	secConfig.GlobalInfo.ApplicationInfo.SetApiAccessorToken(licenseKey)
+	secConfig.GlobalInfo.SetSecurityHomePath(secUtils.GetCurrentWorkingDir())
 	checkDefaultConfig()
-	initLogger(secConfig.GlobalInfo.Security.SecurityHomePath, isDebugLog)
+	initLogger(secConfig.GlobalInfo.SecurityHomePath(), isDebugLog)
 	logging.EndStage("1", "Security agent is starting")
 	initEnvironmentInfo()
 	initApplicationInfo(applicationName)

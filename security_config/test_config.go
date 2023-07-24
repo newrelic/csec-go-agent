@@ -62,7 +62,7 @@ func ValidateResult(expected []TestArgs, t *testing.T) {
 // Initialising the Testing object
 func RegisterListener() {
 	Testing = TestData{}
-	GlobalInfo.Security.Enabled = true
+	GlobalInfo.SetSecurityEnabled(true)
 	Testing.RemoveData()
 }
 
