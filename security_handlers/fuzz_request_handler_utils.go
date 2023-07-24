@@ -3,7 +3,12 @@
 
 package security_handlers
 
-import threadpool "github.com/newrelic/csec-go-agent/internal/security_threadpool"
+import (
+	"sync"
+
+	threadpool "github.com/newrelic/csec-go-agent/internal/security_threadpool"
+	secUtils "github.com/newrelic/csec-go-agent/internal/security_utils"
+)
 
 type SecureFuzz interface {
 	ExecuteFuzzRequest(*FuzzRequrestHandler, string)
@@ -13,6 +18,7 @@ type RestRequestThreadPool struct {
 	httpFuzzRestClient SecureFuzz
 	grpsFuzzRestClient SecureFuzz
 	threadPool         *threadpool.ThreadPool
+	fuzzedApi          sync.Map
 }
 
 func (r *RestRequestThreadPool) InitHttpFuzzRestClient(rest SecureFuzz) {
@@ -22,6 +28,16 @@ func (r *RestRequestThreadPool) InitHttpFuzzRestClient(rest SecureFuzz) {
 func (r *RestRequestThreadPool) InitGrpsFuzzRestClient(rest SecureFuzz) {
 	r.grpsFuzzRestClient = rest
 
+}
+
+func (r *RestRequestThreadPool) isApiIdFuzzed(apiID interface{}) bool {
+	data, ok := r.fuzzedApi.Load(apiID)
+	if ok && data != nil {
+		return true
+	} else {
+		r.fuzzedApi.Store(apiID, "")
+		return false
+	}
 }
 
 type FuzzRequrestHandler struct {
@@ -46,4 +62,5 @@ type FuzzRequrestHandler struct {
 	ParameterMap     map[string]interface{} `json:"parameterMap"`
 	IsGRPC           bool                   `json:"isGrpc"`
 	ServerName       string                 `json:"serverName"`
+	MetaData         secUtils.ReflectedMetaData
 }

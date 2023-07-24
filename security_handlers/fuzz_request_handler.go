@@ -3,14 +3,20 @@
 
 package security_handlers
 
-import threadpool "github.com/newrelic/csec-go-agent/internal/security_threadpool"
+import (
+	"fmt"
+	"strings"
+	"sync"
+
+	threadpool "github.com/newrelic/csec-go-agent/internal/security_threadpool"
+)
 
 const (
 	queueSize   = 10000
 	maxPoolSize = 3
 )
 
-var FuzzHandler = RestRequestThreadPool{}
+var FuzzHandler = RestRequestThreadPool{fuzzedApi: sync.Map{}}
 
 type FuzzTask struct {
 	fuzzRequrestHandler *FuzzRequrestHandler
@@ -36,6 +42,14 @@ func (fTask *FuzzTask) Run() {
 
 func registerFuzzTask(kcc11 *FuzzRequrestHandler, caseType string) {
 	task := &FuzzTask{kcc11, caseType}
+
+	id := kcc11.Headers["nr-csec-fuzz-request-id"]
+	ids := strings.Split(id.(string), ":")
+	if len(ids) > 1 && !FuzzHandler.isApiIdFuzzed(ids[0]) {
+		printlogs := fmt.Sprintf("IAST Scan for API %s with ID : %s started.", kcc11.RequestURI, ids[0])
+		logger.Infoln(printlogs)
+	}
+
 	if FuzzHandler.threadPool != nil {
 		FuzzHandler.threadPool.RegisterTask(task)
 	}
