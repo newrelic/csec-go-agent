@@ -98,7 +98,7 @@ func (httpFuzz SecHttpFuzz) ExecuteFuzzRequest(fuzzRequest *sechandler.FuzzRequr
 	}
 	response, err := fuzzRequestClient.Do(req)
 	if err != nil {
-		logger.Errorln("fuzz request fail : ", fuzzRequestID, err.Error())
+		logger.Debugln("ERROR: fuzz request fail : ", fuzzRequestID, err.Error())
 		eventGeneration.SendFuzzFailEvent(fuzzRequestID)
 	} else {
 		defer response.Body.Close()
