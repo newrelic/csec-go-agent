@@ -4,8 +4,10 @@
 package security_handlers
 
 import (
-	threadpool "github.com/newrelic/csec-go-agent/internal/security_threadpool"
 	"time"
+	"sync"
+	threadpool "github.com/newrelic/csec-go-agent/internal/security_threadpool"
+	secUtils "github.com/newrelic/csec-go-agent/internal/security_utils"
 )
 
 type SecureFuzz interface {
@@ -20,6 +22,7 @@ type RestRequestThreadPool struct {
 	coolDownSleepTime          time.Time
 	lastFuzzRequestTime        time.Time
 	isFuzzSchedulerInitialized bool
+	fuzzedApi          sync.Map
 }
 
 func (r *RestRequestThreadPool) InitFuzzScheduler() {
@@ -75,6 +78,16 @@ func (r *RestRequestThreadPool) InitGrpsFuzzRestClient(rest SecureFuzz) {
 
 }
 
+func (r *RestRequestThreadPool) isApiIdFuzzed(apiID interface{}) bool {
+	data, ok := r.fuzzedApi.Load(apiID)
+	if ok && data != nil {
+		return true
+	} else {
+		r.fuzzedApi.Store(apiID, "")
+		return false
+	}
+}
+
 type FuzzRequrestHandler struct {
 	QueryString      string                 `json:"queryString"`
 	ClientIP         string                 `json:"clientIP"`
@@ -97,4 +110,5 @@ type FuzzRequrestHandler struct {
 	ParameterMap     map[string]interface{} `json:"parameterMap"`
 	IsGRPC           bool                   `json:"isGrpc"`
 	ServerName       string                 `json:"serverName"`
+	MetaData         secUtils.ReflectedMetaData
 }

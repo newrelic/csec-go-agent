@@ -1,5 +1,14 @@
 # Changelog
 
+## [v0.3.0] - 2023-07-24
+
+- Fix for data race conditions observed by race detector.
+- Update WS handler
+   - Drop events when the websocket connection is not established.
+   - Updated websocket reconnection time to 15 sec.
+- New IAST informational messages in logs - start of URL and application trace analysis.
+- Improve support for gRPC client.
+
 ## [v0.2.1] - 2023-06-12
 
 - retract v0.2.0, protobuf cve fixed in v0.2.1

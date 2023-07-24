@@ -5,7 +5,9 @@ package security_handlers
 
 import (
 	"time"
-
+	"fmt"
+	"strings"
+	"sync"
 	threadpool "github.com/newrelic/csec-go-agent/internal/security_threadpool"
 	secConfig "github.com/newrelic/csec-go-agent/security_config"
 	eventGeneration "github.com/newrelic/csec-go-agent/security_event_generation"
@@ -16,7 +18,7 @@ const (
 	maxPoolSize = 3
 )
 
-var FuzzHandler = RestRequestThreadPool{}
+var FuzzHandler = RestRequestThreadPool{fuzzedApi: sync.Map{}}
 
 type FuzzTask struct {
 	fuzzRequrestHandler *FuzzRequrestHandler
@@ -47,6 +49,12 @@ func registerFuzzTask(kcc11 *FuzzRequrestHandler, caseType, requestID string) {
 	task := &FuzzTask{kcc11, caseType, requestID}
 	if FuzzHandler.threadPool == nil {
 		initRestRequestThreadPool()
+	}
+	id := kcc11.Headers["nr-csec-fuzz-request-id"]
+	ids := strings.Split(id.(string), ":")
+	if len(ids) > 1 && !FuzzHandler.isApiIdFuzzed(ids[0]) {
+		printlogs := fmt.Sprintf("IAST Scan for API %s with ID : %s started.", kcc11.RequestURI, ids[0])
+		logger.Infoln(printlogs)
 	}
 	FuzzHandler.threadPool.RegisterTask(task)
 	FuzzHandler.SetLastFuzzRequestTime()
