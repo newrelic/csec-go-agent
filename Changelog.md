@@ -2,12 +2,12 @@
 
 ## [v0.3.0] - 2023-07-24
 
-- Fix for data race issue observed with race detector.
+- Fix for data race conditions observed by race detector.
 - Update WS handler
-   - Drop event when WS is not connected.
-   - Updated reconnection time to 15 sec.
-- New Log messages for IAST Scan
-- New implementation for gRPC fuzz client.
+   - Drop events when the websocket connection is not established.
+   - Updated websocket reconnection time to 15 sec.
+- New IAST informational messages in logs - start of URL and application trace analysis.
+- Improve support for gRPC client.
 
 ## [v0.2.1] - 2023-06-12
 
