@@ -6,4 +6,4 @@ Package `csec_augustoroman_v8` instruments github.com/augustoroman/v8 applicatio
 import _ "github.com/newrelic/csec-go-agent/instrumentation/csec_augustoroman_v8"
 ```
 
-For more information, see [go docs](). 
+For more information, see [go docs](https://godoc.org/github.com/newrelic/csec-go-agent/instrumentation/csec_augustoroman_v8). 

@@ -9,7 +9,6 @@ import (
 	"errors"
 	"io"
 	"io/ioutil"
-	"math"
 	"net/http"
 	"os"
 	"sync"
@@ -24,12 +23,14 @@ import (
 
 var logger = logging.GetLogger("wsclient")
 
-const validatorDefaultEndpoint = "ws://localhost:54321/"
+const validatorDefaultEndpoint = "wss://csec.nr-data.net"
 
 type websocket struct {
-	conn            *gorillaWS.Conn
-	readcontroller  chan string
-	writecontroller chan string
+	conn                 *gorillaWS.Conn
+	readcontroller       chan string
+	writecontroller      chan string
+	isReadThreadRunning  bool
+	isWriteThreadRunning bool
 	sync.Mutex
 	reconnectWill sync.Mutex
 	eventBuffer   chan []byte
@@ -80,7 +81,7 @@ func (ws *websocket) makeConnection() (bool, bool) {
 	}
 	ws.Lock()
 	validatorEndpoint := ""
-	if validatorEndpoint = secConfig.GlobalInfo.Security.Validator_service_url; validatorEndpoint == "" {
+	if validatorEndpoint = secConfig.GlobalInfo.ValidatorServiceUrl(); validatorEndpoint == "" {
 		validatorEndpoint = validatorDefaultEndpoint
 	}
 	connectionHeader := getConnectionHeader()
@@ -127,10 +128,10 @@ func (ws *websocket) makeConnection() (bool, bool) {
 		ws.conn = conn
 		ws.Unlock()
 
-		logger.Infoln("Security Agent is now ACTIVE for ", secConfig.GlobalInfo.ApplicationInfo.AppUUID)
+		logger.Infoln("Security Agent is now ACTIVE for ", secConfig.GlobalInfo.ApplicationInfo.GetAppUUID())
 		logger.Infoln("!!! Websocket worker goroutine starting...")
 		logging.EndStage("4", "Web socket connection to SaaS validator established successfully")
-
+		ws.flushWsController()
 		go writeThread(ws)
 		go readThread(ws)
 		eventGeneration.SendApplicationInfo()
@@ -156,11 +157,7 @@ func (ws *websocket) reconnect() {
 }
 
 func (ws *websocket) connect() bool {
-	waitTime := 1
 	for !ws.isWsConnected() {
-		if waitTime >= 6 {
-			return false
-		}
 		if ws.isWsConnected() {
 			break
 		}
@@ -171,11 +168,10 @@ func (ws *websocket) connect() bool {
 		if !reconnect {
 			return false
 		}
-		sleeptimeForReconnect := time.Duration(waitTime) * time.Minute
+		sleeptimeForReconnect := 15 * time.Second
 		logger.Infoln("sleeping before reconnecting", sleeptimeForReconnect)
 		time.Sleep(sleeptimeForReconnect)
 		logger.Infoln("sleep end, retrying to connect with validator")
-		waitTime++
 	}
 	return true
 }
@@ -183,10 +179,14 @@ func (ws *websocket) connect() bool {
 func (ws *websocket) closeWs() {
 	logger.Infoln("!!! Close Websocket Connection !!! ", len(ws.eventBuffer), " ", cap(ws.eventBuffer))
 	logger.Infoln("Close Read/Write Thread")
-	ws.writecontroller <- "close"
-	ws.readcontroller <- "close"
-	//close(ws.readcontroller)
-
+	if ws.isWriteThreadRunning {
+		logger.Infoln("Send closeWrite thread signal")
+		ws.writecontroller <- "close"
+	}
+	if ws.isReadThreadRunning {
+		logger.Infoln("Send closeRead thread signal")
+		ws.readcontroller <- "close"
+	}
 	ws.Lock()
 	if ws.conn != nil {
 		ws.conn.Close()
@@ -197,6 +197,11 @@ func (ws *websocket) closeWs() {
 
 func (ws *websocket) RegisterEvent(s []byte) {
 	increaseEventProcessed(s)
+	if !ws.isWsConnected() {
+		increaseEventDropCount(s)
+		logger.Debugln("Drop event WS not connected or Reconnecting", len(ws.eventBuffer), cap(ws.eventBuffer))
+		return
+	}
 	select {
 	case ws.eventBuffer <- s:
 		logger.Debugln("Added EVENT", len(ws.eventBuffer), " ", cap(ws.eventBuffer))
@@ -226,33 +231,35 @@ func (ws *websocket) ReconnectAtWill() {
 	 * Post reconnect: reset 'reconnecting phase' in WSClient.
 	 */
 	ws.reconnectWill.Lock()
-	if secConfig.GlobalInfo.CurrentPolicy.VulnerabilityScan.Enabled && secConfig.GlobalInfo.CurrentPolicy.VulnerabilityScan.IastScan.Enabled {
+	if secConfig.GlobalInfo.IsIASTEnable() {
 		for FuzzHandler.threadPool != nil && !FuzzHandler.threadPool.IsTaskPoolEmpty() {
 			logger.Debugln("wait for fuzz threadPool empty")
 			time.Sleep(100 * time.Millisecond)
 		}
 	}
-	secConfig.GlobalInfo.Security.Enabled = false
+	secConfig.GlobalInfo.SetSecurityEnabled(false)
 
-	for ws.pendingEvent() > 0 {
-		logger.Debugln("wait for event threadPool empty")
-		time.Sleep(100 * time.Millisecond)
-	}
+	// for ws.pendingEvent() > 0 {
+	// 	logger.Debugln("wait for event threadPool empty")
+	// 	time.Sleep(100 * time.Millisecond)
+	// }
 
 	//reset ws connection
 
 	ws.closeWs()
 	ws.reconnect()
 
-	secConfig.GlobalInfo.Security.Enabled = true
+	secConfig.GlobalInfo.SetSecurityEnabled(true)
 	ws.reconnectWill.Unlock()
 }
 
 func (ws *websocket) ReconnectAtAgentRefresh() {
 	ws.reconnectWill.Lock()
+	secConfig.GlobalInfo.SetSecurityEnabled(false)
 	//reset ws connection
 	ws.closeWs()
 	ws.reconnect()
+	secConfig.GlobalInfo.SetSecurityEnabled(true)
 	ws.reconnectWill.Unlock()
 }
 
@@ -260,7 +267,7 @@ func InitializeWsConnecton() {
 	ws := new(websocket)
 	ws.eventBuffer = make(chan []byte, 10240)
 	ws.readcontroller = make(chan string, 10)
-	ws.writecontroller = make(chan string)
+	ws.writecontroller = make(chan string, 10)
 	secConfig.SecureWS = ws
 	if ws.connect() {
 		go eventGeneration.InitHcScheduler()
@@ -270,7 +277,11 @@ func InitializeWsConnecton() {
 // Read,Write Threads
 func writeThread(ws *websocket) {
 	logger.Info("Start ws write Thread")
-	defer logger.Info("Close ws write Thread")
+	ws.isWriteThreadRunning = true
+	defer func() {
+		ws.isWriteThreadRunning = false
+		logger.Info("Close ws write Thread")
+	}()
 	for {
 		select {
 		case <-ws.writecontroller:
@@ -284,12 +295,17 @@ func writeThread(ws *websocket) {
 
 func readThread(ws *websocket) {
 	logger.Info("Start ws read Thread")
-	defer logger.Info("Close ws read Thread")
+	ws.isReadThreadRunning = true
+	defer func() {
+		ws.isReadThreadRunning = false
+		logger.Info("Close ws read Thread")
+	}()
 	for {
 		buf, err := ws.read()
 		if err != nil {
 			select {
 			case <-ws.readcontroller:
+				logger.Debugln("Websocket err at agent restart " + err.Error())
 				return
 			default:
 				logger.Errorln("Failed to read CC over websocket err : " + err.Error())
@@ -309,15 +325,15 @@ func readThread(ws *websocket) {
 func getConnectionHeader() http.Header {
 	return http.Header{
 		"NR-CSEC-CONNECTION-TYPE": []string{"LANGUAGE_COLLECTOR"},
-		"NR-LICENSE-KEY":          []string{secConfig.GlobalInfo.ApplicationInfo.ApiAccessorToken},
-		"NR-AGENT-RUN-TOKEN":      []string{secConfig.GlobalInfo.AgentRunId},
+		"NR-LICENSE-KEY":          []string{secConfig.GlobalInfo.ApplicationInfo.GetApiAccessorToken()},
+		"NR-AGENT-RUN-TOKEN":      []string{secConfig.GlobalInfo.MetaData.GetAccountID()},
 		"NR-CSEC-VERSION":         []string{secUtils.CollectorVersion},
 		"NR-CSEC-COLLECTOR-TYPE":  []string{secUtils.CollectorType},
-		"NR-CSEC-MODE":            []string{secConfig.GlobalInfo.Security.Mode},
-		"NR-CSEC-APP-UUID":        []string{secConfig.GlobalInfo.ApplicationInfo.AppUUID},
+		"NR-CSEC-MODE":            []string{secConfig.GlobalInfo.SecurityMode()},
+		"NR-CSEC-APP-UUID":        []string{secConfig.GlobalInfo.ApplicationInfo.GetAppUUID()},
 		"NR-CSEC-BUILD-NUMBER":    []string{secUtils.BuildNumber},
 		"NR-CSEC-JSON-VERSION":    []string{secUtils.JsonVersion},
-		"NR-ACCOUNT-ID":           []string{secConfig.GlobalInfo.AccountID},
+		"NR-ACCOUNT-ID":           []string{secConfig.GlobalInfo.MetaData.GetAccountID()},
 	}
 
 }
@@ -326,28 +342,29 @@ func increaseEventProcessed(event []byte) {
 	if !secUtils.CaseInsensitiveContains(string(event), `"jsonName":"Event"`) {
 		return
 	}
-	secConfig.GlobalInfo.EventData.EventProcessed++
-	if secConfig.GlobalInfo.EventData.EventProcessed == 0 {
-		secConfig.GlobalInfo.EventData.EventProcessed = math.MaxUint64
-	}
+	secConfig.GlobalInfo.EventData.IncreaseEventProcessed()
 }
 
 func increaseEventDropCount(event []byte) {
 	if !secUtils.CaseInsensitiveContains(string(event), `"jsonName":"Event"`) {
 		return
 	}
-	secConfig.GlobalInfo.EventData.EventDropCount++
-	if secConfig.GlobalInfo.EventData.EventDropCount == 0 {
-		secConfig.GlobalInfo.EventData.EventDropCount = math.MaxUint64
-	}
+	secConfig.GlobalInfo.EventData.IncreaseEventDropCount()
 }
 
 func increaseEventEventSentCount(event []byte) {
 	if !secUtils.CaseInsensitiveContains(string(event), `"jsonName":"Event"`) {
 		return
 	}
-	secConfig.GlobalInfo.EventData.EventSentCount++
-	if secConfig.GlobalInfo.EventData.EventSentCount == 0 {
-		secConfig.GlobalInfo.EventData.EventSentCount = math.MaxUint64
+	secConfig.GlobalInfo.EventData.IncreaseEventSentCount()
+}
+
+func (ws *websocket) flushWsController() {
+	logger.Debugln("Flush flush Ws Controller Buffer", len(ws.readcontroller))
+	for ws.readcontroller != nil && len(ws.readcontroller) > 0 {
+		<-ws.readcontroller
+	}
+	for ws.writecontroller != nil && len(ws.writecontroller) > 0 {
+		<-ws.writecontroller
 	}
 }

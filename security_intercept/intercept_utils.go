@@ -19,14 +19,14 @@ import (
 )
 
 func IsForceDisable() bool {
-	return secConfig.GlobalInfo.IsForceDisable
+	return secConfig.GlobalInfo.IsForceDisable()
 }
 
 func IsDisable() bool {
-	return !secConfig.GlobalInfo.Security.Enabled
+	return !secConfig.GlobalInfo.IsSecurityEnabled()
 }
 func IsRXSSDisable() bool {
-	return !secConfig.GlobalInfo.Security.Detection.Rxss.Enabled
+	return !secConfig.GlobalInfo.IsRxssEnabled()
 }
 
 func IsHooked() bool {
@@ -62,8 +62,9 @@ func isAgentInitialized() bool {
 }
 
 func getServerPort() string {
-	if secConfig.GlobalInfo.ApplicationInfo.Ports != nil && len(secConfig.GlobalInfo.ApplicationInfo.Ports) > 0 {
-		return strconv.Itoa(secConfig.GlobalInfo.ApplicationInfo.Ports[0])
+	serverPort := secConfig.GlobalInfo.ApplicationInfo.GetPorts()
+	if serverPort != nil && len(serverPort) > 0 {
+		return strconv.Itoa(serverPort[0])
 	}
 	return ""
 }

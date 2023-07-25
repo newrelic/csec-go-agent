@@ -6,8 +6,10 @@ package security_handlers
 import (
 	"encoding/json"
 	"errors"
+	"path/filepath"
 	"strings"
 
+	secUtils "github.com/newrelic/csec-go-agent/internal/security_utils"
 	secConfig "github.com/newrelic/csec-go-agent/security_config"
 	eventGeneration "github.com/newrelic/csec-go-agent/security_event_generation"
 )
@@ -28,8 +30,9 @@ type CCData struct {
 	Data interface{} `json:"data"`
 }
 type ControlComand struct {
-	ControlCommand int      `json:"controlCommand"`
-	Arguments      []string `json:"arguments"`
+	ControlCommand    int                        `json:"controlCommand"`
+	Arguments         []string                   `json:"arguments"`
+	ReflectedMetaData secUtils.ReflectedMetaData `json:"reflectedMetaData"`
 }
 type ControlComandHandler struct {
 	ControlComand
@@ -45,7 +48,7 @@ func parseControlCommand(arg []byte) (error, bool) {
 		logger.Errorln("Unable to unmarshall cc ", err)
 		return errors.New("Unable to unmarshall cc "), false
 	}
-	logger.Debugln("Recived control command", cc.ControlCommand)
+	logger.Debugln("Received control command", cc.ControlCommand)
 
 	switch cc.ControlCommand {
 	case STARTUP_WELCOME_MSG:
@@ -57,8 +60,9 @@ func parseControlCommand(arg []byte) (error, bool) {
 		if len(cc.Arguments) <= 1 {
 			return errors.New("Unable to process cc11, need minimum 2 arguments "), false
 		}
-		arguments := strings.Replace(cc.Arguments[0], "{{NR_CSEC_VALIDATOR_HOME_TMP}}", secConfig.GlobalInfo.Security.SecurityHomePath, -1)
-		arguments = strings.Replace(arguments, "%7B%7BNR_CSEC_VALIDATOR_HOME_TMP%7D%7D", secConfig.GlobalInfo.Security.SecurityHomePath, -1)
+		dsFilePath := filepath.Join(secConfig.GlobalInfo.SecurityHomePath(), "nr-security-home", "tmp")
+		arguments := strings.Replace(cc.Arguments[0], "{{NR_CSEC_VALIDATOR_HOME_TMP}}", dsFilePath, -1)
+		arguments = strings.Replace(arguments, "%7B%7BNR_CSEC_VALIDATOR_HOME_TMP%7D%7D", dsFilePath, -1)
 
 		arg := []byte(arguments)
 		var cc11 FuzzRequrestHandler
@@ -66,7 +70,9 @@ func parseControlCommand(arg []byte) (error, bool) {
 		if err != nil {
 			return errors.New("Unable to unmarshall cc11 : " + err.Error()), false
 		} else {
+			logger.Debugln("Fuzz request received :",string(arg))
 			logger.Debugln("will fuzz, parsedOK ..")
+			cc11.MetaData = cc.ReflectedMetaData
 			registerFuzzTask(&cc11, cc.Arguments[1])
 			break
 		}

@@ -83,7 +83,8 @@ func HookWrapRawNamed(from string, to, toc interface{}) (string, error) {
  */
 
 func TraceFileOperation(fname string, flag int, isFileOpen bool) *secUtils.EventTracker {
-	if secConfig.GlobalInfo.Security.SecurityHomePath != "" && secUtils.CaseInsensitiveContains(fname, filepath.Join(secConfig.GlobalInfo.Security.SecurityHomePath, "nr-security-home", "logs")) {
+	securityHomePath := secConfig.GlobalInfo.SecurityHomePath()
+	if securityHomePath != "" && secUtils.CaseInsensitiveContains(fname, filepath.Join(securityHomePath, "nr-security-home", "logs")) {
 		// here dont put logger, will cause issue with logrus and hook
 		// the hook is for log file rotation, ignore
 		return nil
@@ -253,15 +254,16 @@ func AssociateApplicationPort(data string) {
 	logger.Infoln("Detected Port : ", port)
 	logger.Infoln("Detected Server IP : ", ip)
 
-	secConfig.GlobalInfo.ApplicationInfo.ServerIp = ip
+	secConfig.GlobalInfo.ApplicationInfo.SetServerIp(ip)
+
 	if port == "" {
 		return
 	}
 
 	a, _ := strconv.Atoi(port)
 
-	if !secUtils.Contains(secConfig.GlobalInfo.ApplicationInfo.Ports, a) {
-		secConfig.GlobalInfo.ApplicationInfo.Ports = append(secConfig.GlobalInfo.ApplicationInfo.Ports, a)
+	if !secUtils.Contains(secConfig.GlobalInfo.ApplicationInfo.GetPorts(), a) {
+		secConfig.GlobalInfo.ApplicationInfo.SetPorts(a)
 	}
 }
 
@@ -271,7 +273,7 @@ func AssociateApplicationPort(data string) {
 
 // TraceIncommingRequest - interception of incoming request
 
-func TraceIncommingRequest(url, host string, hdrMap map[string][]string, method string, body []byte, queryparam map[string][]string, protocol, serverName string) {
+func TraceIncommingRequest(url, host string, hdrMap map[string][]string, method string, body []byte, queryparam map[string][]string, protocol, serverName, type1 string) {
 	if !isAgentInitialized() {
 		return
 	}
@@ -319,7 +321,10 @@ func TraceIncommingRequest(url, host string, hdrMap map[string][]string, method 
 	(*infoReq).ReqTraceData = traceData
 	(*infoReq).RequestIdentifier = RequestIdentifier
 	(*infoReq).Request.ServerName = serverName
-	createFuzzFile(RequestIdentifier)
+	(*infoReq).TmpFiles = createFuzzFile(RequestIdentifier)
+	if type1 == "gRPC" {
+		(*infoReq).Request.IsGRPC = true
+	}
 	secConfig.Secure.AssociateInboundRequest(infoReq)
 }
 
@@ -455,7 +460,7 @@ func tracerpcRequestWithHeader(header map[string]string, data []byte) {
 	if (*infoReq).RequestIdentifier != "" {
 		header[NR_CSEC_FUZZ_REQUEST_ID] = (*infoReq).RequestIdentifier
 	}
-	createFuzzFile((*infoReq).RequestIdentifier)
+	(*infoReq).TmpFiles = createFuzzFile((*infoReq).RequestIdentifier)
 	if (*infoReq).Request.ServerName == "" {
 		(*infoReq).Request.ServerName = host
 	}
@@ -476,8 +481,9 @@ func AssociateGoRoutine(caller, callee int64) {
 }
 
 func DissociateInboundRequest() {
+	tmpFiles := secConfig.Secure.GetTmpFiles()
 	secConfig.Secure.DissociateInboundRequest()
-	removeFuzzFile()
+	removeFuzzFile(tmpFiles)
 }
 
 func XssCheck() {
@@ -508,7 +514,7 @@ func XssCheck() {
 		out := secUtils.CheckForReflectedXSS(r)
 		logger.Debugln("CheckForReflectedXSS out value is : ", out)
 
-		if len(out) == 0 && !(secConfig.GlobalInfo.CurrentPolicy.VulnerabilityScan.Enabled && secConfig.GlobalInfo.CurrentPolicy.VulnerabilityScan.IastScan.Enabled) {
+		if len(out) == 0 && !secConfig.GlobalInfo.IsIASTEnable() {
 			logger.Debugln("No need to send xss event as not attack and dynamic scanning is false")
 		} else {
 			logger.Debugln("return value of reflected xss string : ", out)
@@ -526,7 +532,7 @@ func XssCheck() {
  */
 
 // create a remove fuzz file for verfy file acesss attack
-func createFuzzFile(fuzzheaders string) {
+func createFuzzFile(fuzzheaders string) (tmpFiles []string) {
 	DSON := true
 	if DSON && fuzzheaders != "" {
 		additionalData := strings.Split(fuzzheaders, IAST_SEP)
@@ -534,8 +540,10 @@ func createFuzzFile(fuzzheaders string) {
 		if len(additionalData) >= 7 {
 			for i := 6; i < len(additionalData); i++ {
 				fileName := additionalData[i]
-				fileName = strings.Replace(fileName, "{{NR_CSEC_VALIDATOR_HOME_TMP}}", secConfig.GlobalInfo.Security.SecurityHomePath, -1)
-				fileName = strings.Replace(fileName, "%7B%7BNR_CSEC_VALIDATOR_HOME_TMP%7D%7D", secConfig.GlobalInfo.Security.SecurityHomePath, -1)
+				dsFilePath := filepath.Join(secConfig.GlobalInfo.SecurityHomePath(), "nr-security-home", "tmp")
+				fileName = strings.Replace(fileName, "{{NR_CSEC_VALIDATOR_HOME_TMP}}", dsFilePath, -1)
+				fileName = strings.Replace(fileName, "%7B%7BNR_CSEC_VALIDATOR_HOME_TMP%7D%7D", dsFilePath, -1)
+				tmpFiles = append(tmpFiles, fileName)
 				dir := filepath.Dir(fileName)
 				if dir != "" {
 					err := os.MkdirAll(dir, os.ModePerm)
@@ -551,23 +559,14 @@ func createFuzzFile(fuzzheaders string) {
 			}
 		}
 	}
+	return tmpFiles
 }
 
-func removeFuzzFile() {
-	fuzzheaders := secConfig.Secure.GetFuzzHeader()
-	if secConfig.GlobalInfo.CurrentPolicy.VulnerabilityScan.Enabled && secConfig.GlobalInfo.CurrentPolicy.VulnerabilityScan.IastScan.Enabled && fuzzheaders != "" {
-		additionalData := strings.Split(fuzzheaders, IAST_SEP)
-		logger.Debugln("additionalData:", additionalData)
-		if len(additionalData) >= 7 {
-			for i := 6; i < len(additionalData); i++ {
-				fileName := additionalData[i]
-				fileName = strings.Replace(fileName, "{{NR_CSEC_VALIDATOR_HOME_TMP}}", secConfig.GlobalInfo.Security.SecurityHomePath, -1)
-				fileName = strings.Replace(fileName, "%7B%7BNR_CSEC_VALIDATOR_HOME_TMP%7D%7D", secConfig.GlobalInfo.Security.SecurityHomePath, -1)
-				err := os.Remove(fileName)
-				if err != nil {
-					logger.Errorln("Error while removing created file : ", err.Error(), fileName)
-				}
-			}
+func removeFuzzFile(tmpFiles []string) {
+	for _, path := range tmpFiles {
+		err := os.Remove(path)
+		if err != nil {
+			logger.Errorln("Error while removing created file : ", err.Error(), path)
 		}
 	}
 }
@@ -585,7 +584,7 @@ func GetTraceHeader(event *secUtils.EventTracker) (string, string) {
 		return "", ""
 	}
 	value := event.TracingHeader
-	value += " " + secConfig.GlobalInfo.ApplicationInfo.AppUUID + "/" + event.APIID + "/" + event.ID + ";"
+	value += " " + secConfig.GlobalInfo.ApplicationInfo.GetAppUUID() + "/" + event.APIID + "/" + event.ID + ";"
 	return NR_CSEC_TRACING_DATA, strings.TrimSpace(value)
 
 }
@@ -597,12 +596,13 @@ func GetDummyEventTracker() *secUtils.EventTracker {
 // GetApiCaller - Populate the ApiCallerId for microservice validation
 func GetApiCaller(url string) string {
 	port := ""
-	if secConfig.GlobalInfo.ApplicationInfo.Ports != nil && len(secConfig.GlobalInfo.ApplicationInfo.Ports) > 0 {
-		port = secUtils.IntToString(secConfig.GlobalInfo.ApplicationInfo.Ports[0])
+	applicationPort := secConfig.GlobalInfo.ApplicationInfo.GetPorts()
+	if applicationPort != nil && len(applicationPort) > 0 {
+		port = secUtils.IntToString(applicationPort[0])
 	}
 	url = secUtils.CanonicalURL(url)
 	durl := base64.StdEncoding.EncodeToString([]byte(url))
-	id := fmt.Sprintf("%s||%s||%s||%s", secConfig.GlobalInfo.ApplicationInfo.AppUUID, secConfig.GlobalInfo.ApplicationInfo.ContextPath, port, durl)
+	id := fmt.Sprintf("%s||%s||%s||%s", secConfig.GlobalInfo.ApplicationInfo.GetAppUUID(), secConfig.GlobalInfo.ApplicationInfo.GetContextPath(), port, durl)
 	return id
 }
 
@@ -616,8 +616,9 @@ func SendExitEvent(exitEvent interface{}, err error) {
 }
 
 func ProcessInit(server_name string) {
-	secConfig.GlobalInfo.ApplicationInfo.ServerName = append(secConfig.GlobalInfo.ApplicationInfo.ServerName, server_name)
-	if secConfig.GlobalInfo.AccountID != "" {
+	secConfig.GlobalInfo.ApplicationInfo.SetServerName(server_name)
+
+	if secConfig.GlobalInfo.MetaData.GetAccountID() != "" {
 		eventGeneration.SendApplicationInfo()
 	}
 }
@@ -634,25 +635,25 @@ func UpdateLinkData(linkingMetadata map[string]string) {
 		linkingMetadata["entity.guid"] = value
 		delete(linkingMetadata, "entityGUID")
 	}
-	if secConfig.GlobalInfo.AgentRunId == "" {
-		secConfig.GlobalInfo.LinkingMetadata = linkingMetadata
+	if secConfig.GlobalInfo.MetaData.GetAgentRunId() == "" {
+		secConfig.GlobalInfo.MetaData.SetLinkingMetadata(linkingMetadata)
 		accountId, ok := linkingMetadata["accountId"]
 		if ok {
-			secConfig.GlobalInfo.AccountID = accountId
+			secConfig.GlobalInfo.MetaData.SetAccountID(accountId)
 		}
 		agentRunId, ok := linkingMetadata["agentRunId"]
 		if ok {
-			secConfig.GlobalInfo.AgentRunId = agentRunId
+			secConfig.GlobalInfo.MetaData.SetAgentRunId(agentRunId)
 		}
 
 		if !IsDisable() && !IsForceDisable() {
 			go secWs.InitializeWsConnecton()
 		}
 	} else {
-		secConfig.GlobalInfo.LinkingMetadata = linkingMetadata
+		secConfig.GlobalInfo.MetaData.SetLinkingMetadata(linkingMetadata)
 		agentRunId, ok := linkingMetadata["agentRunId"]
 		if ok {
-			secConfig.GlobalInfo.AgentRunId = agentRunId
+			secConfig.GlobalInfo.MetaData.SetAgentRunId(agentRunId)
 		}
 		secConfig.SecureWS.ReconnectAtAgentRefresh()
 	}
@@ -682,7 +683,9 @@ func SendEvent(caseType string, data ...interface{}) interface{} {
 	case "OUTBOUND":
 		return outboundcallHandler(data[0])
 	case "GRPC":
-		grpcRequestHandler(data[0])
+		grpcRequestHandler(data...)
+	case "GRPC_INFO":
+		grpcInfoHandler(data...)
 	case "MONGO":
 		return mongoHandler(data...)
 	case "SQL":
@@ -713,7 +716,7 @@ func inboundcallHandler(request interface{}) {
 	if clientHost == "" {
 		clientHost = r.GetHost()
 	}
-	TraceIncommingRequest(r.GetURL().String(), clientHost, r.GetHeader(), r.GetMethod(), r.GetBody(), queryparam, r.GetTransport(), r.GetServerName())
+	TraceIncommingRequest(r.GetURL().String(), clientHost, r.GetHeader(), r.GetMethod(), r.GetBody(), queryparam, r.GetTransport(), r.GetServerName(), r.Type1())
 }
 
 func outboundcallHandler(req interface{}) *secUtils.EventTracker {
@@ -766,11 +769,33 @@ func httpresponseHandler(data ...interface{}) {
 	}
 }
 
-func grpcRequestHandler(data interface{}) {
+func grpcRequestHandler(data ...interface{}) {
 	if data == nil || !isAgentInitialized() {
 		return
 	}
-	secConfig.Secure.AssociateGrpcQueryParam(data)
+	if len(data) >= 3 {
+		messageType, _ := data[1].(string)
+		version, _ := data[2].(string)
+		secConfig.Secure.AssociateGrpcQueryParam(data[0], messageType, version)
+	} else {
+		secConfig.Secure.AssociateGrpcQueryParam(data[0], "", "v2")
+	}
+
+}
+
+func grpcInfoHandler(data ...interface{}) {
+	if data == nil || !isAgentInitialized() {
+		return
+	}
+	if len(data) < 2 {
+		return
+	}
+
+	isClientStream, ok := data[0].(bool)
+	isServerStream, ok1 := data[1].(bool)
+	if ok && ok1 {
+		secConfig.Secure.AssociateGrpcInfo(isClientStream, isServerStream)
+	}
 }
 
 func sqlHandler(data ...interface{}) *secUtils.EventTracker {
@@ -867,8 +892,8 @@ func DistributedTraceHeaders(hdrs *http.Request, secureAgentevent interface{}) {
 
 func DeactivateSecurity() {
 	eventGeneration.RemoveHcScheduler()
-	secConfig.GlobalInfo.Security.Enabled = false
-	secConfig.GlobalInfo.Security.Agent.Enabled = false
+	secConfig.GlobalInfo.SetSecurityEnabled(false)
+	secConfig.GlobalInfo.SetSecurityAgentEnabled(false)
 	if secConfig.SecureWS != nil {
 		go secConfig.SecureWS.CloseWSConnection()
 	}

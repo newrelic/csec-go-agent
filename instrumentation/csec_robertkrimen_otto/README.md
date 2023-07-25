@@ -6,4 +6,4 @@ Package `csec_robertkrimen_otto` instruments github.com/robertkrimen/otto applic
 import _ "github.com/newrelic/csec-go-agent/instrumentation/csec_robertkrimen_otto"
 ```
 
-For more information, see [go docs](). 
+For more information, see [go docs](https://godoc.org/github.com/newrelic/csec-go-agent/instrumentation/csec_robertkrimen_otto). 

@@ -67,7 +67,7 @@ func (k Secureimpl) AssociateInboundRequest(r *secUtils.Info_req) {
 	if !isAgentReady() {
 		return
 	}
-	secConfig.GlobalInfo.EventData.HTTPRequestCount++
+	secConfig.GlobalInfo.EventData.IncreaseHttpRequestCount()
 	goroutineID := getID()
 	if r.Request.IsGRPC {
 		data, err := grpcMap.Load(goroutineID)
@@ -113,14 +113,29 @@ func (k Secureimpl) GetRequest() *secUtils.Info_req {
  * Implementation for gRPC frameworks
  */
 
-func (k Secureimpl) AssociateGrpcQueryParam(body interface{}) {
+func (k Secureimpl) AssociateGrpcQueryParam(body interface{}, messageType, version string) {
+
 	request := getRequest(getID())
 	if request == nil {
 		logger.Debugln("(AssociateGrpcQueryParam) GRPC Request Not Found")
 		return
 	}
 	request.Request.IsGRPC = true
+	request.ReflectedMetaData.GrcpMessageType = messageType
+	request.ReflectedMetaData.GrcpMessageVersion = version
 	request.GrpcBody = append(request.GrpcBody, body)
+
+}
+
+func (k Secureimpl) AssociateGrpcInfo(isClientStream, isServerStream bool) {
+	request := getRequest(getID())
+	if request == nil {
+		logger.Debugln("(AssociateGrpcInfo) GRPC Request Not Found")
+		return
+	}
+	request.ReflectedMetaData.IsGrpcClientStream = isClientStream
+	request.ReflectedMetaData.IsServerStream = isServerStream
+
 }
 
 func (k Secureimpl) AssociateGrpcDataBytes(data []byte) bool {
@@ -173,6 +188,15 @@ func (k Secureimpl) GetFuzzHeader() string {
 	}
 }
 
+func (k Secureimpl) GetTmpFiles() []string {
+	request := getRequest(getID())
+	if request == nil {
+		return make([]string, 0)
+	} else {
+		return request.TmpFiles
+	}
+}
+
 /**
  * Implementation for goroutines (created and deleted)
  */
@@ -217,7 +241,7 @@ func (k Secureimpl) SendExitEvent(event *secUtils.EventTracker) {
 	if event == nil {
 		return
 	}
-	if !(secConfig.GlobalInfo.CurrentPolicy.VulnerabilityScan.Enabled && secConfig.GlobalInfo.CurrentPolicy.VulnerabilityScan.IastScan.Enabled) {
+	if !secConfig.GlobalInfo.IsIASTEnable() {
 		return
 	}
 	requestIdentifier := event.RequestIdentifier

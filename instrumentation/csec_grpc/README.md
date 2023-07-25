@@ -6,4 +6,4 @@ Package `csec_grpc` instruments google.golang.org/grpc applications.
 import _ "github.com/newrelic/csec-go-agent/instrumentation/csec_grpc"
 ```
 
-For more information, see [go docs](). 
+For more information, see [go docs](https://godoc.org/github.com/newrelic/csec-go-agent/instrumentation/csec_grpc).
