@@ -4,6 +4,7 @@
 package security_logs
 
 import (
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -19,28 +20,52 @@ import (
 
 type RotateFileConfig struct {
 	Filename        string
+	Filepath        string
 	BaseLogFilename string
 	MaxSize         int64
 	MaxBackups      int
 }
 
 type RotateFileHook struct {
-	Config    RotateFileConfig
-	logWriter os.File
-	rotate    sync.Mutex
+	Config RotateFileConfig
+	rotate sync.Mutex
 }
 
-func NewRotateFileHook(config RotateFileConfig) (*RotateFileHook, *os.File, error) {
+func (config *RotateFileConfig) createLogDir() (io.Writer, error) {
+	err := os.MkdirAll(config.Filepath, os.ModePerm)
+
+	if err != nil {
+		return nil, err
+	}
+
+	err = os.Chmod(config.Filepath, 0777)
+	if err != nil {
+		return nil, err
+	}
+
+	err = os.Chmod(filepath.Dir(config.Filepath), 0777)
+	if err != nil {
+		return nil, err
+	}
 
 	logfile, err := os.OpenFile(config.Filename, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0777)
 
 	if err != nil {
-		return nil, nil, err
+		return nil, err
+	}
+	return logfile, nil
+
+}
+
+func NewRotateFileHook(config RotateFileConfig) (*RotateFileHook, io.Writer, error) {
+	logfile, err := config.createLogDir()
+	if err != nil {
+		fmt.Println(err)
+		logfile = os.Stdout
 	}
 
 	hook := RotateFileHook{
-		Config:    config,
-		logWriter: *logfile,
+		Config: config,
 	}
 
 	return &hook, logfile, nil

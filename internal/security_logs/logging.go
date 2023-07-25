@@ -6,7 +6,6 @@ package security_logs
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 
 	secUtils "github.com/newrelic/csec-go-agent/internal/security_utils"
@@ -18,25 +17,10 @@ var errorBuffer = secUtils.NewCring(5)
 
 func Init(logFileName, initlogFileName, logFilepath string, pid int) {
 	isInitilized = true
-	err := os.MkdirAll(logFilepath, os.ModePerm)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	err = os.Chmod(logFilepath, 0777)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	err = os.Chmod(filepath.Dir(logFilepath), 0777)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
 
 	rotateFileHook, writer, err := NewRotateFileHook(RotateFileConfig{
-		Filename:        filepath.Join(logFilepath, logFileName),
+		Filename:        initlogFileName,
+		Filepath:        logFilepath,
 		MaxSize:         50, // megabytes
 		MaxBackups:      2,
 		BaseLogFilename: logFileName,

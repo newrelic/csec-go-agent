@@ -62,7 +62,8 @@ func (f *logFile) fire(level string, msg ...interface{}) {
 }
 
 func (f *logFile) Errorln(msg ...interface{}) {
-	f.fire("ERROR", msg...)
+	logm := fmt.Sprintf("\x1b[%dm%s\x1b[0m", 31, "ERROR")
+	f.fire(logm, msg...)
 }
 func (f *logFile) Warnln(msg ...interface{}) {
 	f.fire("WARN", msg...)
