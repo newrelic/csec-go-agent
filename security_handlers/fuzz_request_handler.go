@@ -4,10 +4,11 @@
 package security_handlers
 
 import (
-	"time"
 	"fmt"
 	"strings"
 	"sync"
+	"time"
+
 	threadpool "github.com/newrelic/csec-go-agent/internal/security_threadpool"
 	secConfig "github.com/newrelic/csec-go-agent/security_config"
 	eventGeneration "github.com/newrelic/csec-go-agent/security_event_generation"
@@ -75,7 +76,7 @@ func initRestRequestThreadPool() {
 }
 
 func InitFuzzScheduler() {
-	if !(secConfig.GlobalInfo.CurrentPolicy.VulnerabilityScan.Enabled && secConfig.GlobalInfo.CurrentPolicy.VulnerabilityScan.IastScan.Enabled) {
+	if !secConfig.GlobalInfo.IsIASTEnable() {
 		return
 	}
 	if FuzzHandler.threadPool == nil {

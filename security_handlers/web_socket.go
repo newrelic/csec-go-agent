@@ -325,15 +325,15 @@ func readThread(ws *websocket) {
 func getConnectionHeader() http.Header {
 	return http.Header{
 		"NR-CSEC-CONNECTION-TYPE":         []string{"LANGUAGE_COLLECTOR"},
-		"NR-LICENSE-KEY":                  []string{secConfig.GlobalInfo.ApplicationInfo.ApiAccessorToken},
-		"NR-AGENT-RUN-TOKEN":              []string{secConfig.GlobalInfo.AgentRunId},
+		"NR-LICENSE-KEY":                  []string{secConfig.GlobalInfo.ApplicationInfo.GetApiAccessorToken()},
+		"NR-AGENT-RUN-TOKEN":              []string{secConfig.GlobalInfo.MetaData.GetAccountID()},
 		"NR-CSEC-VERSION":                 []string{secUtils.CollectorVersion},
 		"NR-CSEC-COLLECTOR-TYPE":          []string{secUtils.CollectorType},
-		"NR-CSEC-MODE":                    []string{secConfig.GlobalInfo.Security.Mode},
-		"NR-CSEC-APP-UUID":                []string{secConfig.GlobalInfo.ApplicationInfo.AppUUID},
+		"NR-CSEC-MODE":                    []string{secConfig.GlobalInfo.SecurityMode()},
+		"NR-CSEC-APP-UUID":                []string{secConfig.GlobalInfo.ApplicationInfo.GetAppUUID()},
 		"NR-CSEC-BUILD-NUMBER":            []string{secUtils.BuildNumber},
 		"NR-CSEC-JSON-VERSION":            []string{secUtils.JsonVersion},
-		"NR-ACCOUNT-ID":                   []string{secConfig.GlobalInfo.AccountID},
+		"NR-ACCOUNT-ID":                   []string{secConfig.GlobalInfo.MetaData.GetAccountID()},
 		"NR-CSEC-IAST-DATA-TRANSFER-MODE": []string{"PULL"},
 	}
 

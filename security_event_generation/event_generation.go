@@ -334,7 +334,7 @@ func IASTDataRequest(batchSize int, completedRequestIds []string) {
 	var tmp_event IASTDataRequestBeen
 	tmp_event.CompletedRequestIds = completedRequestIds
 	tmp_event.BatchSize = batchSize
-	tmp_event.ApplicationUUID = secConfig.GlobalInfo.ApplicationInfo.AppUUID
+	tmp_event.ApplicationUUID = secConfig.GlobalInfo.ApplicationInfo.GetAppUUID()
 	tmp_event.JSONName = "iast-data-request"
 	_, err := sendEvent(tmp_event)
 	if err != nil {
