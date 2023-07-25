@@ -32,9 +32,9 @@ type CCData struct {
 	Data interface{} `json:"data"`
 }
 type ControlComand struct {
-	Id             string   `json:"id"`
-	ControlCommand int      `json:"controlCommand"`
-	Arguments      []string `json:"arguments"`
+	Id                string                     `json:"id"`
+	ControlCommand    int                        `json:"controlCommand"`
+	Arguments         []string                   `json:"arguments"`
 	ReflectedMetaData secUtils.ReflectedMetaData `json:"reflectedMetaData"`
 }
 type ControlComandHandler struct {
@@ -49,7 +49,7 @@ func parseControlCommand(arg []byte) (error, bool) {
 
 	if err != nil {
 		logger.Errorln("Unable to unmarshall cc ", err)
-		return errors.New("Unable to unmarshall cc "), false
+		return errors.New("unable to unmarshall cc "), false
 	}
 	logger.Debugln("Received control command", cc.ControlCommand)
 
@@ -61,7 +61,7 @@ func parseControlCommand(arg []byte) (error, bool) {
 			initRestRequestThreadPool()
 		}
 		if len(cc.Arguments) <= 1 {
-			return errors.New("Unable to process cc11, need minimum 2 arguments "), false
+			return errors.New("unable to process cc11, need minimum 2 arguments "), false
 		}
 		dsFilePath := filepath.Join(secConfig.GlobalInfo.SecurityHomePath(), "nr-security-home", "tmp")
 		arguments := strings.Replace(cc.Arguments[0], "{{NR_CSEC_VALIDATOR_HOME_TMP}}", dsFilePath, -1)
@@ -73,7 +73,7 @@ func parseControlCommand(arg []byte) (error, bool) {
 		if err != nil {
 			return errors.New("Unable to unmarshall cc11 : " + err.Error()), false
 		} else {
-			logger.Debugln("Fuzz request received :",string(arg))
+			logger.Debugln("Fuzz request received :", cc.Id, string(arg))
 			logger.Debugln("will fuzz, parsedOK ..")
 			cc11.MetaData = cc.ReflectedMetaData
 			registerFuzzTask(&cc11, cc.Arguments[1], cc.Id)
@@ -107,6 +107,8 @@ func parseControlCommand(arg []byte) (error, bool) {
 		logger.Debugln("coolDownSleepTime", coolDownSleepTime)
 		FuzzHandler.SetCoolDownSleepTime(coolDownSleepTime)
 	case IAST_RECORD_DELETE_CONFIRMATION:
+		logger.Debugln("Purging confirmed IAST processed records count ", len(cc.Arguments))
+		logger.Debugln("Purging confirmed IAST processed records  ", cc.Arguments)
 		removeRequestID(cc.Arguments)
 
 	}
