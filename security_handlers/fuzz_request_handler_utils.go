@@ -4,8 +4,9 @@
 package security_handlers
 
 import (
-	"time"
 	"sync"
+	"time"
+
 	threadpool "github.com/newrelic/csec-go-agent/internal/security_threadpool"
 	secUtils "github.com/newrelic/csec-go-agent/internal/security_utils"
 )
@@ -18,11 +19,11 @@ type RestRequestThreadPool struct {
 	httpFuzzRestClient         SecureFuzz
 	grpsFuzzRestClient         SecureFuzz
 	threadPool                 *threadpool.ThreadPool
-	completedRequestIds        map[string]int
+	completedRequestIds        *sync.Map
 	coolDownSleepTime          time.Time
 	lastFuzzRequestTime        time.Time
 	isFuzzSchedulerInitialized bool
-	fuzzedApi          sync.Map
+	fuzzedApi                  sync.Map
 }
 
 func (r *RestRequestThreadPool) InitFuzzScheduler() {
@@ -50,23 +51,28 @@ func (r *RestRequestThreadPool) SetCoolDownSleepTime(coolDownSleepTimeInSecond i
 }
 
 func (r *RestRequestThreadPool) CompletedRequestIds() []string {
-	keys := make([]string, 0, len(r.completedRequestIds))
-	for k := range r.completedRequestIds {
-		keys = append(keys, k)
+	var keys []string
+	if r.completedRequestIds != nil {
+		r.completedRequestIds.Range(func(key, value interface{}) bool {
+			keys = append(keys, key.(string))
+			return true
+		})
+
 	}
+
 	return keys
 }
 
-func (r *RestRequestThreadPool) SetCompletedRequestIds(completedRequestIds map[string]int) {
+func (r *RestRequestThreadPool) SetCompletedRequestIds(completedRequestIds *sync.Map) {
 	r.completedRequestIds = completedRequestIds
 }
 
 func (r *RestRequestThreadPool) AppendCompletedRequestIds(requestId string) {
-	r.completedRequestIds[requestId] = 1
+	r.completedRequestIds.Store(requestId, 1)
 }
 
 func (r *RestRequestThreadPool) RemoveCompletedRequestIds(requestId string) {
-	delete(r.completedRequestIds, requestId)
+	r.completedRequestIds.Delete(requestId)
 }
 
 func (r *RestRequestThreadPool) InitHttpFuzzRestClient(rest SecureFuzz) {

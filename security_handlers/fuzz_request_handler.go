@@ -71,7 +71,7 @@ func removeRequestID(requestID []string) {
 }
 
 func initRestRequestThreadPool() {
-	FuzzHandler.SetCompletedRequestIds(make(map[string]int))
+	FuzzHandler.SetCompletedRequestIds(&sync.Map{})
 	FuzzHandler.threadPool = threadpool.NewThreadPool(queueSize, maxPoolSize, logger, "RestRequestThreadPool")
 }
 
