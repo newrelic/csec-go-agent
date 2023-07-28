@@ -17,6 +17,7 @@ type logFile struct {
 	cache          []interface{}
 	iscache        bool
 	rotateFileHook *RotateFileHook
+	isDefault      bool
 }
 
 type Logger interface {
@@ -27,18 +28,19 @@ type Logger interface {
 }
 
 // New creates a basic Logger.
-func UpdateLogger(w io.Writer, mode string, pid int, logF *logFile, rotateFileHook *RotateFileHook) {
+func UpdateLogger(w io.Writer, mode string, pid int, logF *logFile, rotateFileHook *RotateFileHook, isDefault bool) {
 	logF.logger = log.New(w, fmt.Sprintf("%d", pid), log.Ldate|log.Ltime|log.Lmsgprefix|log.LstdFlags|log.LUTC|log.Lshortfile)
 	logF.isActive = true
 	logF.iscache = false
 	logF.rotateFileHook = rotateFileHook
+	logF.isDefault = isDefault
 	logF.setLevel(mode)
 	logF.cleanCache()
 	return
 }
 
 func DefaultLogger(iscache1 bool) *logFile {
-	logF := &logFile{isActive: false, iscache: iscache1}
+	logF := &logFile{isActive: false, iscache: iscache1, isDefault: true}
 	return logF
 }
 
@@ -55,7 +57,7 @@ func (f *logFile) fire(level string, msg ...interface{}) {
 	}
 
 	if f.rotateFileHook != nil {
-		logm = f.rotateFileHook.Fire(logm, level)
+		logm = f.rotateFileHook.Fire(logm, level, f.isDefault)
 	}
 
 	f.logger.Output(3, logm)
@@ -82,7 +84,9 @@ func (f *logFile) Debugln(msg ...interface{}) {
 func (f *logFile) DebugEnabled() bool { return f.isDebugMode }
 
 func (f *logFile) setLevel(mode string) {
-	if mode == "DEBUG" {
+	if f.isDefault {
+		f.isDebugMode = false
+	} else if mode == "DEBUG" {
 		f.isDebugMode = true
 	}
 	f.mode = mode

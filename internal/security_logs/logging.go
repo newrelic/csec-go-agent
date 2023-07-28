@@ -26,11 +26,7 @@ func Init(logFileName, initlogFileName, logFilepath string, pid int) {
 		BaseLogFilename: logFileName,
 	})
 
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	UpdateLogger(writer, "INFO", pid, agentLogger, rotateFileHook)
+	UpdateLogger(writer, "INFO", pid, agentLogger, rotateFileHook, err)
 
 	init_initLogger(initlogFileName, logFilepath, pid)
 }

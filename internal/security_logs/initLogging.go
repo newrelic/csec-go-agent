@@ -1,3 +1,6 @@
+// Copyright 2020 New Relic Corporation. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 package security_logs
 
 import (
@@ -15,12 +18,8 @@ func init_initLogger(initlogFileName, logFilepath string, pid int) {
 		MaxBackups:      2,
 		BaseLogFilename: initlogFileName,
 	})
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
 
-	UpdateLogger(writer, "INFO", pid, initLogger, rotateFileHook)
+	UpdateLogger(writer, "INFO", pid, initLogger, rotateFileHook, err)
 }
 
 func InitLogger() *logFile {

@@ -57,21 +57,23 @@ func (config *RotateFileConfig) createLogDir() (io.Writer, error) {
 
 }
 
-func NewRotateFileHook(config RotateFileConfig) (*RotateFileHook, io.Writer, error) {
+func NewRotateFileHook(config RotateFileConfig) (*RotateFileHook, io.Writer, bool) {
 	logfile, err := config.createLogDir()
+	idDefault := false
 	if err != nil {
 		fmt.Println(err)
 		logfile = os.Stdout
+		idDefault = true
 	}
 
 	hook := RotateFileHook{
 		Config: config,
 	}
 
-	return &hook, logfile, nil
+	return &hook, logfile, idDefault
 }
 
-func (hook *RotateFileHook) Fire(logMessege, mode string) string {
+func (hook *RotateFileHook) Fire(logMessege, mode string, isDefault bool) string {
 	re := regexp.MustCompile(`license_key=[a-fA-F0-9.]+`)
 	logMessege = re.ReplaceAllLiteralString(logMessege, "license_key=[redacted]")
 
@@ -79,9 +81,11 @@ func (hook *RotateFileHook) Fire(logMessege, mode string) string {
 		trackError(logMessege)
 	}
 
-	info, err := os.Stat(hook.Config.Filename)
-	if err == nil && info.Size() > hook.Config.MaxSize*1024*1024 {
-		hook.logrollover()
+	if !isDefault {
+		info, err := os.Stat(hook.Config.Filename)
+		if err == nil && info.Size() > hook.Config.MaxSize*1024*1024 {
+			hook.logrollover()
+		}
 	}
 	return logMessege
 }
