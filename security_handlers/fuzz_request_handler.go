@@ -29,6 +29,14 @@ type FuzzTask struct {
 
 func (fTask *FuzzTask) Run() {
 
+	for {
+		if !secConfig.SecureWS.GetStatus() {
+			logger.Infoln("WS not connected sleep FuzzTask for 5 sec")
+			time.Sleep(5 * time.Second)
+		} else {
+			break
+		}
+	}
 	if fTask.fuzzRequrestHandler.IsGRPC {
 		if FuzzHandler.grpsFuzzRestClient == nil {
 			logger.Errorln("gRPC rest client not initialised")
