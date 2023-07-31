@@ -5,12 +5,7 @@ go 1.17
 require (
 	github.com/dlclark/regexp2 v1.9.0
 	github.com/gorilla/websocket v1.5.0
-	github.com/juju/fslock v0.0.0-20160525022230-4d5c94c67b4b
 	github.com/k2io/hookingo v1.0.3
-	github.com/mackerelio/go-osstat v0.2.4
-	github.com/pbnjay/memory v0.0.0-20210728143218-7b4eea64cf58
-	github.com/sirupsen/logrus v1.9.0
-	github.com/struCoder/pidusage v0.2.1
 )
 
 require (
