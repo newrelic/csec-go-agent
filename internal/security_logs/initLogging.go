@@ -5,6 +5,7 @@ package security_logs
 
 import (
 	"fmt"
+	"path/filepath"
 )
 
 var initLogger = DefaultLogger(true)
@@ -12,7 +13,7 @@ var initLogger = DefaultLogger(true)
 func init_initLogger(initlogFileName, logFilepath string, pid int) {
 
 	rotateFileHook, writer, err := NewRotateFileHook(RotateFileConfig{
-		Filename:        initlogFileName,
+		Filename:        filepath.Join(logFilepath, initlogFileName),
 		Filepath:        logFilepath,
 		MaxSize:         50, // megabytes
 		MaxBackups:      2,
