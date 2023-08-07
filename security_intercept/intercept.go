@@ -702,6 +702,9 @@ func SendEvent(caseType string, data ...interface{}) interface{} {
 		secConfig.Secure.DissociateInboundRequest()
 	case "APP_INFO":
 		associateApplicationPort(data...)
+	case "API_END_POINTS":
+		associateApplicationApiEndPoints(data...)
+
 	}
 	return nil
 }
@@ -842,6 +845,21 @@ func associateApplicationPort(data ...interface{}) {
 	if ok {
 		AssociateApplicationPort(add)
 	}
+}
+
+func associateApplicationApiEndPoints(data ...interface{}) {
+	if data == nil {
+		return
+	}
+	if len(data) < 2 {
+		return
+	}
+	uri, ok := data[0].(string)
+	method, ok1 := data[1].(string)
+	if ok && ok1 {
+		secConfig.GlobalInfo.ApplicationInfo.SetApiEndPoints(uri, method)
+	}
+
 }
 
 func mongoHandler(data ...interface{}) *secUtils.EventTracker {

@@ -341,6 +341,7 @@ type runningApplicationInfo struct {
 	starttimestr     string
 	binaryPath       string
 	serverName       []string
+	apiEndPoints     map[string]string
 }
 
 func (r *runningApplicationInfo) GetAppName() string {
@@ -469,6 +470,21 @@ func (r *runningApplicationInfo) SetServerName(value string) {
 	r.Lock()
 	defer r.Unlock()
 	r.serverName = append(r.serverName, value)
+}
+
+func (r *runningApplicationInfo) GetApiEndPoints() map[string]string {
+	r.Lock()
+	defer r.Unlock()
+	return r.apiEndPoints
+}
+
+func (r *runningApplicationInfo) SetApiEndPoints(uri, methods string) {
+	r.Lock()
+	defer r.Unlock()
+	if r.apiEndPoints == nil {
+		r.apiEndPoints = make(map[string]string, 0)
+	}
+	r.apiEndPoints[uri] = methods
 }
 
 type Instrumentation struct {

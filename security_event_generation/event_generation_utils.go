@@ -161,6 +161,18 @@ type IASTDataRequestBeen struct {
 	CompletedRequestIds []string `json:"completedRequestIds"`
 }
 
+type UrlMappingBeen struct {
+	ApplicationIdentifiers
+	EventType string        `json:"eventType"`
+	Mappings  []Urlmappings `json:"mappings"`
+}
+
+type Urlmappings struct {
+	Method  string `json:"method"`
+	Path    string `json:"path"`
+	Handler string `json:"handler"`
+}
+
 //status utils function
 /////
 
