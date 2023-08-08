@@ -26,14 +26,18 @@ func PhysicalMemoryBytes() (uint64, error) {
 }
 
 func FreePhysicalMemoryBytes() (uint64, error) {
-	mod := syscall.NewLazyDLL("kernel32.dll")
+	mod, err := syscall.LoadDLL("kernel32.dll")
+	if err != nil {
+		return 0, err
+	}
+
 	proc, err := mod.FindProc("GlobalMemoryStatusEx")
 	if err != nil {
 		return 0, err
 	}
 	var memkb uint64
 	r, _, _ := proc.Call(uintptr(unsafe.Pointer(&memkb)))
-	if ret != 1 {
+	if r == 0 {
 		return 0, err
 	}
 

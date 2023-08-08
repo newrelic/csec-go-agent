@@ -5,7 +5,7 @@ go 1.17
 require (
 	github.com/dlclark/regexp2 v1.9.0
 	github.com/gorilla/websocket v1.5.0
-	github.com/k2io/hookingo v1.0.3
+	github.com/k2io/hookingo v1.0.4
 )
 
 require (

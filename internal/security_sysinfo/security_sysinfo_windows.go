@@ -4,6 +4,7 @@
 package security_sysinfo
 
 import (
+	"error"
 	"syscall"
 	"unsafe"
 )
