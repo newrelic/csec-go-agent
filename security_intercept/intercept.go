@@ -620,6 +620,7 @@ func ProcessInit(server_name string) {
 
 	if secConfig.GlobalInfo.MetaData.GetAccountID() != "" {
 		eventGeneration.SendApplicationInfo()
+		eventGeneration.SendUrlMappingEvent()
 	}
 }
 
@@ -844,6 +845,7 @@ func associateApplicationPort(data ...interface{}) {
 	add, ok := data[0].(string)
 	if ok {
 		AssociateApplicationPort(add)
+		ProcessInit("http")
 	}
 }
 

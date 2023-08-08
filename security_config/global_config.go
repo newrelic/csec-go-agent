@@ -326,22 +326,23 @@ type EnvironmentInfo struct {
 
 type runningApplicationInfo struct {
 	sync.Mutex
-	appName          string
-	apiAccessorToken string
-	protectedServer  string
-	appUUID          string
-	sha256           string
-	size             string
-	contextPath      string
-	pid              string
-	Cmd              string
-	cmdline          []string
-	ports            []int
-	ServerIp         string
-	starttimestr     string
-	binaryPath       string
-	serverName       []string
-	apiEndPoints     map[string]string
+	appName               string
+	apiAccessorToken      string
+	protectedServer       string
+	appUUID               string
+	sha256                string
+	size                  string
+	contextPath           string
+	pid                   string
+	Cmd                   string
+	cmdline               []string
+	ports                 []int
+	ServerIp              string
+	starttimestr          string
+	binaryPath            string
+	serverName            []string
+	apiEndPoints          map[string]string
+	sentApiEndPointsCount int
 }
 
 func (r *runningApplicationInfo) GetAppName() string {
@@ -476,6 +477,18 @@ func (r *runningApplicationInfo) GetApiEndPoints() map[string]string {
 	r.Lock()
 	defer r.Unlock()
 	return r.apiEndPoints
+}
+
+func (r *runningApplicationInfo) SetSentApiEndPointsCount(value int) {
+	r.Lock()
+	defer r.Unlock()
+	r.sentApiEndPointsCount = value
+}
+
+func (r *runningApplicationInfo) GetSentApiEndPointsCount() int {
+	r.Lock()
+	defer r.Unlock()
+	return r.sentApiEndPointsCount
 }
 
 func (r *runningApplicationInfo) SetApiEndPoints(uri, methods string) {

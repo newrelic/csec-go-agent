@@ -240,6 +240,7 @@ func SendFuzzFailEvent(fuzzHeader string) {
 func SendUrlMappingEvent() {
 
 	apiEndPoints := secConfig.GlobalInfo.ApplicationInfo.GetApiEndPoints()
+	lastSentApiEndPointsCount := secConfig.GlobalInfo.ApplicationInfo.GetSentApiEndPointsCount()
 	if apiEndPoints == nil {
 		return
 	}
@@ -253,7 +254,10 @@ func SendUrlMappingEvent() {
 			"",
 		})
 	}
-
+	if len(urlmappings) <= lastSentApiEndPointsCount {
+		return
+	}
+	secConfig.GlobalInfo.ApplicationInfo.SetSentApiEndPointsCount(len(urlmappings))
 	var urlMappingEvent UrlMappingBeen
 	urlMappingEvent.Mappings = urlmappings
 	urlMappingEvent.EventType = "sec-application-url-mapping"
