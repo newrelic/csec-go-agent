@@ -544,7 +544,7 @@ const forceDisable = "NEW_RELIC_SECURITY_AGENT_ENABLED"
 
 func isSecurityAgentEnabled() bool {
 	if env := os.Getenv(forceDisable); env != "" {
-		if b, err := strconv.ParseBool("false"); nil == err {
+		if b, err := strconv.ParseBool(env); nil == err {
 			return b
 		}
 	}
