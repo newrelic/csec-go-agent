@@ -99,7 +99,7 @@ func SendSecHealthCheck() {
 	serviceStatus := getServiceStatus()
 	hc.ServiceStatus = serviceStatus
 
-	healthCheck, _ := sendEvent(hc)
+	healthCheck, _ := sendPriorityEvent(hc)
 	HcBuffer.ForceInsert(healthCheck)
 	populateStatusLogs(serviceStatus, stats)
 
@@ -383,6 +383,21 @@ func sendEvent(event interface{}) (string, error) {
 	logger.Debugln("ready to send : ", string(event_json))
 	if secConfig.SecureWS != nil {
 		(secConfig.SecureWS).RegisterEvent([]byte(string(event_json)))
+		return string(event_json), nil
+	} else {
+		logger.Errorln("websocket not configured to send event")
+		return string(event_json), errors.New("websocket not configured to send event")
+	}
+}
+
+func sendPriorityEvent(event interface{}) (string, error) {
+	event_json, err := json.Marshal(event)
+	if err != nil {
+		logger.Errorln("Marshal JSON before send", err)
+		return "", err
+	}
+	if secConfig.SecureWS != nil {
+		(secConfig.SecureWS).SendPriorityEvent(event_json)
 		return string(event_json), nil
 	} else {
 		logger.Errorln("websocket not configured to send event")

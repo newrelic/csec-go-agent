@@ -211,6 +211,15 @@ func (ws *websocket) RegisterEvent(s []byte) {
 	}
 }
 
+func (ws *websocket) SendPriorityEvent(s []byte) {
+	if !ws.isWsConnected() {
+		logger.Debugln("Drop priority event WS not connected or Reconnecting", len(ws.eventBuffer), cap(ws.eventBuffer))
+		return
+	}
+	logger.Debugln("send priority event", string(s))
+	ws.write(s)
+}
+
 func (ws *websocket) GetStatus() bool {
 	return ws.isWsConnected()
 }
