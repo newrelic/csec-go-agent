@@ -3,7 +3,7 @@
 
 name: Go Security Agent CI
 
-on: [push, pull_request]
+on: [push,pull_request]
 
 jobs:
   go-agent-v3:
@@ -16,52 +16,9 @@ jobs:
         include:
           - go-version: 1.17.x
             dirs: instrumentation/csec_antchfx_htmlquery
-          - go-version: 1.17.x
-            dirs: instrumentation/csec_antchfx_xpath
-          - go-version: 1.17.x
-            dirs: instrumentation/csec_ldap_v3
-          - go-version: 1.17.x
-            dirs: instrumentation/csec_sql
-          - go-version: 1.17.x
-            dirs: instrumentation/csec_antchfx_jsonquery
-          - go-version: 1.17.x
-            dirs: instrumentation/csec_mongodb_mongo
-          - go-version: 1.17.x
-            dirs: instrumentation/csec_antchfx_xmlquery
-          - go-version: 1.17.x
-            dirs: instrumentation/csec_robertkrimen_otto
-          - go-version: 1.18.x
-            dirs: instrumentation/csec_antchfx_htmlquery
-          - go-version: 1.18.x
-            dirs: instrumentation/csec_antchfx_xpath
-          - go-version: 1.18.x
-            dirs: instrumentation/csec_ldap_v3
-          - go-version: 1.18.x
-            dirs: instrumentation/csec_sql
-          - go-version: 1.18.x
-            dirs: instrumentation/csec_antchfx_jsonquery
-          - go-version: 1.18.x
-            dirs: instrumentation/csec_mongodb_mongo
-          - go-version: 1.18.x
-            dirs: instrumentation/csec_antchfx_xmlquery
-          - go-version: 1.18.x
-            dirs: instrumentation/csec_robertkrimen_otto  
-          - go-version: 1.19.x
-            dirs: instrumentation/csec_antchfx_htmlquery
-          - go-version: 1.19.x
-            dirs: instrumentation/csec_antchfx_xpath
-          - go-version: 1.19.x
-            dirs: instrumentation/csec_ldap_v3
-          - go-version: 1.19.x
-            dirs: instrumentation/csec_sql
-          - go-version: 1.19.x
-            dirs: instrumentation/csec_antchfx_jsonquery
-          - go-version: 1.19.x
-            dirs: instrumentation/csec_mongodb_mongo
-          - go-version: 1.19.x
-            dirs: instrumentation/csec_antchfx_xmlquery
-          - go-version: 1.19.x
-            dirs: instrumentation/csec_robertkrimen_otto  
+            extratesting: ["v1.3.0","v1.2.0"]
+            package: "github.com/antchfx/htmlquery"
+
     steps:
     - name: Install Go
       uses: actions/setup-go@v1
@@ -76,4 +33,5 @@ jobs:
       env:
         DIRS: ${{ matrix.dirs }}
         EXTRATESTING: ${{ matrix.extratesting }}
+        PACKAGE: ${{ matrix.package }}
         PIN: ${{ matrix.pin }}

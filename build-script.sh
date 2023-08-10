@@ -16,24 +16,29 @@ echo $version
 IFS=","
 
 for dir in $DIRS; do
-  cd "$pwd/$dir"
+    cd "$pwd/$dir"
 
-  # replace go-agent with local pull
-  go mod edit -replace github.com/newrelic/csec-go-agent="$pwd"
+    # replace go-agent with local pull
+    go mod edit -replace github.com/newrelic/csec-go-agent="$pwd"
 
-  # manage dependencies
-  go mod tidy
+    # manage dependencies
+    go mod tidy
 
-  go get
-  # run tests
-  if [[ $dir  ==  "instrumentation/csec_mongodb_mongo" ]]
-  then
-   go test -gcflags "-l" -race -benchtime=1ms -bench=. ./...
-  else
-   go test -race -benchtime=1ms -bench=. ./...
-  fi
-  
-  go vet ./...
+    go get
+    # run tests
+
+  for version in $EXTRATESTING; do
+    go get "$PACKAGE"@"$version"
+
+    if [[ $dir  ==  "instrumentation/csec_mongodb_mongo" ]]
+    then
+    go test -gcflags "-l" -race -benchtime=1ms -bench=. ./...
+    else
+    go test -race -benchtime=1ms -bench=. ./...
+    fi
+    
+    go vet ./...
+  done
   verify_go_fmt
 
 done
