@@ -36,7 +36,7 @@ for dir in $DIRS; do
     else
     go test -race -benchtime=1ms -bench=. ./...
     fi
-    
+
     go vet ./...
   done
   verify_go_fmt

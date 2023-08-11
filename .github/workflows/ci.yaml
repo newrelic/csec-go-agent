@@ -16,7 +16,7 @@ jobs:
         include:
           - go-version: 1.17.x
             dirs: instrumentation/csec_antchfx_htmlquery
-            extratesting: [v1.3.0, v1.2.0]
+            extratesting: "v1.3.0,v1.2.0"
             package: "github.com/antchfx/htmlquery"
     steps:
     - name: Install Go
@@ -29,9 +29,8 @@ jobs:
 
     - name: Run Tests
       run: bash ./build-script.sh
-      with:
-        EXTRATESTING: ${{ matrix.extratesting }}
       env:
         DIRS: ${{ matrix.dirs }}
         PACKAGE: ${{ matrix.package }}
         PIN: ${{ matrix.pin }}
+        EXTRATESTING: ${{ matrix.extratesting }}
