@@ -16,8 +16,21 @@ jobs:
         include:
           - go-version: 1.19.x
             dirs: instrumentation/csec_antchfx_htmlquery
-            extratesting: "v1.3.0,v1.2.0"
-            package: "github.com/antchfx/htmlquery"
+            extratesting: "v1.3.0,v1.2.0,v1.1.0"
+            package: "github.com/antchfx/htmlquery"          
+          - go-version: 1.19.x
+            dirs: instrumentation/csec_ldap_v3
+            extratesting: "v3.0.0,v3.1.0,v3.2.0,v3.3.0,v3.4.0"
+            package: "github.com/go-ldap/ldap/v3"
+          - go-version: 1.19.x
+            dirs: instrumentation/csec_mongodb_mongo
+            extratesting: "v1.12.0"
+            package: "go.mongodb.org/mongo-driver/mongo"
+          - go-version: 1.19.x
+            dirs: instrumentation/csec_robertkrimen_otto  
+            extratesting: "v0.1.0,v0.2.0"
+            package: "github.com/robertkrimen/otto"
+   
     steps:
     - name: Install Go
       uses: actions/setup-go@v1
