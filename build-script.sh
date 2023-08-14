@@ -18,6 +18,8 @@ IFS=","
 for dir in $DIRS; do
     cd "$pwd/$dir"
 
+  for version in $EXTRATESTING; do
+    git reset --hard
     # replace go-agent with local pull
     go mod edit -replace github.com/newrelic/csec-go-agent="$pwd"
 
@@ -26,8 +28,6 @@ for dir in $DIRS; do
 
     go get
     # run tests
-
-  for version in $EXTRATESTING; do
     go get "$PACKAGE"@"$version"
 
     if [[ $dir  ==  "instrumentation/csec_mongodb_mongo" ]]
