@@ -665,7 +665,9 @@ func UpdateLinkData(linkingMetadata map[string]string) {
 		if ok {
 			secConfig.GlobalInfo.MetaData.SetAgentRunId(agentRunId)
 		}
-		secConfig.SecureWS.ReconnectAtAgentRefresh()
+		if secConfig.SecureWS != nil {
+			secConfig.SecureWS.ReconnectAtAgentRefresh()
+		}
 	}
 
 }
