@@ -41,7 +41,6 @@ var (
 func InitHcScheduler() {
 	logging.EndStage("5", "Security agent components started")
 	SendSecHealthCheck()
-	SendUrlMappingEvent()
 	t := time.NewTicker(5 * time.Minute)
 	for {
 		select {
@@ -237,37 +236,6 @@ func SendFuzzFailEvent(fuzzHeader string) {
 	}
 }
 
-func SendUrlMappingEvent() {
-
-	apiEndPoints := secConfig.GlobalInfo.ApplicationInfo.GetApiEndPoints()
-	lastSentApiEndPointsCount := secConfig.GlobalInfo.ApplicationInfo.GetSentApiEndPointsCount()
-	if apiEndPoints == nil {
-		return
-	}
-
-	var urlmappings []Urlmappings
-
-	for uri := range apiEndPoints {
-		urlmappings = append(urlmappings, Urlmappings{
-			uri,
-			apiEndPoints[uri],
-			"",
-		})
-	}
-	if len(urlmappings) <= lastSentApiEndPointsCount {
-		return
-	}
-	secConfig.GlobalInfo.ApplicationInfo.SetSentApiEndPointsCount(len(urlmappings))
-	var urlMappingEvent UrlMappingBeen
-	urlMappingEvent.Mappings = urlmappings
-	urlMappingEvent.EventType = "sec-application-url-mapping"
-	urlMappingEvent.ApplicationIdentifiers = getApplicationIdentifiers("sec-application-url-mapping")
-	_, err := sendEvent(urlMappingEvent)
-	if err != nil {
-		logger.Errorln(err)
-	}
-
-}
 func SendVulnerableEvent(req *secUtils.Info_req, category string, args interface{}, vulnerabilityDetails secUtils.VulnerabilityDetails, eventId string) *secUtils.EventTracker {
 	var tmp_event eventJson
 

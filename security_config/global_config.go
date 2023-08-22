@@ -326,23 +326,21 @@ type EnvironmentInfo struct {
 
 type runningApplicationInfo struct {
 	sync.Mutex
-	appName               string
-	apiAccessorToken      string
-	protectedServer       string
-	appUUID               string
-	sha256                string
-	size                  string
-	contextPath           string
-	pid                   string
-	Cmd                   string
-	cmdline               []string
-	ports                 []int
-	ServerIp              string
-	starttimestr          string
-	binaryPath            string
-	serverName            []string
-	apiEndPoints          map[string]string
-	sentApiEndPointsCount int
+	appName          string
+	apiAccessorToken string
+	protectedServer  string
+	appUUID          string
+	sha256           string
+	size             string
+	contextPath      string
+	pid              string
+	Cmd              string
+	cmdline          []string
+	ports            []int
+	ServerIp         string
+	starttimestr     string
+	binaryPath       string
+	serverName       []string
 }
 
 func (r *runningApplicationInfo) GetAppName() string {
@@ -471,33 +469,6 @@ func (r *runningApplicationInfo) SetServerName(value string) {
 	r.Lock()
 	defer r.Unlock()
 	r.serverName = append(r.serverName, value)
-}
-
-func (r *runningApplicationInfo) GetApiEndPoints() map[string]string {
-	r.Lock()
-	defer r.Unlock()
-	return r.apiEndPoints
-}
-
-func (r *runningApplicationInfo) SetSentApiEndPointsCount(value int) {
-	r.Lock()
-	defer r.Unlock()
-	r.sentApiEndPointsCount = value
-}
-
-func (r *runningApplicationInfo) GetSentApiEndPointsCount() int {
-	r.Lock()
-	defer r.Unlock()
-	return r.sentApiEndPointsCount
-}
-
-func (r *runningApplicationInfo) SetApiEndPoints(uri, methods string) {
-	r.Lock()
-	defer r.Unlock()
-	if r.apiEndPoints == nil {
-		r.apiEndPoints = make(map[string]string, 0)
-	}
-	r.apiEndPoints[uri] = methods
 }
 
 type Instrumentation struct {
