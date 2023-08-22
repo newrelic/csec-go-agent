@@ -9,6 +9,7 @@ import (
 	"errors"
 	"io"
 	"io/ioutil"
+	"math/rand"
 	"net/http"
 	"os"
 	"sync"
@@ -144,14 +145,19 @@ func (ws *websocket) reconnect() {
 		if ws.isWsConnected() {
 			break
 		}
+
+		sleeptimeForReconnect := time.Duration(rand.Intn(15)+5) * time.Second
+		logger.Infoln("sleeping before reconnecting", sleeptimeForReconnect)
+		time.Sleep(sleeptimeForReconnect)
+		logger.Infoln("sleep end, retrying to connect with validator")
+
+		if ws.isWsConnected() {
+			break
+		}
 		ok, reconnect := ws.makeConnection()
 		if ok || !reconnect {
 			return
 		}
-		sleeptimeForReconnect := 15 * time.Second
-		logger.Infoln("sleeping before reconnecting", sleeptimeForReconnect)
-		time.Sleep(sleeptimeForReconnect)
-		logger.Infoln("sleep end, retrying to connect with validator")
 
 	}
 }
@@ -168,7 +174,7 @@ func (ws *websocket) connect() bool {
 		if !reconnect {
 			return false
 		}
-		sleeptimeForReconnect := 15 * time.Second
+		sleeptimeForReconnect := time.Duration(rand.Intn(15)+5) * time.Second
 		logger.Infoln("sleeping before reconnecting", sleeptimeForReconnect)
 		time.Sleep(sleeptimeForReconnect)
 		logger.Infoln("sleep end, retrying to connect with validator")
@@ -239,7 +245,10 @@ func (ws *websocket) ReconnectAtWill() {
 	 *
 	 * Post reconnect: reset 'reconnecting phase' in WSClient.
 	 */
-	ws.reconnectWill.Lock()
+	if !ws.reconnectWill.TryLock() {
+		logger.Infoln("No need to reconnect another thread is doing a reconnection")
+		return
+	}
 	if secConfig.GlobalInfo.IsIASTEnable() {
 		for FuzzHandler.threadPool != nil && !FuzzHandler.threadPool.IsTaskPoolEmpty() {
 			logger.Debugln("wait for fuzz threadPool empty")
@@ -263,7 +272,10 @@ func (ws *websocket) ReconnectAtWill() {
 }
 
 func (ws *websocket) ReconnectAtAgentRefresh() {
-	ws.reconnectWill.Lock()
+	if !ws.reconnectWill.TryLock() {
+		logger.Infoln("No need to reconnect another thread is doing a reconnection")
+		return
+	}
 	secConfig.GlobalInfo.SetSecurityEnabled(false)
 	//reset ws connection
 	ws.closeWs()
