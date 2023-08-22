@@ -146,7 +146,7 @@ func (ws *websocket) reconnect() {
 			break
 		}
 
-		sleeptimeForReconnect := time.Duration(rand.Intn(15)+5) * time.Second
+		sleeptimeForReconnect := time.Duration(rand.Intn(10)+5) * time.Second
 		logger.Infoln("sleeping before reconnecting", sleeptimeForReconnect)
 		time.Sleep(sleeptimeForReconnect)
 		logger.Infoln("sleep end, retrying to connect with validator")
@@ -174,7 +174,7 @@ func (ws *websocket) connect() bool {
 		if !reconnect {
 			return false
 		}
-		sleeptimeForReconnect := time.Duration(rand.Intn(15)+5) * time.Second
+		sleeptimeForReconnect := time.Duration(rand.Intn(10)+5) * time.Second
 		logger.Infoln("sleeping before reconnecting", sleeptimeForReconnect)
 		time.Sleep(sleeptimeForReconnect)
 		logger.Infoln("sleep end, retrying to connect with validator")
