@@ -557,12 +557,12 @@ func createFuzzFile(fuzzheaders string) (tmpFiles []string) {
 				if dir != "" {
 					err := os.MkdirAll(dir, os.ModePerm)
 					if err != nil {
-						logger.Info("Error while creating file : ", err.Error())
+						logger.Debugln("Error while creating file : ", err.Error())
 					}
 				}
 				emptyFile, err := os.Create(fileName)
 				if err != nil {
-					logger.Info("Error while creating file : ", err.Error(), fileName)
+					logger.Debugln("Error while creating file : ", err.Error(), fileName)
 				}
 				emptyFile.Close()
 			}
@@ -575,7 +575,7 @@ func removeFuzzFile(tmpFiles []string) {
 	for _, path := range tmpFiles {
 		err := os.Remove(path)
 		if err != nil {
-			logger.Errorln("Error while removing created file : ", err.Error(), path)
+			logger.Debugln("Error while removing created file : ", err.Error(), path)
 		}
 	}
 }

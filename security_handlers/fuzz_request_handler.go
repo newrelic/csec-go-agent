@@ -93,14 +93,14 @@ func InitFuzzScheduler() {
 	for {
 		time.Sleep(1 * time.Second)
 		if !secConfig.SecureWS.GetStatus() {
-			logger.Infoln("WS not connected sleep FuzzScheduler for 5 sec")
+			logger.Debugln("WS not connected sleep FuzzScheduler for 5 sec")
 			time.Sleep(5 * time.Second)
 			continue
 		}
 		currentTime := time.Now()
 		coolDownSleepTime := int64(FuzzHandler.CoolDownSleepTime().Sub(currentTime).Seconds())
 		if coolDownSleepTime > 0 {
-			logger.Infoln("coolDown SleepTime", coolDownSleepTime)
+			logger.Debugln("coolDown SleepTime", coolDownSleepTime)
 			time.Sleep(time.Duration(coolDownSleepTime) * time.Second)
 		}
 		currentTime = time.Now()
@@ -114,10 +114,10 @@ func InitFuzzScheduler() {
 		remainingRecordCapacity := FuzzHandler.threadPool.RemainingCapacity()
 		currentRecordBacklog := FuzzHandler.threadPool.PendingTask()
 		batchSize := currentFetchThreshold - currentRecordBacklog
-		logger.Infoln("InitFuzzScheduler test ", batchSize, remainingRecordCapacity, currentRecordBacklog, currentFetchThreshold)
+		logger.Debugln("InitFuzzScheduler test ", batchSize, remainingRecordCapacity, currentRecordBacklog, currentFetchThreshold)
 
 		if batchSize > 100 && remainingRecordCapacity > batchSize {
-			logger.Infoln("InitFuzzScheduler", batchSize*2)
+			logger.Debugln("InitFuzzScheduler", batchSize*2)
 			eventGeneration.IASTDataRequest(batchSize*2, FuzzHandler.CompletedRequestIds())
 		}
 	}

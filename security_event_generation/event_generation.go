@@ -365,6 +365,7 @@ func sendPriorityEvent(event interface{}) (string, error) {
 		return "", err
 	}
 	if secConfig.SecureWS != nil {
+		logger.Debugln("sending priority event", string(event_json))
 		(secConfig.SecureWS).SendPriorityEvent(event_json)
 		return string(event_json), nil
 	} else {

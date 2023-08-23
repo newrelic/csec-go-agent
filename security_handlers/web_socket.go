@@ -222,7 +222,7 @@ func (ws *websocket) SendPriorityEvent(s []byte) {
 		logger.Debugln("Drop priority event WS not connected or Reconnecting", len(ws.eventBuffer), cap(ws.eventBuffer))
 		return
 	}
-	logger.Debugln("send priority event", string(s))
+	logger.Debugln("priority event send", string(s))
 	ws.write(s)
 }
 
