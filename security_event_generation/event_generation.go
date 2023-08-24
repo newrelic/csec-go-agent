@@ -276,6 +276,10 @@ func SendVulnerableEvent(req *secUtils.Info_req, category string, args interface
 		tmp_event.IsIASTEnable = true
 	}
 
+	if tmp_event.HTTPRequest.ServerPort == "" {
+		tmp_event.HTTPRequest.ServerPort = "-1"
+	}
+
 	if tmp_event.HTTPRequest.IsGRPC {
 		body := (*req).GrpcBody
 		grpc_bodyJson, err1 := json.Marshal(body)
