@@ -131,7 +131,8 @@ func (ws *websocket) makeConnection() (bool, bool) {
 
 		logger.Infoln("Security Agent is now ACTIVE for ", secConfig.GlobalInfo.ApplicationInfo.GetAppUUID())
 		logger.Infoln("!!! Websocket worker goroutine starting...")
-		logging.EndStage("4", "Web socket connection to SaaS validator established successfully")
+		logger.Infoln("Web socket connection to SaaS validator established successfully at", validatorEndpoint)
+		logging.EndStage("4", "Web socket connection to SaaS validator established successfully at "+validatorEndpoint)
 		ws.flushWsController()
 		go writeThread(ws)
 		go readThread(ws)
