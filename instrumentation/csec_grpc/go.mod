@@ -8,3 +8,11 @@ require (
 	google.golang.org/protobuf v1.31.0
 	github.com/golang/protobuf v1.5.3
 )
+
+require(
+	golang.org/x/net v0.13.0
+)
+
+exclude(
+	golang.org/x/net v0.9.0
+)
