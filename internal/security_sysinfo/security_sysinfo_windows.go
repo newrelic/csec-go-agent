@@ -4,6 +4,7 @@
 package security_sysinfo
 
 import (
+	"errors"
 	"syscall"
 	"unsafe"
 )
@@ -30,4 +31,8 @@ func DiskFreeSpace(volumePath string) uint64 {
 		uintptr(unsafe.Pointer(&diskusage.availBytes)))
 
 	return uint64(diskusage.freeBytes)
+}
+
+func GetLoadavg() (string, error) {
+	return "0", errors.New("GetLoadavg not supported for windows")
 }

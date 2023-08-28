@@ -154,6 +154,25 @@ type FuzzFailBean struct {
 	FuzzHeader string `json:"fuzzHeader"`
 }
 
+type IASTDataRequestBeen struct {
+	JSONName            string   `json:"jsonName"`
+	ApplicationUUID     string   `json:"applicationUUID"`
+	BatchSize           int      `json:"batchSize"`
+	CompletedRequestIds []string `json:"completedRequestIds"`
+}
+
+type UrlMappingBeen struct {
+	ApplicationIdentifiers
+	EventType string        `json:"eventType"`
+	Mappings  []Urlmappings `json:"mappings"`
+}
+
+type Urlmappings struct {
+	Method  string `json:"method"`
+	Path    string `json:"path"`
+	Handler string `json:"handler"`
+}
+
 //status utils function
 /////
 
@@ -185,20 +204,24 @@ func populateStatusLogs(service, process map[string]interface{}) {
 	err := os.MkdirAll(statusFilePath, os.ModePerm)
 	if err != nil {
 		logger.Errorln(err)
+		return
 	}
 	err = os.Chmod(statusFilePath, 0777)
 	if err != nil {
 		logger.Errorln(err)
+		return
 	}
 	statusFilePath1 := filepath.Join(statusFilePath, fmt.Sprintf("go-security-collector-status-%s.log", secConfig.GlobalInfo.ApplicationInfo.GetAppUUID()))
 	f, err := os.OpenFile(statusFilePath1, os.O_RDWR|os.O_CREATE, 0777)
 	if err != nil {
 		logger.Errorln(err)
+		return
 	}
 	defer f.Close()
 	_, err2 := f.WriteString(status)
 	if err2 != nil {
 		logger.Errorln(err2)
+		return
 	}
 	removeOlderSnapshots(statusFilePath, "go-security-collector-status")
 }

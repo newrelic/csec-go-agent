@@ -5,6 +5,7 @@ package security_handlers
 
 import (
 	"sync"
+	"time"
 
 	threadpool "github.com/newrelic/csec-go-agent/internal/security_threadpool"
 	secUtils "github.com/newrelic/csec-go-agent/internal/security_utils"
@@ -15,10 +16,63 @@ type SecureFuzz interface {
 }
 
 type RestRequestThreadPool struct {
-	httpFuzzRestClient SecureFuzz
-	grpsFuzzRestClient SecureFuzz
-	threadPool         *threadpool.ThreadPool
-	fuzzedApi          sync.Map
+	httpFuzzRestClient         SecureFuzz
+	grpsFuzzRestClient         SecureFuzz
+	threadPool                 *threadpool.ThreadPool
+	completedRequestIds        *sync.Map
+	coolDownSleepTime          time.Time
+	lastFuzzRequestTime        time.Time
+	isFuzzSchedulerInitialized bool
+	fuzzedApi                  sync.Map
+}
+
+func (r *RestRequestThreadPool) InitFuzzScheduler() {
+	if !r.isFuzzSchedulerInitialized {
+		go InitFuzzScheduler()
+		r.isFuzzSchedulerInitialized = true
+	}
+}
+
+func (r *RestRequestThreadPool) LastFuzzRequestTime() time.Time {
+	return r.lastFuzzRequestTime
+}
+
+func (r *RestRequestThreadPool) SetLastFuzzRequestTime() {
+	r.lastFuzzRequestTime = time.Now()
+}
+
+func (r *RestRequestThreadPool) CoolDownSleepTime() time.Time {
+	return r.coolDownSleepTime
+}
+
+func (r *RestRequestThreadPool) SetCoolDownSleepTime(coolDownSleepTimeInSecond int) {
+	coolDownSleepTime := time.Now().Add(time.Duration(coolDownSleepTimeInSecond) * time.Second)
+	r.coolDownSleepTime = coolDownSleepTime
+}
+
+func (r *RestRequestThreadPool) CompletedRequestIds() []string {
+	var keys []string
+	if r.completedRequestIds != nil {
+		r.completedRequestIds.Range(func(key, value interface{}) bool {
+			keys = append(keys, key.(string))
+			return true
+		})
+
+	}
+
+	return keys
+}
+
+func (r *RestRequestThreadPool) SetCompletedRequestIds(completedRequestIds *sync.Map) {
+	r.completedRequestIds = completedRequestIds
+}
+
+func (r *RestRequestThreadPool) AppendCompletedRequestIds(requestId string) {
+	r.completedRequestIds.Store(requestId, 1)
+}
+
+func (r *RestRequestThreadPool) RemoveCompletedRequestIds(requestId string) {
+	r.completedRequestIds.Delete(requestId)
 }
 
 func (r *RestRequestThreadPool) InitHttpFuzzRestClient(rest SecureFuzz) {

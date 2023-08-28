@@ -46,4 +46,5 @@ type SecureWSiface interface {
 	ReconnectAtAgentRefresh()
 	ReconnectAtWill()
 	CloseWSConnection()
+	SendPriorityEvent([]byte)
 }

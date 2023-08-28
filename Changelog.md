@@ -1,5 +1,38 @@
 # Changelog
 
+## [v0.3.0] - 2023-08-28
+
+ * Updated logger module and implemented new logging module with standard golang package `log`
+    * Remove the following third-party dependency for logging:
+       - juju/fslock
+        -  sirupsen/logrus
+ * Update HC health check messages sending pipeline and send HC health check messages on priority.
+ * Added null parameter checks before event generation.
+ * Adopt IAST data pull implementation.
+ * Improved logging and added a few fallback mechanisms for restricted environments.
+ * Updated service status module and removed the following third-party dependency:
+    - juju/fslock
+     - mackerelio/go-osstat
+     - pbnjay/memory
+     -  sirupsen/logrus
+     - struCoder/pidusage
+
+ * This affects:
+     * Base csec agent code (updated to v0.4.0)
+     * `csec_antchfx_htmlquery` instrumentation (updated to v0.4.0)
+     * `csec_antchfx_xmlquery` instrumentation (updated to v0.4.0)
+     * `csec_augustoroman_v8` instrumentation (updated to v0.4.0)
+     * `csec_ldap_v3` instrumentation (updated to v0.4.0)
+     * `csec_robertkrimen_otto` instrumentation (updated to v0.4.0)
+     * `csec_valyala_fasthttp` instrumentation (updated to v0.4.0)
+     * `csec_antchfx_jsonquery` instrumentation (updated to v0.4.0)
+     * `csec_antchfx_xpath` instrumentation (updated to v0.4.0)
+     * `csec_grpc` instrumentation (updated to v0.4.0)
+     * `csec_mongodb_mongo` instrumentation (updated to v0.4.0)
+
+### Support statement
+* Go versions 1.18 and later are supported
+
 ## [v0.3.0] - 2023-07-24
 
 - Fix for data race conditions observed by race detector.
