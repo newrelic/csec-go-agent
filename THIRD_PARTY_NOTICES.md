@@ -13,12 +13,7 @@ can be found at https://github.com/newrelic/csec-go-agent/.
 ## Contents
 * [dlclark/regexp2](https://github.com/dlclark/regexp2)
 * [gorilla/websocket](https://github.com/gorilla/websocket)
-* [juju/fslock](https://github.com/juju/fslock)
 * [k2io/hookingo](https://github.com/k2io/hookingo)
-* [mackerelio/go-osstat](https://github.com/mackerelio/go-osstat)
-* [pbnjay/memory](https://github.com/pbnjay/memory)
-* [sirupsen/logrus](https://github.com/sirupsen/logrus)
-* [struCoder/pidusage](https://github.com/struCoder/pidusage)
 
 ## dlclark/regexp2
 
