@@ -4,8 +4,8 @@
 package security_utils
 
 const (
-	CollectorVersion = "0.3.0"
+	CollectorVersion = "0.4.0"
 	JsonVersion      = "1.0.1"
 	CollectorType    = "GOLANG"
-	BuildNumber      = "151"
+	BuildNumber      = "152"
 )
