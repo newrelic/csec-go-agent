@@ -14,22 +14,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - go-version: 1.17.x
-            dirs: instrumentation/csec_antchfx_htmlquery
-          - go-version: 1.17.x
-            dirs: instrumentation/csec_antchfx_xpath
-          - go-version: 1.17.x
-            dirs: instrumentation/csec_ldap_v3
-          - go-version: 1.17.x
-            dirs: instrumentation/csec_sql
-          - go-version: 1.17.x
-            dirs: instrumentation/csec_antchfx_jsonquery
-          - go-version: 1.17.x
-            dirs: instrumentation/csec_mongodb_mongo
-          - go-version: 1.17.x
-            dirs: instrumentation/csec_antchfx_xmlquery
-          - go-version: 1.17.x
-            dirs: instrumentation/csec_robertkrimen_otto
           - go-version: 1.18.x
             dirs: instrumentation/csec_antchfx_htmlquery
           - go-version: 1.18.x

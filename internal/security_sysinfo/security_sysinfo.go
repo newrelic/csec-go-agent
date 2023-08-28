@@ -4,7 +4,12 @@
 // SPDX-License-Identifier: New Relic Pre-Release
 package security_sysinfo
 
-import "syscall"
+import (
+	"errors"
+	"os"
+	"strings"
+	"syscall"
+)
 
 func DiskFreeSpace(path string) uint64 {
 	var stats syscall.Statfs_t
@@ -13,4 +18,16 @@ func DiskFreeSpace(path string) uint64 {
 		return stats.Bfree * uint64(stats.Bsize)
 	}
 	return stats.Bfree * uint64(stats.Bsize)
+}
+
+func GetLoadavg() (string, error) {
+	file, err := os.ReadFile("/proc/loadavg")
+	if err != nil {
+		return "0", err
+	}
+	lavg := strings.Split(string(file), " ")
+	if len(lavg) > 3 {
+		return lavg[1], nil
+	}
+	return "0", errors.New("supported Loadavg not found in /proc/loadavg")
 }

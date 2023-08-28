@@ -14,10 +14,9 @@ import (
 	logging "github.com/newrelic/csec-go-agent/internal/security_logs"
 	secUtils "github.com/newrelic/csec-go-agent/internal/security_utils"
 	secConfig "github.com/newrelic/csec-go-agent/security_config"
-	"github.com/sirupsen/logrus"
 )
 
-var logger *logrus.Entry
+var logger logging.Logger
 
 const (
 	LOG_FILE        = "go-security-collector.log"
@@ -38,8 +37,8 @@ func initLogger(logFilePath string, isDebugLog bool) {
 	if isDebugLog {
 		logLevel = "DEBUG"
 	}
-	logging.SetLogLevel(logLevel)
 	logging.Init(LOG_FILE, INIT_LOG_FILE, logFilePath, os.Getpid())
+	logging.SetLogLevel(logLevel)
 	logger = logging.GetLogger("Init")
 }
 

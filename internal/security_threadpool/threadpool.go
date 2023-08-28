@@ -6,7 +6,7 @@ package security_threadpool
 import (
 	"fmt"
 
-	"github.com/sirupsen/logrus"
+	logging "github.com/newrelic/csec-go-agent/internal/security_logs"
 )
 
 type Task interface {
@@ -16,11 +16,11 @@ type Task interface {
 type ThreadPool struct {
 	jobs        chan interface{}
 	closeHandle chan bool
-	logger      *logrus.Entry
+	logger      logging.Logger
 	name        string
 }
 
-func NewThreadPool(queueSize int, noOfThreads int, logger *logrus.Entry, name string) *ThreadPool {
+func NewThreadPool(queueSize int, noOfThreads int, logger logging.Logger, name string) *ThreadPool {
 	tr := &ThreadPool{}
 	tr.jobs = make(chan interface{}, queueSize)
 	tr.closeHandle = make(chan bool)
@@ -44,6 +44,9 @@ func (tr *ThreadPool) PendingTask() int {
 }
 func (tr *ThreadPool) IsTaskPoolEmpty() bool {
 	return len(tr.jobs) == 0
+}
+func (tr *ThreadPool) RemainingCapacity() int {
+	return cap(tr.jobs) - len(tr.jobs)
 }
 func (tr *ThreadPool) createThreadPool(noOfThreads int) {
 	for i := 0; i < noOfThreads; i++ {

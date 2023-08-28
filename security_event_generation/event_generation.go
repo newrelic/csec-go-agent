@@ -98,7 +98,7 @@ func SendSecHealthCheck() {
 	serviceStatus := getServiceStatus()
 	hc.ServiceStatus = serviceStatus
 
-	healthCheck, _ := sendEvent(hc)
+	healthCheck, _ := sendPriorityEvent(hc)
 	HcBuffer.ForceInsert(healthCheck)
 	populateStatusLogs(serviceStatus, stats)
 
@@ -276,6 +276,10 @@ func SendVulnerableEvent(req *secUtils.Info_req, category string, args interface
 		tmp_event.IsIASTEnable = true
 	}
 
+	if tmp_event.HTTPRequest.ServerPort == "" {
+		tmp_event.HTTPRequest.ServerPort = "-1"
+	}
+
 	if tmp_event.HTTPRequest.IsGRPC {
 		body := (*req).GrpcBody
 		grpc_bodyJson, err1 := json.Marshal(body)
@@ -330,6 +334,18 @@ func SendUpdatedPolicy(policy secConfig.Policy) {
 	}
 }
 
+func IASTDataRequest(batchSize int, completedRequestIds []string) {
+	var tmp_event IASTDataRequestBeen
+	tmp_event.CompletedRequestIds = completedRequestIds
+	tmp_event.BatchSize = batchSize
+	tmp_event.ApplicationUUID = secConfig.GlobalInfo.ApplicationInfo.GetAppUUID()
+	tmp_event.JSONName = "iast-data-request"
+	_, err := sendEvent(tmp_event)
+	if err != nil {
+		logger.Errorln(err)
+	}
+}
+
 func sendEvent(event interface{}) (string, error) {
 	event_json, err := json.Marshal(event)
 	if err != nil {
@@ -339,6 +355,22 @@ func sendEvent(event interface{}) (string, error) {
 	logger.Debugln("ready to send : ", string(event_json))
 	if secConfig.SecureWS != nil {
 		(secConfig.SecureWS).RegisterEvent([]byte(string(event_json)))
+		return string(event_json), nil
+	} else {
+		logger.Errorln("websocket not configured to send event")
+		return string(event_json), errors.New("websocket not configured to send event")
+	}
+}
+
+func sendPriorityEvent(event interface{}) (string, error) {
+	event_json, err := json.Marshal(event)
+	if err != nil {
+		logger.Errorln("Marshal JSON before send", err)
+		return "", err
+	}
+	if secConfig.SecureWS != nil {
+		logger.Debugln("sending priority event", string(event_json))
+		(secConfig.SecureWS).SendPriorityEvent(event_json)
 		return string(event_json), nil
 	} else {
 		logger.Errorln("websocket not configured to send event")

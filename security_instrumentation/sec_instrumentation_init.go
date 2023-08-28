@@ -55,6 +55,7 @@ func init_hooks() {
 	initOshooks()
 	initFilehooks()
 	secIntercept.SetHooked()
+	logging.EndStage("6", "Application instrumentation applied successfully")
 
 }
 

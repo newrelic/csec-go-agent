@@ -110,7 +110,7 @@ func TraceFileOperation(fname string, flag int, isFileOpen bool) *secUtils.Event
  */
 
 func TraceSystemCommand(command string) *secUtils.EventTracker {
-	if !isAgentInitialized() {
+	if !isAgentInitialized() || command == "" {
 		return nil
 	}
 	var arg []string
@@ -131,6 +131,9 @@ func TraceMongoHooks(e error) {
 
 func TraceMongoOperation(arguments []byte, queryType string) *secUtils.EventTracker {
 	if !isAgentInitialized() {
+		return nil
+	}
+	if len(arguments) == 0 {
 		return nil
 	}
 	var arg11 []interface{}
@@ -166,6 +169,9 @@ func TraceSqlOperation(query string, args ...interface{}) *secUtils.EventTracker
 	if !isAgentInitialized() {
 		return nil
 	}
+	if query == "" {
+		return nil
+	}
 	var arg11 []interface{}
 	parameters := map[int]interface{}{}
 	for i := range args {
@@ -183,6 +189,9 @@ func TraceSqlOperation(query string, args ...interface{}) *secUtils.EventTracker
 
 func TracePrepareStatement(q, p string) {
 	if !isAgentInitialized() {
+		return
+	}
+	if q == "" {
 		return
 	}
 	secConfig.Secure.SecurePrepareStatement(q, p)
@@ -206,7 +215,7 @@ func TraceExecPrepareStatement(q_address string, args ...interface{}) *secUtils.
  */
 
 func TraceXpathOperation(a string) *secUtils.EventTracker {
-	if !isAgentInitialized() {
+	if !isAgentInitialized() || a == "" {
 		return nil
 	}
 	var arg []string
@@ -232,7 +241,7 @@ func TraceLdapOperation(a map[string]string) *secUtils.EventTracker {
  */
 
 func TraceJsOperation(a string) *secUtils.EventTracker {
-	if !isAgentInitialized() {
+	if !isAgentInitialized() || a == "" {
 		return nil
 	}
 	var arg []string
@@ -548,12 +557,12 @@ func createFuzzFile(fuzzheaders string) (tmpFiles []string) {
 				if dir != "" {
 					err := os.MkdirAll(dir, os.ModePerm)
 					if err != nil {
-						logger.Info("Error while creating file : ", err.Error())
+						logger.Debugln("Error while creating file : ", err.Error())
 					}
 				}
 				emptyFile, err := os.Create(fileName)
 				if err != nil {
-					logger.Info("Error while creating file : ", err.Error(), fileName)
+					logger.Debugln("Error while creating file : ", err.Error(), fileName)
 				}
 				emptyFile.Close()
 			}
@@ -566,7 +575,7 @@ func removeFuzzFile(tmpFiles []string) {
 	for _, path := range tmpFiles {
 		err := os.Remove(path)
 		if err != nil {
-			logger.Errorln("Error while removing created file : ", err.Error(), path)
+			logger.Debugln("Error while removing created file : ", err.Error(), path)
 		}
 	}
 }
@@ -655,7 +664,9 @@ func UpdateLinkData(linkingMetadata map[string]string) {
 		if ok {
 			secConfig.GlobalInfo.MetaData.SetAgentRunId(agentRunId)
 		}
-		secConfig.SecureWS.ReconnectAtAgentRefresh()
+		if secConfig.SecureWS != nil {
+			secConfig.SecureWS.ReconnectAtAgentRefresh()
+		}
 	}
 
 }
@@ -702,6 +713,7 @@ func SendEvent(caseType string, data ...interface{}) interface{} {
 		secConfig.Secure.DissociateInboundRequest()
 	case "APP_INFO":
 		associateApplicationPort(data...)
+
 	}
 	return nil
 }
@@ -724,7 +736,7 @@ func outboundcallHandler(req interface{}) *secUtils.EventTracker {
 		return nil
 	}
 	r, ok := req.(*http.Request)
-	if !ok {
+	if !ok || r.URL.String() == "" {
 		return nil
 	}
 	var args []interface{}
@@ -841,6 +853,7 @@ func associateApplicationPort(data ...interface{}) {
 	add, ok := data[0].(string)
 	if ok {
 		AssociateApplicationPort(add)
+		ProcessInit("http")
 	}
 }
 
