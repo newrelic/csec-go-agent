@@ -12,6 +12,7 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -86,6 +87,7 @@ func (ws *websocket) makeConnection() (bool, bool) {
 		validatorEndpoint = validatorDefaultEndpoint
 	}
 	connectionHeader := getConnectionHeader()
+	printConnectionHeader(connectionHeader)
 
 	var wsDialer = &gorillaWS.Dialer{
 		Proxy:            http.ProxyFromEnvironment,
@@ -359,6 +361,16 @@ func getConnectionHeader() http.Header {
 		"NR-CSEC-IAST-DATA-TRANSFER-MODE": []string{"PULL"},
 	}
 
+}
+
+func printConnectionHeader(header http.Header) {
+	for i, j := range header {
+		if i == "NR-LICENSE-KEY" {
+			logger.Infoln("Adding WS connection header:", i, "->", "redacted")
+		} else {
+			logger.Infoln("Adding WS connection header:", i, "->", strings.Join(j, ""))
+		}
+	}
 }
 
 func increaseEventProcessed(event []byte) {
