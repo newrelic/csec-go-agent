@@ -46,6 +46,12 @@ func (ws *websocket) pendingEvent() int {
 	return len(ws.eventBuffer)
 }
 
+func (ws *websocket) clean() {
+	for len(ws.eventBuffer) != 0 {
+		<-ws.eventBuffer
+	}
+}
+
 func (ws *websocket) write(s []byte) bool {
 	ws.Lock()
 	defer ws.Unlock()
@@ -201,10 +207,12 @@ func (ws *websocket) closeWs() {
 		ws.conn.Close()
 	}
 	ws.conn = nil
+	FuzzHandler.IASTCleanUp()
+	ws.clean()
 	ws.Unlock()
 }
 
-func (ws *websocket) RegisterEvent(s []byte) {
+func (ws *websocket) RegisterEvent(s []byte, eventID string) {
 	increaseEventProcessed(s)
 	if !ws.isWsConnected() {
 		increaseEventDropCount(s)
@@ -215,6 +223,9 @@ func (ws *websocket) RegisterEvent(s []byte) {
 	case ws.eventBuffer <- s:
 		logger.Debugln("Added EVENT", len(ws.eventBuffer), " ", cap(ws.eventBuffer))
 	default:
+		if eventID != "" {
+			FuzzHandler.RemoveCompletedRequestIds(eventID)
+		}
 		increaseEventDropCount(s)
 		logger.Errorln("cring.Full : Unable to add event to cring ", len(ws.eventBuffer), cap(ws.eventBuffer))
 	}
@@ -285,6 +296,10 @@ func (ws *websocket) ReconnectAtAgentRefresh() {
 	ws.reconnect()
 	secConfig.GlobalInfo.SetSecurityEnabled(true)
 	ws.reconnectWill.Unlock()
+}
+
+func (ws *websocket) AddCompletedRequests(parentId, apiID string) {
+	FuzzHandler.AppendCompletedRequestIds(parentId, apiID)
 }
 
 func InitializeWsConnecton() {

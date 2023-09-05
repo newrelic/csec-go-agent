@@ -53,6 +53,7 @@ type eventJson struct {
 	BlockingProcessingTime string               `json:"blockingProcessingTime"`
 	IsAPIBlocked           bool                 `json:"isAPIBlocked"`
 	IsIASTEnable           bool                 `json:"isIASTEnable"`
+	ParentId               string               `json:"parentId"`
 	IsIASTRequest          bool                 `json:"isIASTRequest"`
 	secUtils.VulnerabilityDetails
 }
@@ -155,10 +156,11 @@ type FuzzFailBean struct {
 }
 
 type IASTDataRequestBeen struct {
-	JSONName            string   `json:"jsonName"`
-	ApplicationUUID     string   `json:"applicationUUID"`
-	BatchSize           int      `json:"batchSize"`
-	CompletedRequestIds []string `json:"completedRequestIds"`
+	JSONName          string      `json:"jsonName"`
+	ApplicationUUID   string      `json:"applicationUUID"`
+	BatchSize         int         `json:"batchSize"`
+	CompletedRequests interface{} `json:"completedRequests"`
+	PendingRequestIds []string    `json:"pendingRequestIds"`
 }
 
 type UrlMappingBeen struct {

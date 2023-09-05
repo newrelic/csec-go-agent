@@ -35,7 +35,8 @@ const (
 	IAST_SEP                = ":IAST:"
 	EARLY_EXIT              = "Early Exit, csec agent is not initlized"
 	NR_CSEC_TRACING_DATA    = "NR-CSEC-TRACING-DATA"
-	NR_CSEC_FUZZ_REQUEST_ID = "NR-CSEC-FUZZ-REQUEST-ID"
+	NR_CSEC_FUZZ_REQUEST_ID = "nr-csec-fuzz-request-id"
+	NR_CSEC_PARENT_ID       = "NR-CSEC-PARENT-ID"
 )
 
 /**
@@ -296,11 +297,15 @@ func TraceIncommingRequest(url, host string, hdrMap map[string][]string, method 
 	filterHeader := map[string]string{}
 	RequestIdentifier := ""
 	traceData := ""
+	parentID := ""
+
 	for k, v := range hdrMap {
 		if secUtils.CaseInsensitiveEquals(k, NR_CSEC_TRACING_DATA) {
 			traceData = strings.Join(v, ",")
 		} else if secUtils.CaseInsensitiveEquals(k, NR_CSEC_FUZZ_REQUEST_ID) {
 			RequestIdentifier = strings.Join(v, ",")
+		} else if secUtils.CaseInsensitiveEquals(k, NR_CSEC_PARENT_ID) {
+			parentID = strings.Join(v, ",")
 		} else {
 			filterHeader[k] = strings.Join(v, ",")
 		}
@@ -331,6 +336,7 @@ func TraceIncommingRequest(url, host string, hdrMap map[string][]string, method 
 	(*infoReq).RequestIdentifier = RequestIdentifier
 	(*infoReq).Request.ServerName = serverName
 	(*infoReq).TmpFiles = createFuzzFile(RequestIdentifier)
+	(*infoReq).ParentID = parentID
 	if type1 == "gRPC" {
 		(*infoReq).Request.IsGRPC = true
 	}
