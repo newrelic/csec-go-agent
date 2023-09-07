@@ -316,6 +316,9 @@ func TraceIncommingRequest(url, host string, hdrMap map[string][]string, method 
 	if RequestIdentifier != "" {
 		filterHeader[NR_CSEC_FUZZ_REQUEST_ID] = RequestIdentifier
 	}
+	if parentID != "" {
+		filterHeader[NR_CSEC_PARENT_ID] = parentID
+	}
 	kb := bytes.TrimRight(body, "\x00")
 	kbb := string(kb)
 	// record incoming request
