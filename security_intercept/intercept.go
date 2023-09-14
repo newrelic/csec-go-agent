@@ -722,6 +722,8 @@ func SendEvent(caseType string, data ...interface{}) interface{} {
 		secConfig.Secure.DissociateInboundRequest()
 	case "APP_INFO":
 		associateApplicationPort(data...)
+	case "DYNAMO_DB":
+		dynamodbHandler(data...)
 
 	}
 	return nil
@@ -910,6 +912,12 @@ func DistributedTraceHeaders(hdrs *http.Request, secureAgentevent interface{}) {
 		}
 	}
 
+}
+func dynamodbHandler(data ...interface{}) {
+	if data == nil || !isAgentInitialized() {
+		return
+	}
+	secConfig.Secure.SendEvent("DYNAMO_DB_COMMAND", data[0])
 }
 
 func DeactivateSecurity() {
