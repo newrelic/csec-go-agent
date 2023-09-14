@@ -22,7 +22,7 @@ import (
 type SecGrpcFuzz struct {
 }
 
-func (grpcFuzz SecGrpcFuzz) ExecuteFuzzRequest(fuzzRequest *sechandler.FuzzRequrestHandler, caseType string) {
+func (grpcFuzz SecGrpcFuzz) ExecuteFuzzRequest(fuzzRequest *sechandler.FuzzRequrestHandler, caseType string, fuzzId string) {
 	fuzzRequestID := fmt.Sprintf("%v", fuzzRequest.Headers[secIntercept.NR_CSEC_FUZZ_REQUEST_ID])
 
 	var grpcBody []interface{}
@@ -62,6 +62,10 @@ func (grpcFuzz SecGrpcFuzz) ExecuteFuzzRequest(fuzzRequest *sechandler.FuzzRequr
 	if len(url) > 1 && strings.HasPrefix(url, "/") {
 		url = url[1:]
 	}
+
+	sechandler.FuzzHandler.AppendCompletedRequestIds(fuzzId, "")
+	tmp := fmt.Sprintf("%s: %s", "nr-csec-parent-id", fuzzId)
+	headers = append(headers, tmp)
 
 	h := &secGrpcHandler{
 		reqMessages:        finalData,
