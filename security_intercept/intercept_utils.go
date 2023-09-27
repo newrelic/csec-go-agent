@@ -188,3 +188,8 @@ type webRequest interface {
 	Type1() string
 	GetRemoteAddress() string
 }
+
+type parameters struct {
+	Payload     interface{} `json:"payload"`
+	PayloadType interface{} `json:"payloadType"`
+}

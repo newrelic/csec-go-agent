@@ -244,6 +244,11 @@ func SendVulnerableEvent(req *secUtils.Info_req, category string, args interface
 		eventCategory = "SQLITE"
 	} else if category == "NOSQL_DB_COMMAND" {
 		eventCategory = "MONGO"
+	} else if category == "REDIS_DB_COMMAND" {
+		eventCategory = "REDIS"
+		category = "SQL_DB_COMMAND"
+	} else if category == "DYNAMO_DB_COMMAND" {
+		eventCategory = "DQL"
 	}
 
 	tmp_event.ID = eventId

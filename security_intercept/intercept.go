@@ -724,7 +724,8 @@ func SendEvent(caseType string, data ...interface{}) interface{} {
 		associateApplicationPort(data...)
 	case "DYNAMO_DB":
 		dynamodbHandler(data...)
-
+	case "REDIS":
+		redisHandler(data...)
 	}
 	return nil
 }
@@ -918,6 +919,14 @@ func dynamodbHandler(data ...interface{}) {
 		return
 	}
 	secConfig.Secure.SendEvent("DYNAMO_DB_COMMAND", data[0])
+}
+
+func redisHandler(data ...interface{}) {
+	if data == nil || !isAgentInitialized() {
+		return
+	}
+
+	secConfig.Secure.SendEvent("REDIS_DB_COMMAND", data)
 }
 
 func DeactivateSecurity() {
