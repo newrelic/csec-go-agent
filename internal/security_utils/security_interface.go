@@ -41,7 +41,7 @@ type Secureiface interface {
 // interface: websocket interface
 // ---------------------------------------------------
 type SecureWSiface interface {
-	RegisterEvent([]byte, string)
+	RegisterEvent([]byte, string, string)
 	GetStatus() bool
 	ReconnectAtAgentRefresh()
 	ReconnectAtWill()

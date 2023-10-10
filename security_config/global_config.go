@@ -166,105 +166,36 @@ func (m *metaData) SetLinkingMetadata(value interface{}) {
 
 // EventData used to track number of request
 type eventData struct {
-	eventDropCount   uint64
-	eventProcessed   uint64
-	eventSentCount   uint64
 	httpRequestCount uint64
+	iastEventStats   EventStats
+	raspEventStats   EventStats
+	exitEventStats   EventStats
 	sync.Mutex
 }
 
-func (e *eventData) GetEventDropCount() uint64 {
+func (e *eventData) GetIastEventStats() *EventStats {
 	if e == nil {
-		return 0
+		return &EventStats{}
 	}
 	e.Lock()
 	defer e.Unlock()
-	return e.eventDropCount
+	return &e.iastEventStats
 }
-
-func (e *eventData) SetEventDropCount(value uint64) {
+func (e *eventData) GetRaspEventStats() *EventStats {
 	if e == nil {
-		return
+		return &EventStats{}
 	}
 	e.Lock()
 	defer e.Unlock()
-	e.eventDropCount = value
+	return &e.raspEventStats
 }
-
-func (e *eventData) IncreaseEventDropCount() {
+func (e *eventData) GetExitEventStats() *EventStats {
 	if e == nil {
-		return
+		return &EventStats{}
 	}
 	e.Lock()
 	defer e.Unlock()
-
-	e.eventDropCount++
-	if e.eventDropCount == 0 {
-		e.eventDropCount = math.MaxUint64
-	}
-}
-
-func (e *eventData) GetEventProcessed() uint64 {
-	if e == nil {
-		return 0
-	}
-	e.Lock()
-	defer e.Unlock()
-	return e.eventProcessed
-}
-
-func (e *eventData) SetEventProcessed(value uint64) {
-	if e == nil {
-		return
-	}
-	e.Lock()
-	defer e.Unlock()
-	e.eventProcessed = value
-}
-
-func (e *eventData) IncreaseEventProcessed() {
-	if e == nil {
-		return
-	}
-	e.Lock()
-	defer e.Unlock()
-
-	e.eventProcessed++
-	if e.eventProcessed == 0 {
-		e.eventProcessed = math.MaxUint64
-	}
-}
-
-func (e *eventData) GetEventSentCount() uint64 {
-	if e == nil {
-		return 0
-	}
-	e.Lock()
-	defer e.Unlock()
-	return e.eventSentCount
-}
-
-func (e *eventData) SetEventSentCount(value uint64) {
-	if e == nil {
-		return
-	}
-	e.Lock()
-	defer e.Unlock()
-
-	e.eventSentCount = value
-}
-
-func (e *eventData) IncreaseEventSentCount() {
-	if e == nil {
-		return
-	}
-	e.Lock()
-	defer e.Unlock()
-
-	e.eventSentCount++
-	if e.eventSentCount == 0 {
-		e.eventSentCount = math.MaxUint64
-	}
+	return &e.exitEventStats
 }
 
 func (e *eventData) GetHttpRequestCount() uint64 {
@@ -296,6 +227,67 @@ func (e *eventData) IncreaseHttpRequestCount() {
 	e.httpRequestCount++
 	if e.httpRequestCount == 0 {
 		e.httpRequestCount = math.MaxUint64
+	}
+}
+
+func (e *eventData) ResetEventStats() {
+	if e == nil {
+		return
+	}
+	e.Lock()
+	defer e.Unlock()
+
+	e.iastEventStats = EventStats{}
+	e.raspEventStats = EventStats{}
+	e.exitEventStats = EventStats{}
+	return
+}
+
+type EventStats struct {
+	Processed  uint64 `json:"processed"`
+	Sent       uint64 `json:"sent"`
+	Rejected   uint64 `json:"rejected"`
+	ErrorCount uint64 `json:"errorCount"`
+}
+
+func (e *EventStats) IncreaseEventProcessedCount() {
+	if e == nil {
+		return
+	}
+	e.Processed++
+	if e.Processed == 0 {
+		e.Processed = math.MaxUint64
+	}
+}
+
+func (e *EventStats) IncreaseEventSentCount() {
+	if e == nil {
+		return
+	}
+	e.Sent++
+	if e.Sent == 0 {
+		e.Sent = math.MaxUint64
+	}
+}
+
+func (e *EventStats) IncreaseEventRejectedCount() {
+	if e == nil {
+		return
+	}
+
+	e.Rejected++
+	if e.Rejected == 0 {
+		e.Rejected = math.MaxUint64
+	}
+}
+
+func (e *EventStats) IncreaseEventErrorCount() {
+	if e == nil {
+		return
+	}
+	e.ErrorCount++
+	if e.ErrorCount == 0 {
+		e.ErrorCount = math.MaxUint64
 	}
 }
 

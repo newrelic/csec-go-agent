@@ -89,9 +89,14 @@ func SendSecHealthCheck() {
 	hc.EventType = "sec_health_check_lc"
 	hc.ApplicationIdentifiers = getApplicationIdentifiers("LAhealthcheck")
 	hc.ProtectedServer = secConfig.GlobalInfo.ApplicationInfo.GetProtectedServer()
-	hc.EventDropCount = secConfig.GlobalInfo.EventData.GetEventDropCount()
-	hc.EventProcessed = secConfig.GlobalInfo.EventData.GetEventProcessed()
-	hc.EventSentCount = secConfig.GlobalInfo.EventData.GetEventSentCount()
+	hc.IastEventStats = *secConfig.GlobalInfo.EventData.GetIastEventStats()
+	hc.RaspEventStats = *secConfig.GlobalInfo.EventData.GetRaspEventStats()
+	hc.ExitEventStats = *secConfig.GlobalInfo.EventData.GetExitEventStats()
+
+	hc.EventDropCount = hc.IastEventStats.Rejected + hc.RaspEventStats.Rejected + hc.ExitEventStats.Rejected
+	hc.EventProcessed = hc.IastEventStats.Processed + hc.RaspEventStats.Processed + hc.ExitEventStats.Rejected
+	hc.EventSentCount = hc.IastEventStats.Sent + hc.RaspEventStats.Sent + hc.ExitEventStats.Rejected
+
 	hc.HTTPRequestCount = secConfig.GlobalInfo.EventData.GetHttpRequestCount()
 	stats := sysInfo.GetStats(secConfig.GlobalInfo.ApplicationInfo.GetPid(), secConfig.GlobalInfo.ApplicationInfo.GetBinaryPath())
 	hc.Stats = stats
@@ -102,10 +107,8 @@ func SendSecHealthCheck() {
 	HcBuffer.ForceInsert(healthCheck)
 	populateStatusLogs(serviceStatus, stats)
 
-	secConfig.GlobalInfo.EventData.SetEventDropCount(0)
-	secConfig.GlobalInfo.EventData.SetEventProcessed(0)
-	secConfig.GlobalInfo.EventData.SetEventSentCount(0)
 	secConfig.GlobalInfo.EventData.SetHttpRequestCount(0)
+	secConfig.GlobalInfo.EventData.ResetEventStats()
 }
 
 func SendApplicationInfo() {
@@ -213,7 +216,7 @@ func SendApplicationInfo() {
 	appInfo.BinaryPath = secConfig.GlobalInfo.ApplicationInfo.GetBinaryPath()
 	appInfo.AgentAttachmentType = "STATIC"
 
-	app, err := sendEvent(appInfo, "")
+	app, err := sendEvent(appInfo, "", "")
 	if err != nil && initlogs {
 		logging.PrintInitErrolog("Error while Sending ApplicationInfo " + err.Error())
 		return
@@ -230,7 +233,7 @@ func SendFuzzFailEvent(fuzzHeader string) {
 	var fuzzFailEvent FuzzFailBean
 	fuzzFailEvent.FuzzHeader = fuzzHeader
 	fuzzFailEvent.ApplicationIdentifiers = getApplicationIdentifiers("fuzzfail")
-	_, err := sendEvent(fuzzFailEvent, "")
+	_, err := sendEvent(fuzzFailEvent, "", "")
 	if err != nil {
 		logger.Errorln(err)
 	}
@@ -274,8 +277,10 @@ func SendVulnerableEvent(req *secUtils.Info_req, category string, args interface
 		}
 	}
 
+	requestType := "raspEvent"
 	if secConfig.GlobalInfo.GetCurrentPolicy().VulnerabilityScan.Enabled && secConfig.GlobalInfo.GetCurrentPolicy().VulnerabilityScan.IastScan.Enabled {
 		if fuzzHeader != "" {
+			requestType = "iastEvent"
 			tmp_event.IsIASTRequest = true
 		}
 		tmp_event.IsIASTEnable = true
@@ -304,7 +309,7 @@ func SendVulnerableEvent(req *secUtils.Info_req, category string, args interface
 		}
 	}
 
-	event_json, err1 := sendEvent(tmp_event, req.ParentID)
+	event_json, err1 := sendEvent(tmp_event, req.ParentID, requestType)
 	if err1 != nil {
 		logger.Errorln("JSON invalid" + string(event_json))
 		return nil
@@ -328,7 +333,7 @@ func SendExitEvent(eventTracker *secUtils.EventTracker, requestIdentifier string
 	tmp_event.RequestIdentifier = eventTracker.RequestIdentifier
 	tmp_event.CaseType = eventTracker.CaseType
 	tmp_event.ExecutionId = eventTracker.ID
-	_, err := sendEvent(tmp_event, "")
+	_, err := sendEvent(tmp_event, "", "exitEvent")
 	if err != nil {
 		logger.Errorln(err)
 	}
@@ -341,7 +346,7 @@ func SendUpdatedPolicy(policy secConfig.Policy) {
 		secConfig.Policy
 	}
 
-	_, err := sendEvent(policy1{"lc-policy", policy}, "")
+	_, err := sendEvent(policy1{"lc-policy", policy}, "", "")
 	if err != nil {
 		logger.Errorln(err)
 	}
@@ -354,13 +359,13 @@ func IASTDataRequest(batchSize int, completedRequestIds interface{}, pendingRequ
 	tmp_event.BatchSize = batchSize
 	tmp_event.ApplicationUUID = secConfig.GlobalInfo.ApplicationInfo.GetAppUUID()
 	tmp_event.JSONName = "iast-data-request"
-	_, err := sendEvent(tmp_event, "")
+	_, err := sendEvent(tmp_event, "", "")
 	if err != nil {
 		logger.Errorln(err)
 	}
 }
 
-func sendEvent(event interface{}, eventID string) (string, error) {
+func sendEvent(event interface{}, eventID, eventType string) (string, error) {
 	event_json, err := json.Marshal(event)
 	if err != nil {
 		logger.Errorln("Marshal JSON before send", err)
@@ -368,7 +373,7 @@ func sendEvent(event interface{}, eventID string) (string, error) {
 	}
 	logger.Debugln("ready to send : ", string(event_json))
 	if secConfig.SecureWS != nil {
-		(secConfig.SecureWS).RegisterEvent([]byte(string(event_json)), eventID)
+		(secConfig.SecureWS).RegisterEvent([]byte(string(event_json)), eventID, eventType)
 		return string(event_json), nil
 	} else {
 		logger.Errorln("websocket not configured to send event")
