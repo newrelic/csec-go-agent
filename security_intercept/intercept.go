@@ -663,6 +663,10 @@ func UpdateLinkData(linkingMetadata map[string]string) {
 		if ok {
 			secConfig.GlobalInfo.MetaData.SetAgentRunId(agentRunId)
 		}
+		entityGuid, ok := linkingMetadata["entity.guid"]
+		if ok {
+			secConfig.GlobalInfo.MetaData.SetEntityGuid(entityGuid)
+		}
 
 		if !IsDisable() && !IsForceDisable() {
 			go secWs.InitializeWsConnecton()

@@ -125,7 +125,20 @@ type metaData struct {
 	linkingMetadata interface{}
 	accountID       string
 	agentRunId      string
+	entityGuid      string
 	sync.Mutex
+}
+
+func (m *metaData) GetEntityGuid() string {
+	m.Lock()
+	defer m.Unlock()
+	return m.entityGuid
+}
+
+func (m *metaData) SetEntityGuid(value string) {
+	m.Lock()
+	defer m.Unlock()
+	m.entityGuid = value
 }
 
 func (m *metaData) GetAccountID() string {
