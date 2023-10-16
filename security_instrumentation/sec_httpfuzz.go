@@ -53,8 +53,7 @@ func getHttpsClient() *http.Client {
 	return httpsClient
 }
 
-func (httpFuzz SecHttpFuzz) ExecuteFuzzRequest(fuzzRequest *sechandler.FuzzRequrestHandler, caseType string) {
-
+func (httpFuzz SecHttpFuzz) ExecuteFuzzRequest(fuzzRequest *sechandler.FuzzRequrestHandler, caseType string, fuzzId string) {
 	fuzzRequestID := fmt.Sprintf("%v", fuzzRequest.Headers[secIntercept.NR_CSEC_FUZZ_REQUEST_ID])
 	applicationPort := ":" + strconv.Itoa(fuzzRequest.ServerPort)
 	fuzzRequestURL := secConfig.GlobalInfo.ApplicationInfo.GetServerIp() + applicationPort + fuzzRequest.Url
@@ -91,7 +90,9 @@ func (httpFuzz SecHttpFuzz) ExecuteFuzzRequest(fuzzRequest *sechandler.FuzzRequr
 		value := fmt.Sprintf("%v", headerValue)
 		req.Header.Set(headerKey, value)
 	}
+	sechandler.FuzzHandler.AppendCompletedRequestIds(fuzzId, "")
 	req.Header.Set("Content-Type", fuzzRequest.ContentType)
+	req.Header.Set("nr-csec-parent-id", fuzzId)
 
 	if fuzzRequestClient == nil {
 		logger.Debugln("Blackops client = nil")

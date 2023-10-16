@@ -18,6 +18,7 @@ type ThreadPool struct {
 	closeHandle chan bool
 	logger      logging.Logger
 	name        string
+	noOfThreads int
 }
 
 func NewThreadPool(queueSize int, noOfThreads int, logger logging.Logger, name string) *ThreadPool {
@@ -26,6 +27,7 @@ func NewThreadPool(queueSize int, noOfThreads int, logger logging.Logger, name s
 	tr.closeHandle = make(chan bool)
 	tr.logger = logger
 	tr.name = name
+	tr.noOfThreads = noOfThreads
 	tr.createThreadPool(noOfThreads)
 	return tr
 }
@@ -64,6 +66,12 @@ func (tr *ThreadPool) createThread(num int) {
 			tr.logger.Infoln("close thread poolName =", tr.name, "Number = ", num)
 			return
 		}
+	}
+}
+
+func (tr *ThreadPool) Clean() {
+	for i := 0; i < tr.noOfThreads; i++ {
+		tr.closeHandle <- true
 	}
 }
 

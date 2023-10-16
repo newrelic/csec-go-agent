@@ -14,6 +14,7 @@ type Info_req struct {
 	VulnerabilityDetails VulnerabilityDetails
 	TmpFiles             []string
 	ReflectedMetaData    ReflectedMetaData
+	ParentID             string
 }
 
 type ReflectedMetaData struct {

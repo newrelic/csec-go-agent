@@ -12,14 +12,17 @@ import (
 )
 
 type SecureFuzz interface {
-	ExecuteFuzzRequest(*FuzzRequrestHandler, string)
+	ExecuteFuzzRequest(*FuzzRequrestHandler, string, string)
 }
 
 type RestRequestThreadPool struct {
-	httpFuzzRestClient         SecureFuzz
-	grpsFuzzRestClient         SecureFuzz
-	threadPool                 *threadpool.ThreadPool
-	completedRequestIds        *sync.Map
+	httpFuzzRestClient SecureFuzz
+	grpsFuzzRestClient SecureFuzz
+	threadPool         *threadpool.ThreadPool
+
+	completedRequestIds *sync.Map
+	pendingRequestIds   *sync.Map
+
 	coolDownSleepTime          time.Time
 	lastFuzzRequestTime        time.Time
 	isFuzzSchedulerInitialized bool
@@ -50,10 +53,69 @@ func (r *RestRequestThreadPool) SetCoolDownSleepTime(coolDownSleepTimeInSecond i
 	r.coolDownSleepTime = coolDownSleepTime
 }
 
-func (r *RestRequestThreadPool) CompletedRequestIds() []string {
-	var keys []string
+func (r *RestRequestThreadPool) IASTCleanUp() {
+	if r.threadPool != nil {
+		r.completedRequestIds = &sync.Map{}
+		r.pendingRequestIds = &sync.Map{}
+		if !r.threadPool.IsTaskPoolEmpty() {
+			r.threadPool.Clean()
+			r.threadPool = threadpool.NewThreadPool(queueSize, maxPoolSize, logger, "RestRequestThreadPool")
+		}
+	}
+}
+
+func (r *RestRequestThreadPool) CompletedRequestIds() interface{} {
+	mapRequestIds := map[string]interface{}{}
+
 	if r.completedRequestIds != nil {
 		r.completedRequestIds.Range(func(key, value interface{}) bool {
+			mapRequestIds[key.(string)] = value
+			return true
+		})
+	}
+
+	return mapRequestIds
+}
+
+func (r *RestRequestThreadPool) SetCompletedRequestIds(completedRequestIds *sync.Map) {
+	r.completedRequestIds = completedRequestIds
+}
+
+func (r *RestRequestThreadPool) AppendCompletedRequestIds(requestId, apiId string) {
+	if apiId != "" {
+		result, ok := r.completedRequestIds.Load(requestId)
+		if ok {
+			results := result.([]string)
+			results = append(results, apiId)
+			r.completedRequestIds.Store(requestId, results)
+		} else {
+			r.completedRequestIds.Store(requestId, []string{apiId})
+		}
+	} else {
+		r.completedRequestIds.Store(requestId, []string{})
+	}
+}
+
+func (r *RestRequestThreadPool) RemoveCompletedRequestIds(requestId string) {
+	r.completedRequestIds.Delete(requestId)
+}
+
+func (r *RestRequestThreadPool) SetPendingRequestIds(pendingRequestIds *sync.Map) {
+	r.pendingRequestIds = pendingRequestIds
+}
+
+func (r *RestRequestThreadPool) AppendPendingRequestIds(requestId string) {
+	r.pendingRequestIds.Store(requestId, 1)
+}
+
+func (r *RestRequestThreadPool) RemovePendingRequestIds(requestId string) {
+	r.pendingRequestIds.Delete(requestId)
+}
+
+func (r *RestRequestThreadPool) PendingRequestIds() []string {
+	keys := []string{}
+	if r.pendingRequestIds != nil {
+		r.pendingRequestIds.Range(func(key, value interface{}) bool {
 			keys = append(keys, key.(string))
 			return true
 		})
@@ -61,18 +123,6 @@ func (r *RestRequestThreadPool) CompletedRequestIds() []string {
 	}
 
 	return keys
-}
-
-func (r *RestRequestThreadPool) SetCompletedRequestIds(completedRequestIds *sync.Map) {
-	r.completedRequestIds = completedRequestIds
-}
-
-func (r *RestRequestThreadPool) AppendCompletedRequestIds(requestId string) {
-	r.completedRequestIds.Store(requestId, 1)
-}
-
-func (r *RestRequestThreadPool) RemoveCompletedRequestIds(requestId string) {
-	r.completedRequestIds.Delete(requestId)
 }
 
 func (r *RestRequestThreadPool) InitHttpFuzzRestClient(rest SecureFuzz) {

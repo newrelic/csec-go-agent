@@ -35,7 +35,8 @@ const (
 	IAST_SEP                = ":IAST:"
 	EARLY_EXIT              = "Early Exit, csec agent is not initlized"
 	NR_CSEC_TRACING_DATA    = "NR-CSEC-TRACING-DATA"
-	NR_CSEC_FUZZ_REQUEST_ID = "NR-CSEC-FUZZ-REQUEST-ID"
+	NR_CSEC_FUZZ_REQUEST_ID = "nr-csec-fuzz-request-id"
+	NR_CSEC_PARENT_ID       = "NR-CSEC-PARENT-ID"
 )
 
 /**
@@ -296,11 +297,15 @@ func TraceIncommingRequest(url, host string, hdrMap map[string][]string, method 
 	filterHeader := map[string]string{}
 	RequestIdentifier := ""
 	traceData := ""
+	parentID := ""
+
 	for k, v := range hdrMap {
 		if secUtils.CaseInsensitiveEquals(k, NR_CSEC_TRACING_DATA) {
 			traceData = strings.Join(v, ",")
 		} else if secUtils.CaseInsensitiveEquals(k, NR_CSEC_FUZZ_REQUEST_ID) {
 			RequestIdentifier = strings.Join(v, ",")
+		} else if secUtils.CaseInsensitiveEquals(k, NR_CSEC_PARENT_ID) {
+			parentID = strings.Join(v, ",")
 		} else {
 			filterHeader[k] = strings.Join(v, ",")
 		}
@@ -310,6 +315,9 @@ func TraceIncommingRequest(url, host string, hdrMap map[string][]string, method 
 	}
 	if RequestIdentifier != "" {
 		filterHeader[NR_CSEC_FUZZ_REQUEST_ID] = RequestIdentifier
+	}
+	if parentID != "" {
+		filterHeader[NR_CSEC_PARENT_ID] = parentID
 	}
 	kb := bytes.TrimRight(body, "\x00")
 	kbb := string(kb)
@@ -331,6 +339,7 @@ func TraceIncommingRequest(url, host string, hdrMap map[string][]string, method 
 	(*infoReq).RequestIdentifier = RequestIdentifier
 	(*infoReq).Request.ServerName = serverName
 	(*infoReq).TmpFiles = createFuzzFile(RequestIdentifier)
+	(*infoReq).ParentID = parentID
 	if type1 == "gRPC" {
 		(*infoReq).Request.IsGRPC = true
 	}
@@ -654,6 +663,10 @@ func UpdateLinkData(linkingMetadata map[string]string) {
 		if ok {
 			secConfig.GlobalInfo.MetaData.SetAgentRunId(agentRunId)
 		}
+		entityGuid, ok := linkingMetadata["entity.guid"]
+		if ok {
+			secConfig.GlobalInfo.MetaData.SetEntityGuid(entityGuid)
+		}
 
 		if !IsDisable() && !IsForceDisable() {
 			go secWs.InitializeWsConnecton()
@@ -713,7 +726,10 @@ func SendEvent(caseType string, data ...interface{}) interface{} {
 		secConfig.Secure.DissociateInboundRequest()
 	case "APP_INFO":
 		associateApplicationPort(data...)
-
+	case "DYNAMO_DB":
+		dynamodbHandler(data...)
+	case "REDIS":
+		redisHandler(data...)
 	}
 	return nil
 }
@@ -901,6 +917,20 @@ func DistributedTraceHeaders(hdrs *http.Request, secureAgentevent interface{}) {
 		}
 	}
 
+}
+func dynamodbHandler(data ...interface{}) {
+	if data == nil || !isAgentInitialized() {
+		return
+	}
+	secConfig.Secure.SendEvent("DYNAMO_DB_COMMAND", data[0])
+}
+
+func redisHandler(data ...interface{}) {
+	if data == nil || !isAgentInitialized() {
+		return
+	}
+
+	secConfig.Secure.SendEvent("REDIS_DB_COMMAND", data)
 }
 
 func DeactivateSecurity() {

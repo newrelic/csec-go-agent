@@ -53,6 +53,7 @@ type eventJson struct {
 	BlockingProcessingTime string               `json:"blockingProcessingTime"`
 	IsAPIBlocked           bool                 `json:"isAPIBlocked"`
 	IsIASTEnable           bool                 `json:"isIASTEnable"`
+	ParentId               string               `json:"parentId"`
 	IsIASTRequest          bool                 `json:"isIASTRequest"`
 	secUtils.VulnerabilityDetails
 }
@@ -104,14 +105,17 @@ type userProvidedApplicationInfo struct {
 
 type healthcheck struct {
 	ApplicationIdentifiers
-	EventType        string      `json:"eventType"`
-	ProtectedServer  string      `json:"protectedServer"`
-	EventDropCount   uint64      `json:"eventDropCount"`
-	EventProcessed   uint64      `json:"eventProcessed"`
-	EventSentCount   uint64      `json:"eventSentCount"`
-	HTTPRequestCount uint64      `json:"httpRequestCount"`
-	Stats            interface{} `json:"stats"`
-	ServiceStatus    interface{} `json:"serviceStatus"`
+	EventType        string               `json:"eventType"`
+	ProtectedServer  string               `json:"protectedServer"`
+	EventDropCount   uint64               `json:"eventDropCount"`
+	EventProcessed   uint64               `json:"eventProcessed"`
+	EventSentCount   uint64               `json:"eventSentCount"`
+	HTTPRequestCount uint64               `json:"httpRequestCount"`
+	Stats            interface{}          `json:"stats"`
+	ServiceStatus    interface{}          `json:"serviceStatus"`
+	IastEventStats   secConfig.EventStats `json:"iastEventStats"`
+	RaspEventStats   secConfig.EventStats `json:"raspEventStats"`
+	ExitEventStats   secConfig.EventStats `json:"exitEventStats"`
 }
 
 type SourceID struct {
@@ -155,10 +159,11 @@ type FuzzFailBean struct {
 }
 
 type IASTDataRequestBeen struct {
-	JSONName            string   `json:"jsonName"`
-	ApplicationUUID     string   `json:"applicationUUID"`
-	BatchSize           int      `json:"batchSize"`
-	CompletedRequestIds []string `json:"completedRequestIds"`
+	JSONName          string      `json:"jsonName"`
+	ApplicationUUID   string      `json:"applicationUUID"`
+	BatchSize         int         `json:"batchSize"`
+	CompletedRequests interface{} `json:"completedRequests"`
+	PendingRequestIds []string    `json:"pendingRequestIds"`
 }
 
 type UrlMappingBeen struct {
