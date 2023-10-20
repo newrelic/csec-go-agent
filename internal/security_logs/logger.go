@@ -103,3 +103,7 @@ func (f *logFile) cleanCache() {
 	}
 	f.cache = make([]interface{}, 0)
 }
+
+func (f *logFile) IsDebug() bool{
+	return f.isDebugMode
+}

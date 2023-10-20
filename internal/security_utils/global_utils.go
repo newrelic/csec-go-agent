@@ -3,6 +3,10 @@
 
 package security_utils
 
+import "bytes"
+
+const MaxReadBodyLen = 300000
+
 type Info_req struct {
 	ResponseBody         string
 	ResponseContentType  string
@@ -15,6 +19,7 @@ type Info_req struct {
 	TmpFiles             []string
 	ReflectedMetaData    ReflectedMetaData
 	ParentID             string
+	BodyLimit            int
 }
 
 type ReflectedMetaData struct {
@@ -25,20 +30,27 @@ type ReflectedMetaData struct {
 }
 
 type RequestInfo struct {
-	Body         string              `json:"body"`
-	Headers      map[string]string   `json:"headers"`
-	URL          string              `json:"url"`
-	RawRequest   string              `json:"rawRequest"`
-	Method       string              `json:"method"`
-	ContentType  string              `json:"contentType"`
-	ContextPath  string              `json:"contextPath"`
-	ClientIP     string              `json:"clientIP"`
-	ClientPort   string              `json:"clientPort"`
-	ServerPort   string              `json:"serverPort"`
-	Protocol     string              `json:"protocol"`
-	ParameterMap map[string][]string `json:"parameterMap"`
-	IsGRPC       bool                `json:"isGrpc"`
-	ServerName   string              `json:"serverName"`
+	Body          string              `json:"body"`
+	Headers       map[string]string   `json:"headers"`
+	URL           string              `json:"url"`
+	RawRequest    string              `json:"rawRequest"`
+	Method        string              `json:"method"`
+	ContentType   string              `json:"contentType"`
+	ContextPath   string              `json:"contextPath"`
+	ClientIP      string              `json:"clientIP"`
+	ClientPort    string              `json:"clientPort"`
+	ServerPort    string              `json:"serverPort"`
+	Protocol      string              `json:"protocol"`
+	ParameterMap  map[string][]string `json:"parameterMap"`
+	IsGRPC        bool                `json:"isGrpc"`
+	ServerName    string              `json:"serverName"`
+	DataTruncated bool                `json:"dataTruncated"`
+	BodyReader    *bytes.Buffer
+}
+
+type ReqBodyWriter interface {
+	Write(b []byte) (int, error)
+	GetBody() string
 }
 
 type EventTracker struct {

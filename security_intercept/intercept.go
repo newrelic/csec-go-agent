@@ -283,7 +283,7 @@ func AssociateApplicationPort(data string) {
 
 // TraceIncommingRequest - interception of incoming request
 
-func TraceIncommingRequest(url, host string, hdrMap map[string][]string, method string, body []byte, queryparam map[string][]string, protocol, serverName, type1 string) {
+func TraceIncommingRequest(url, host string, hdrMap map[string][]string, method string, body string, queryparam map[string][]string, protocol, serverName, type1 string, bodyReader *bytes.Buffer) {
 	if !isAgentInitialized() {
 		return
 	}
@@ -319,8 +319,6 @@ func TraceIncommingRequest(url, host string, hdrMap map[string][]string, method 
 	if parentID != "" {
 		filterHeader[NR_CSEC_PARENT_ID] = parentID
 	}
-	kb := bytes.TrimRight(body, "\x00")
-	kbb := string(kb)
 	// record incoming request
 	infoReq := new(secUtils.Info_req)
 	(*infoReq).Request.URL = url
@@ -332,12 +330,14 @@ func TraceIncommingRequest(url, host string, hdrMap map[string][]string, method 
 	(*infoReq).Request.Headers = filterHeader
 	(*infoReq).GrpcByte = make([][]byte, 0)
 	(*infoReq).Request.Method = method
-	(*infoReq).Request.Body = kbb
+	(*infoReq).Request.Body = body
+	(*infoReq).Request.BodyReader = bodyReader
 	(*infoReq).Request.Protocol = protocol
 	(*infoReq).Request.ContentType = getContentType(filterHeader)
 	(*infoReq).ReqTraceData = traceData
 	(*infoReq).RequestIdentifier = RequestIdentifier
 	(*infoReq).Request.ServerName = serverName
+	(*infoReq).BodyLimit = secConfig.GlobalInfo.BodyLimit()
 	(*infoReq).TmpFiles = createFuzzFile(RequestIdentifier)
 	(*infoReq).ParentID = parentID
 	if type1 == "gRPC" {
@@ -529,7 +529,9 @@ func XssCheck() {
 			r.ResponseContentType = cType
 		}
 
+		fmt.Println("CheckForReflectedXSS")
 		out := secUtils.CheckForReflectedXSS(r)
+		fmt.Println("CheckForReflectedXSS end")
 		logger.Debugln("CheckForReflectedXSS out value is : ", out)
 
 		if len(out) == 0 && !secConfig.GlobalInfo.IsIASTEnable() {
@@ -736,6 +738,7 @@ func SendEvent(caseType string, data ...interface{}) interface{} {
 
 func inboundcallHandler(request interface{}) {
 	r := request.(webRequest)
+
 	queryparam := map[string][]string{}
 	for key, value := range r.GetURL().Query() {
 		queryparam[key] = value
@@ -744,7 +747,23 @@ func inboundcallHandler(request interface{}) {
 	if clientHost == "" {
 		clientHost = r.GetHost()
 	}
-	TraceIncommingRequest(r.GetURL().String(), clientHost, r.GetHeader(), r.GetMethod(), r.GetBody(), queryparam, r.GetTransport(), r.GetServerName(), r.Type1())
+
+	// requestBody := strings.Builder{}
+	// fmt.Println("CheckForReflectedXSS")
+	//io.Copy(io.Discard, r.GetBody())
+	// if r.GetBody() != nil || !secUtils.CaseInsensitiveContains(r.GetHeader().Get("Content-Type"), "multipart/form-data") {
+	// 	if len, err := strconv.Atoi(r.GetHeader().Get("Content-Length")); err == nil {
+	// 		if len > 1000000 {
+	// 			fmt.Println("discard")
+	// 			io.Copy(io.Discard, r.GetBody())
+	// 		}
+	// 	}
+	// 	// io.Copy(&requestBody, r.GetBody())
+	// 	// if len(requestBody.String()) > 1000000 {
+	// 	// 	requestBody = strings.Builder{}
+	// 	// }
+	// }
+	TraceIncommingRequest(r.GetURL().String(), clientHost, r.GetHeader(), r.GetMethod(), "", queryparam, r.GetTransport(), r.GetServerName(), r.Type1(), r.GetBody())
 }
 
 func outboundcallHandler(req interface{}) *secUtils.EventTracker {

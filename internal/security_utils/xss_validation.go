@@ -280,8 +280,13 @@ func decodeRequestData(rq *Info_req) []string {
 
 	vVal := processURLEncodedDataForXSS(rq.Request.URL)
 	processedData = append(processedData, vVal...)
-
-	body := rq.Request.Body
+	body := ""
+	if rq.Request.BodyReader != nil {
+		if rq.Request.BodyReader.Len() < rq.BodyLimit {
+			reader := *rq.Request.BodyReader
+			body = reader.String()
+		}
+	}
 	contentType := rq.Request.ContentType
 	if body != "" {
 		processedData = append(processedData, body)

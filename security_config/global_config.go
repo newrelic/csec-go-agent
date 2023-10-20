@@ -121,6 +121,15 @@ func (info *Info_struct) SecurityMode() string {
 	return info.security.Mode
 }
 
+func (info *Info_struct) BodyLimit() int {
+	return info.security.Request.BodyLimit * 100
+}
+
+func (info *Info_struct) SetBodyLimit(bodyLimit int) {
+	info.security.Request.BodyLimit = bodyLimit
+	return
+}
+
 type metaData struct {
 	linkingMetadata interface{}
 	accountID       string

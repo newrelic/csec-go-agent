@@ -4,6 +4,7 @@
 package security_intercept
 
 import (
+	"bytes"
 	"net/http"
 	"net/url"
 	"os"
@@ -183,7 +184,7 @@ type webRequest interface {
 	GetMethod() string
 	GetTransport() string
 	GetHost() string
-	GetBody() []byte
+	GetBody() *bytes.Buffer
 	GetServerName() string
 	Type1() string
 	GetRemoteAddress() string

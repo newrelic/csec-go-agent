@@ -223,7 +223,7 @@ func SendApplicationInfo() {
 	}
 	if initlogs {
 		logging.EndStage("3", "Gathering information about the application")
-		logging.PrintInitlog("Application info generated  " + app)
+		logging.PrintInitlog("Application info generated  " + string(app))
 		initlogs = false
 	}
 
@@ -261,6 +261,15 @@ func SendVulnerableEvent(req *secUtils.Info_req, category string, args interface
 	tmp_event.EventGenerationTime = strconv.FormatInt(time.Now().Unix()*1000, 10)
 	tmp_event.BlockingProcessingTime = "1"
 	tmp_event.HTTPRequest = req.Request
+
+	if req.Request.BodyReader != nil {
+		reader := *req.Request.BodyReader
+		if reader.Len() < secConfig.GlobalInfo.BodyLimit() {
+			tmp_event.HTTPRequest.Body = reader.String()
+		} else {
+			tmp_event.HTTPRequest.DataTruncated = true
+		}
+	}
 	tmp_event.VulnerabilityDetails = vulnerabilityDetails
 	tmp_event.ApplicationIdentifiers = getApplicationIdentifiers("Event")
 
@@ -365,19 +374,21 @@ func IASTDataRequest(batchSize int, completedRequestIds interface{}, pendingRequ
 	}
 }
 
-func sendEvent(event interface{}, eventID, eventType string) (string, error) {
+func sendEvent(event interface{}, eventID, eventType string) ([]byte, error) {
 	event_json, err := json.Marshal(event)
 	if err != nil {
 		logger.Errorln("Marshal JSON before send", err)
-		return "", err
+		return []byte{}, err
 	}
-	logger.Debugln("ready to send : ", string(event_json))
+	if logger.IsDebug() {
+		logger.Debugln("ready to send : ", string(event_json))
+	}
 	if secConfig.SecureWS != nil {
-		(secConfig.SecureWS).RegisterEvent([]byte(string(event_json)), eventID, eventType)
-		return string(event_json), nil
+		(secConfig.SecureWS).RegisterEvent(event_json, eventID, eventType)
+		return event_json, nil
 	} else {
 		logger.Errorln("websocket not configured to send event")
-		return string(event_json), errors.New("websocket not configured to send event")
+		return event_json, errors.New("websocket not configured to send event")
 	}
 }
 
