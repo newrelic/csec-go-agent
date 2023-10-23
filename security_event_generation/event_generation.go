@@ -263,12 +263,7 @@ func SendVulnerableEvent(req *secUtils.Info_req, category string, args interface
 	tmp_event.HTTPRequest = req.Request
 
 	if req.Request.BodyReader != nil {
-		reader := req.Request.BodyReader
-		if reader.Len() < secConfig.GlobalInfo.BodyLimit() {
-			tmp_event.HTTPRequest.Body = reader.String()
-		} else {
-			tmp_event.HTTPRequest.DataTruncated = true
-		}
+		tmp_event.HTTPRequest.Body, tmp_event.HTTPRequest.DataTruncated = req.Request.BodyReader.String()
 	}
 	tmp_event.VulnerabilityDetails = vulnerabilityDetails
 	tmp_event.ApplicationIdentifiers = getApplicationIdentifiers("Event")

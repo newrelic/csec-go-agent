@@ -49,7 +49,7 @@ type RequestInfo struct {
 type SecWriter interface {
 	Write(p []byte) (n int, err error)
 	Len() int
-	String() string
+	String() (string, bool)
 }
 
 type ReqBodyWriter interface {

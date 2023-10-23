@@ -282,10 +282,7 @@ func decodeRequestData(rq *Info_req) []string {
 	processedData = append(processedData, vVal...)
 	body := ""
 	if rq.Request.BodyReader != nil {
-		if rq.Request.BodyReader.Len() < rq.BodyLimit {
-			reader := rq.Request.BodyReader
-			body = reader.String()
-		}
+		body, _ = rq.Request.BodyReader.String()
 	}
 	contentType := rq.Request.ContentType
 	if body != "" {
