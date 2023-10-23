@@ -9,7 +9,6 @@ package security_intercept
  */
 
 import (
-	"bytes"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -283,7 +282,7 @@ func AssociateApplicationPort(data string) {
 
 // TraceIncommingRequest - interception of incoming request
 
-func TraceIncommingRequest(url, host string, hdrMap map[string][]string, method string, body string, queryparam map[string][]string, protocol, serverName, type1 string, bodyReader *bytes.Buffer) {
+func TraceIncommingRequest(url, host string, hdrMap map[string][]string, method string, body string, queryparam map[string][]string, protocol, serverName, type1 string, bodyReader secUtils.SecWriter) {
 	if !isAgentInitialized() {
 		return
 	}
@@ -763,7 +762,8 @@ func inboundcallHandler(request interface{}) {
 	// 	// 	requestBody = strings.Builder{}
 	// 	// }
 	// }
-	TraceIncommingRequest(r.GetURL().String(), clientHost, r.GetHeader(), r.GetMethod(), "", queryparam, r.GetTransport(), r.GetServerName(), r.Type1(), r.GetBody())
+	reqBodyWriter, _ := r.GetBody().(secUtils.SecWriter)
+	TraceIncommingRequest(r.GetURL().String(), clientHost, r.GetHeader(), r.GetMethod(), "", queryparam, r.GetTransport(), r.GetServerName(), r.Type1(), reqBodyWriter)
 }
 
 func outboundcallHandler(req interface{}) *secUtils.EventTracker {

@@ -263,7 +263,7 @@ func SendVulnerableEvent(req *secUtils.Info_req, category string, args interface
 	tmp_event.HTTPRequest = req.Request
 
 	if req.Request.BodyReader != nil {
-		reader := *req.Request.BodyReader
+		reader := req.Request.BodyReader
 		if reader.Len() < secConfig.GlobalInfo.BodyLimit() {
 			tmp_event.HTTPRequest.Body = reader.String()
 		} else {

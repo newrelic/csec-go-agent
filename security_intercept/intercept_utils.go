@@ -4,7 +4,6 @@
 package security_intercept
 
 import (
-	"bytes"
 	"net/http"
 	"net/url"
 	"os"
@@ -28,6 +27,10 @@ func IsDisable() bool {
 }
 func IsRXSSDisable() bool {
 	return !secConfig.GlobalInfo.IsRxssEnabled()
+}
+
+func RequestBodyReadLimit() int {
+	return secConfig.GlobalInfo.BodyLimit()
 }
 
 func IsHooked() bool {
@@ -184,7 +187,7 @@ type webRequest interface {
 	GetMethod() string
 	GetTransport() string
 	GetHost() string
-	GetBody() *bytes.Buffer
+	GetBody() interface{}
 	GetServerName() string
 	Type1() string
 	GetRemoteAddress() string

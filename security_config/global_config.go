@@ -122,7 +122,7 @@ func (info *Info_struct) SecurityMode() string {
 }
 
 func (info *Info_struct) BodyLimit() int {
-	return info.security.Request.BodyLimit * 100
+	return info.security.Request.BodyLimit * 1000
 }
 
 func (info *Info_struct) SetBodyLimit(bodyLimit int) {

@@ -3,8 +3,6 @@
 
 package security_utils
 
-import "bytes"
-
 const MaxReadBodyLen = 300000
 
 type Info_req struct {
@@ -45,7 +43,13 @@ type RequestInfo struct {
 	IsGRPC        bool                `json:"isGrpc"`
 	ServerName    string              `json:"serverName"`
 	DataTruncated bool                `json:"dataTruncated"`
-	BodyReader    *bytes.Buffer
+	BodyReader    SecWriter
+}
+
+type SecWriter interface {
+	Write(p []byte) (n int, err error)
+	Len() int
+	String() string
 }
 
 type ReqBodyWriter interface {

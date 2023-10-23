@@ -283,7 +283,7 @@ func decodeRequestData(rq *Info_req) []string {
 	body := ""
 	if rq.Request.BodyReader != nil {
 		if rq.Request.BodyReader.Len() < rq.BodyLimit {
-			reader := *rq.Request.BodyReader
+			reader := rq.Request.BodyReader
 			body = reader.String()
 		}
 	}
