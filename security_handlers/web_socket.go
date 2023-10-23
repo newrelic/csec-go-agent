@@ -27,6 +27,11 @@ var logger = logging.GetLogger("wsclient")
 
 const validatorDefaultEndpoint = "wss://csec.nr-data.net"
 
+type eventStruct struct {
+	event     []byte
+	eventType string
+}
+
 type websocket struct {
 	conn                 *gorillaWS.Conn
 	readcontroller       chan string
@@ -35,7 +40,7 @@ type websocket struct {
 	isWriteThreadRunning bool
 	sync.Mutex
 	reconnectWill sync.Mutex
-	eventBuffer   chan []byte
+	eventBuffer   chan eventStruct
 }
 
 func (ws *websocket) isWsConnected() bool {
@@ -46,19 +51,25 @@ func (ws *websocket) pendingEvent() int {
 	return len(ws.eventBuffer)
 }
 
-func (ws *websocket) write(s []byte) bool {
+func (ws *websocket) clean() {
+	for len(ws.eventBuffer) != 0 {
+		<-ws.eventBuffer
+	}
+}
+
+func (ws *websocket) write(s eventStruct) bool {
 	ws.Lock()
 	defer ws.Unlock()
 	if !ws.isWsConnected() {
 		return false
 	}
-	err := ws.conn.WriteMessage(gorillaWS.TextMessage, s)
+	err := ws.conn.WriteMessage(gorillaWS.TextMessage, s.event)
 	if err != nil {
 		logger.Errorln("Failed to send event over websocket : ", err.Error())
-		increaseEventDropCount(s)
+		increaseEventErrorCount(s.eventType)
 		return false
 	}
-	increaseEventEventSentCount(s)
+	increaseEventEventSentCount(s.eventType)
 	logger.Debugln("Event sent event over websocket done")
 	return true
 }
@@ -201,21 +212,26 @@ func (ws *websocket) closeWs() {
 		ws.conn.Close()
 	}
 	ws.conn = nil
+	FuzzHandler.IASTCleanUp()
+	ws.clean()
 	ws.Unlock()
 }
 
-func (ws *websocket) RegisterEvent(s []byte) {
-	increaseEventProcessed(s)
+func (ws *websocket) RegisterEvent(s []byte, eventID string, eventType string) {
+	increaseEventProcessed(eventType)
 	if !ws.isWsConnected() {
-		increaseEventDropCount(s)
+		increaseEventDropCount(eventType)
 		logger.Debugln("Drop event WS not connected or Reconnecting", len(ws.eventBuffer), cap(ws.eventBuffer))
 		return
 	}
 	select {
-	case ws.eventBuffer <- s:
+	case ws.eventBuffer <- eventStruct{event: s, eventType: eventType}:
 		logger.Debugln("Added EVENT", len(ws.eventBuffer), " ", cap(ws.eventBuffer))
 	default:
-		increaseEventDropCount(s)
+		if eventID != "" {
+			FuzzHandler.RemoveCompletedRequestIds(eventID)
+		}
+		increaseEventDropCount(eventType)
 		logger.Errorln("cring.Full : Unable to add event to cring ", len(ws.eventBuffer), cap(ws.eventBuffer))
 	}
 }
@@ -225,8 +241,10 @@ func (ws *websocket) SendPriorityEvent(s []byte) {
 		logger.Debugln("Drop priority event WS not connected or Reconnecting", len(ws.eventBuffer), cap(ws.eventBuffer))
 		return
 	}
-	logger.Debugln("priority event send", string(s))
-	ws.write(s)
+	if logger.IsDebug() {
+		logger.Debugln("priority event send", string(s))
+	}
+	ws.write(eventStruct{event: s, eventType: "PriorityEvent"})
 }
 
 func (ws *websocket) GetStatus() bool {
@@ -287,9 +305,13 @@ func (ws *websocket) ReconnectAtAgentRefresh() {
 	ws.reconnectWill.Unlock()
 }
 
+func (ws *websocket) AddCompletedRequests(parentId, apiID string) {
+	FuzzHandler.AppendCompletedRequestIds(parentId, apiID)
+}
+
 func InitializeWsConnecton() {
 	ws := new(websocket)
-	ws.eventBuffer = make(chan []byte, 10240)
+	ws.eventBuffer = make(chan eventStruct, 10240)
 	ws.readcontroller = make(chan string, 10)
 	ws.writecontroller = make(chan string, 10)
 	secConfig.SecureWS = ws
@@ -359,6 +381,7 @@ func getConnectionHeader() http.Header {
 		"NR-CSEC-JSON-VERSION":            []string{secUtils.JsonVersion},
 		"NR-ACCOUNT-ID":                   []string{secConfig.GlobalInfo.MetaData.GetAccountID()},
 		"NR-CSEC-IAST-DATA-TRANSFER-MODE": []string{"PULL"},
+		"NR-CSEC-ENTITY-GUID":             []string{secConfig.GlobalInfo.MetaData.GetEntityGuid()},
 	}
 
 }
@@ -373,25 +396,44 @@ func printConnectionHeader(header http.Header) {
 	}
 }
 
-func increaseEventProcessed(event []byte) {
-	if !secUtils.CaseInsensitiveContains(string(event), `"jsonName":"Event"`) {
-		return
+func increaseEventProcessed(eventType string) {
+	if eventType == "iastEvent" {
+		secConfig.GlobalInfo.EventData.GetIastEventStats().IncreaseEventProcessedCount()
+	} else if eventType == "raspEvent" {
+		secConfig.GlobalInfo.EventData.GetRaspEventStats().IncreaseEventProcessedCount()
+	} else if eventType == "exitEvent" {
+		secConfig.GlobalInfo.EventData.GetExitEventStats().IncreaseEventProcessedCount()
 	}
-	secConfig.GlobalInfo.EventData.IncreaseEventProcessed()
 }
 
-func increaseEventDropCount(event []byte) {
-	if !secUtils.CaseInsensitiveContains(string(event), `"jsonName":"Event"`) {
-		return
+func increaseEventDropCount(eventType string) {
+	if eventType == "iastEvent" {
+		secConfig.GlobalInfo.EventData.GetIastEventStats().IncreaseEventRejectedCount()
+	} else if eventType == "raspEvent" {
+		secConfig.GlobalInfo.EventData.GetRaspEventStats().IncreaseEventRejectedCount()
+	} else if eventType == "exitEvent" {
+		secConfig.GlobalInfo.EventData.GetExitEventStats().IncreaseEventRejectedCount()
 	}
-	secConfig.GlobalInfo.EventData.IncreaseEventDropCount()
 }
 
-func increaseEventEventSentCount(event []byte) {
-	if !secUtils.CaseInsensitiveContains(string(event), `"jsonName":"Event"`) {
-		return
+func increaseEventEventSentCount(eventType string) {
+	if eventType == "iastEvent" {
+		secConfig.GlobalInfo.EventData.GetIastEventStats().IncreaseEventSentCount()
+	} else if eventType == "raspEvent" {
+		secConfig.GlobalInfo.EventData.GetRaspEventStats().IncreaseEventSentCount()
+	} else if eventType == "exitEvent" {
+		secConfig.GlobalInfo.EventData.GetExitEventStats().IncreaseEventSentCount()
 	}
-	secConfig.GlobalInfo.EventData.IncreaseEventSentCount()
+}
+
+func increaseEventErrorCount(eventType string) {
+	if eventType == "iastEvent" {
+		secConfig.GlobalInfo.EventData.GetIastEventStats().IncreaseEventErrorCount()
+	} else if eventType == "raspEvent" {
+		secConfig.GlobalInfo.EventData.GetRaspEventStats().IncreaseEventErrorCount()
+	} else if eventType == "exitEvent" {
+		secConfig.GlobalInfo.EventData.GetExitEventStats().IncreaseEventErrorCount()
+	}
 }
 
 func (ws *websocket) flushWsController() {

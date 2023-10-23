@@ -9,7 +9,6 @@ package security_intercept
  */
 
 import (
-	"bytes"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -35,7 +34,8 @@ const (
 	IAST_SEP                = ":IAST:"
 	EARLY_EXIT              = "Early Exit, csec agent is not initlized"
 	NR_CSEC_TRACING_DATA    = "NR-CSEC-TRACING-DATA"
-	NR_CSEC_FUZZ_REQUEST_ID = "NR-CSEC-FUZZ-REQUEST-ID"
+	NR_CSEC_FUZZ_REQUEST_ID = "nr-csec-fuzz-request-id"
+	NR_CSEC_PARENT_ID       = "NR-CSEC-PARENT-ID"
 )
 
 /**
@@ -282,7 +282,7 @@ func AssociateApplicationPort(data string) {
 
 // TraceIncommingRequest - interception of incoming request
 
-func TraceIncommingRequest(url, host string, hdrMap map[string][]string, method string, body []byte, queryparam map[string][]string, protocol, serverName, type1 string) {
+func TraceIncommingRequest(url, host string, hdrMap map[string][]string, method string, body string, queryparam map[string][]string, protocol, serverName, type1 string, bodyReader secUtils.SecWriter) {
 	if !isAgentInitialized() {
 		return
 	}
@@ -296,11 +296,15 @@ func TraceIncommingRequest(url, host string, hdrMap map[string][]string, method 
 	filterHeader := map[string]string{}
 	RequestIdentifier := ""
 	traceData := ""
+	parentID := ""
+
 	for k, v := range hdrMap {
 		if secUtils.CaseInsensitiveEquals(k, NR_CSEC_TRACING_DATA) {
 			traceData = strings.Join(v, ",")
 		} else if secUtils.CaseInsensitiveEquals(k, NR_CSEC_FUZZ_REQUEST_ID) {
 			RequestIdentifier = strings.Join(v, ",")
+		} else if secUtils.CaseInsensitiveEquals(k, NR_CSEC_PARENT_ID) {
+			parentID = strings.Join(v, ",")
 		} else {
 			filterHeader[k] = strings.Join(v, ",")
 		}
@@ -311,8 +315,9 @@ func TraceIncommingRequest(url, host string, hdrMap map[string][]string, method 
 	if RequestIdentifier != "" {
 		filterHeader[NR_CSEC_FUZZ_REQUEST_ID] = RequestIdentifier
 	}
-	kb := bytes.TrimRight(body, "\x00")
-	kbb := string(kb)
+	if parentID != "" {
+		filterHeader[NR_CSEC_PARENT_ID] = parentID
+	}
 	// record incoming request
 	infoReq := new(secUtils.Info_req)
 	(*infoReq).Request.URL = url
@@ -324,13 +329,16 @@ func TraceIncommingRequest(url, host string, hdrMap map[string][]string, method 
 	(*infoReq).Request.Headers = filterHeader
 	(*infoReq).GrpcByte = make([][]byte, 0)
 	(*infoReq).Request.Method = method
-	(*infoReq).Request.Body = kbb
+	(*infoReq).Request.Body = body
+	(*infoReq).Request.BodyReader = bodyReader
 	(*infoReq).Request.Protocol = protocol
 	(*infoReq).Request.ContentType = getContentType(filterHeader)
 	(*infoReq).ReqTraceData = traceData
 	(*infoReq).RequestIdentifier = RequestIdentifier
 	(*infoReq).Request.ServerName = serverName
+	(*infoReq).BodyLimit = secConfig.GlobalInfo.BodyLimit()
 	(*infoReq).TmpFiles = createFuzzFile(RequestIdentifier)
+	(*infoReq).ParentID = parentID
 	if type1 == "gRPC" {
 		(*infoReq).Request.IsGRPC = true
 	}
@@ -654,6 +662,10 @@ func UpdateLinkData(linkingMetadata map[string]string) {
 		if ok {
 			secConfig.GlobalInfo.MetaData.SetAgentRunId(agentRunId)
 		}
+		entityGuid, ok := linkingMetadata["entity.guid"]
+		if ok {
+			secConfig.GlobalInfo.MetaData.SetEntityGuid(entityGuid)
+		}
 
 		if !IsDisable() && !IsForceDisable() {
 			go secWs.InitializeWsConnecton()
@@ -713,13 +725,17 @@ func SendEvent(caseType string, data ...interface{}) interface{} {
 		secConfig.Secure.DissociateInboundRequest()
 	case "APP_INFO":
 		associateApplicationPort(data...)
-
+	case "DYNAMO_DB":
+		dynamodbHandler(data...)
+	case "REDIS":
+		redisHandler(data...)
 	}
 	return nil
 }
 
 func inboundcallHandler(request interface{}) {
 	r := request.(webRequest)
+
 	queryparam := map[string][]string{}
 	for key, value := range r.GetURL().Query() {
 		queryparam[key] = value
@@ -728,7 +744,9 @@ func inboundcallHandler(request interface{}) {
 	if clientHost == "" {
 		clientHost = r.GetHost()
 	}
-	TraceIncommingRequest(r.GetURL().String(), clientHost, r.GetHeader(), r.GetMethod(), r.GetBody(), queryparam, r.GetTransport(), r.GetServerName(), r.Type1())
+
+	reqBodyWriter, _ := r.GetBody().(secUtils.SecWriter)
+	TraceIncommingRequest(r.GetURL().String(), clientHost, r.GetHeader(), r.GetMethod(), "", queryparam, r.GetTransport(), r.GetServerName(), r.Type1(), reqBodyWriter)
 }
 
 func outboundcallHandler(req interface{}) *secUtils.EventTracker {
@@ -901,6 +919,20 @@ func DistributedTraceHeaders(hdrs *http.Request, secureAgentevent interface{}) {
 		}
 	}
 
+}
+func dynamodbHandler(data ...interface{}) {
+	if data == nil || !isAgentInitialized() {
+		return
+	}
+	secConfig.Secure.SendEvent("DYNAMO_DB_COMMAND", data[0])
+}
+
+func redisHandler(data ...interface{}) {
+	if data == nil || !isAgentInitialized() {
+		return
+	}
+
+	secConfig.Secure.SendEvent("REDIS_DB_COMMAND", data)
 }
 
 func DeactivateSecurity() {

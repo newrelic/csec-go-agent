@@ -29,27 +29,23 @@ type FuzzTask struct {
 
 func (fTask *FuzzTask) Run() {
 
-	for {
-		if !secConfig.SecureWS.GetStatus() {
-			logger.Infoln("WS not connected sleep FuzzTask for 5 sec")
-			time.Sleep(5 * time.Second)
-		} else {
-			break
-		}
+	if !secConfig.SecureWS.GetStatus() {
+		logger.Infoln("WS not connected drop FuzzTask ")
 	}
+
 	if fTask.fuzzRequrestHandler.IsGRPC {
 		if FuzzHandler.grpsFuzzRestClient == nil {
 			logger.Errorln("gRPC rest client not initialised")
 		} else {
-			FuzzHandler.grpsFuzzRestClient.ExecuteFuzzRequest(fTask.fuzzRequrestHandler, fTask.caseType)
-			FuzzHandler.AppendCompletedRequestIds(fTask.requestID)
+			FuzzHandler.grpsFuzzRestClient.ExecuteFuzzRequest(fTask.fuzzRequrestHandler, fTask.caseType, fTask.requestID)
+			FuzzHandler.RemovePendingRequestIds(fTask.requestID)
 		}
 	} else {
 		if FuzzHandler.httpFuzzRestClient == nil {
 			logger.Errorln("http rest client not initialised")
 		} else {
-			FuzzHandler.httpFuzzRestClient.ExecuteFuzzRequest(fTask.fuzzRequrestHandler, fTask.caseType)
-			FuzzHandler.AppendCompletedRequestIds(fTask.requestID)
+			FuzzHandler.httpFuzzRestClient.ExecuteFuzzRequest(fTask.fuzzRequrestHandler, fTask.caseType, fTask.requestID)
+			FuzzHandler.RemovePendingRequestIds(fTask.requestID)
 		}
 	}
 }
@@ -65,6 +61,7 @@ func registerFuzzTask(kcc11 *FuzzRequrestHandler, caseType, requestID string) {
 		printlogs := fmt.Sprintf("IAST Scan for API %s with ID : %s started.", kcc11.RequestURI, ids[0])
 		logger.Infoln(printlogs)
 	}
+	FuzzHandler.AppendPendingRequestIds(requestID)
 	FuzzHandler.threadPool.RegisterTask(task)
 	FuzzHandler.SetLastFuzzRequestTime()
 }
@@ -80,6 +77,7 @@ func removeRequestID(requestID []string) {
 
 func initRestRequestThreadPool() {
 	FuzzHandler.SetCompletedRequestIds(&sync.Map{})
+	FuzzHandler.SetPendingRequestIds(&sync.Map{})
 	FuzzHandler.threadPool = threadpool.NewThreadPool(queueSize, maxPoolSize, logger, "RestRequestThreadPool")
 }
 
@@ -118,7 +116,7 @@ func InitFuzzScheduler() {
 
 		if batchSize > 100 && remainingRecordCapacity > batchSize {
 			logger.Debugln("InitFuzzScheduler", batchSize*2)
-			eventGeneration.IASTDataRequest(batchSize*2, FuzzHandler.CompletedRequestIds())
+			eventGeneration.IASTDataRequest(batchSize*2, FuzzHandler.CompletedRequestIds(), FuzzHandler.PendingRequestIds())
 		}
 	}
 }

@@ -41,10 +41,11 @@ type Secureiface interface {
 // interface: websocket interface
 // ---------------------------------------------------
 type SecureWSiface interface {
-	RegisterEvent([]byte)
+	RegisterEvent([]byte, string, string)
 	GetStatus() bool
 	ReconnectAtAgentRefresh()
 	ReconnectAtWill()
 	CloseWSConnection()
 	SendPriorityEvent([]byte)
+	AddCompletedRequests(string, string)
 }

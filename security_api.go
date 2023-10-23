@@ -37,3 +37,7 @@ func (t securityAgent) DistributedTraceHeaders(hdrs *http.Request, secureAgentev
 	sec_intercept.DistributedTraceHeaders(hdrs, secureAgentevent)
 
 }
+
+func (t securityAgent) RequestBodyReadLimit() int {
+	return sec_intercept.RequestBodyReadLimit()
+}

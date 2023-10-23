@@ -29,6 +29,9 @@ func checkDefaultConfig() {
 	if secConfig.GlobalInfo.ValidatorServiceUrl() == "" {
 		secConfig.GlobalInfo.SetValidatorServiceUrl("wss://csec.nr-data.net")
 	}
+	if secConfig.GlobalInfo.BodyLimit() == 0 {
+		secConfig.GlobalInfo.SetBodyLimit(300)
+	}
 }
 
 func initLogger(logFilePath string, isDebugLog bool) {

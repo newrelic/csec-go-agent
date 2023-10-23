@@ -29,6 +29,10 @@ func IsRXSSDisable() bool {
 	return !secConfig.GlobalInfo.IsRxssEnabled()
 }
 
+func RequestBodyReadLimit() int {
+	return secConfig.GlobalInfo.BodyLimit()
+}
+
 func IsHooked() bool {
 	if secConfig.GlobalInfo == nil {
 		return false
@@ -183,8 +187,13 @@ type webRequest interface {
 	GetMethod() string
 	GetTransport() string
 	GetHost() string
-	GetBody() []byte
+	GetBody() interface{}
 	GetServerName() string
 	Type1() string
 	GetRemoteAddress() string
+}
+
+type parameters struct {
+	Payload     interface{} `json:"payload"`
+	PayloadType interface{} `json:"payloadType"`
 }
