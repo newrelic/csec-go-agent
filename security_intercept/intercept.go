@@ -528,9 +528,7 @@ func XssCheck() {
 			r.ResponseContentType = cType
 		}
 
-		fmt.Println("CheckForReflectedXSS")
 		out := secUtils.CheckForReflectedXSS(r)
-		fmt.Println("CheckForReflectedXSS end")
 		logger.Debugln("CheckForReflectedXSS out value is : ", out)
 
 		if len(out) == 0 && !secConfig.GlobalInfo.IsIASTEnable() {
@@ -747,21 +745,6 @@ func inboundcallHandler(request interface{}) {
 		clientHost = r.GetHost()
 	}
 
-	// requestBody := strings.Builder{}
-	// fmt.Println("CheckForReflectedXSS")
-	//io.Copy(io.Discard, r.GetBody())
-	// if r.GetBody() != nil || !secUtils.CaseInsensitiveContains(r.GetHeader().Get("Content-Type"), "multipart/form-data") {
-	// 	if len, err := strconv.Atoi(r.GetHeader().Get("Content-Length")); err == nil {
-	// 		if len > 1000000 {
-	// 			fmt.Println("discard")
-	// 			io.Copy(io.Discard, r.GetBody())
-	// 		}
-	// 	}
-	// 	// io.Copy(&requestBody, r.GetBody())
-	// 	// if len(requestBody.String()) > 1000000 {
-	// 	// 	requestBody = strings.Builder{}
-	// 	// }
-	// }
 	reqBodyWriter, _ := r.GetBody().(secUtils.SecWriter)
 	TraceIncommingRequest(r.GetURL().String(), clientHost, r.GetHeader(), r.GetMethod(), "", queryparam, r.GetTransport(), r.GetServerName(), r.Type1(), reqBodyWriter)
 }
