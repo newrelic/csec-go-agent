@@ -1,6 +1,19 @@
 # Changelog
 
-## [v0.3.0] - 2023-08-28
+## [v0.5.0] - 2023-10-23
+
+### Features
+* Last leg acknowledgement in IAST scanning.
+* Added event stats in healthcheck
+### Bug Fixes
+* Remediate cve with grpc version v1.56.2
+* Remediate cve with net version v0.13.0
+* Out of Memory issue in case of large request body.
+   * Added new security config parameter to set a limit on the read request body.
+* Added a few optimizations for CPU and memory utilization.
+
+
+## [v0.4.0] - 2023-08-28
 
  * Updated logger module and implemented new logging module with standard golang package `log`
     * Remove the following third-party dependency for logging:
