@@ -124,6 +124,10 @@ func (ws *websocket) makeConnection() (bool, bool) {
 	wsDialer.TLSClientConfig = &tls.Config{RootCAs: caCertPool}
 
 	conn, res, err := wsDialer.Dial(validatorEndpoint, connectionHeader)
+	if res != nil {
+		logger.Infoln("WS res Header :", res.Header)
+		logger.Infoln("requestblockreason :", res.Header.Get("requestblockreason"))
+	}
 	if err != nil || conn == nil {
 		logging.PrintInitErrolog("Failed to connect Validator " + validatorEndpoint)
 		logger.Errorln("Failed to connect Validator  : ", err, validatorEndpoint)
