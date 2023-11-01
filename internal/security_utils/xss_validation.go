@@ -266,7 +266,7 @@ func decodeRequestData(rq *Info_req) []string {
 	for k, v := range rq.Request.Headers {
 		kVal := processURLEncodedDataForXSS(k)
 		processedData = append(processedData, kVal...)
-		vVal := processURLEncodedDataForXSS(v)
+		vVal := processURLEncodedDataForXSS(strings.Join(v, ","))
 		processedData = append(processedData, vVal...)
 	}
 	for k, v := range rq.Request.ParameterMap {

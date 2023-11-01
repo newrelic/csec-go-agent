@@ -3,6 +3,8 @@
 
 package security_utils
 
+import "net/http"
+
 const MaxReadBodyLen = 300000
 
 type Info_req struct {
@@ -29,7 +31,7 @@ type ReflectedMetaData struct {
 
 type RequestInfo struct {
 	Body          string              `json:"body"`
-	Headers       map[string]string   `json:"headers"`
+	Headers       http.Header         `json:"headers"`
 	URL           string              `json:"url"`
 	RawRequest    string              `json:"rawRequest"`
 	Method        string              `json:"method"`

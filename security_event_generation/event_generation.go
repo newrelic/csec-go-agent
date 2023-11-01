@@ -325,7 +325,7 @@ func SendVulnerableEvent(req *secUtils.Info_req, category string, args interface
 		firstEvent = false
 		logging.Disableinitlogs()
 	}
-	tracingHeader := tmp_event.HTTPRequest.Headers[NR_CSEC_TRACING_DATA]
+	tracingHeader := tmp_event.HTTPRequest.Headers.Get(NR_CSEC_TRACING_DATA)
 	return &secUtils.EventTracker{APIID: tmp_event.APIID, ID: tmp_event.ID, CaseType: tmp_event.CaseType, TracingHeader: tracingHeader, RequestIdentifier: fuzzHeader}
 
 }

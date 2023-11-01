@@ -282,7 +282,7 @@ func AssociateApplicationPort(data string) {
 
 // TraceIncommingRequest - interception of incoming request
 
-func TraceIncommingRequest(url, host string, hdrMap map[string][]string, method string, body string, queryparam map[string][]string, protocol, serverName, type1 string, bodyReader secUtils.SecWriter) {
+func TraceIncommingRequest(url, host string, hdrMap http.Header, method string, body string, queryparam map[string][]string, protocol, serverName, type1 string, bodyReader secUtils.SecWriter) {
 	if !isAgentInitialized() {
 		return
 	}
@@ -292,32 +292,14 @@ func TraceIncommingRequest(url, host string, hdrMap map[string][]string, method 
 		clientIp, clientPort = getIpAndPort(host)
 	}
 
-	// filter request headers
-	filterHeader := map[string]string{}
 	RequestIdentifier := ""
 	traceData := ""
 	parentID := ""
 
-	for k, v := range hdrMap {
-		if secUtils.CaseInsensitiveEquals(k, NR_CSEC_TRACING_DATA) {
-			traceData = strings.Join(v, ",")
-		} else if secUtils.CaseInsensitiveEquals(k, NR_CSEC_FUZZ_REQUEST_ID) {
-			RequestIdentifier = strings.Join(v, ",")
-		} else if secUtils.CaseInsensitiveEquals(k, NR_CSEC_PARENT_ID) {
-			parentID = strings.Join(v, ",")
-		} else {
-			filterHeader[k] = strings.Join(v, ",")
-		}
-	}
-	if traceData != "" {
-		filterHeader[NR_CSEC_TRACING_DATA] = traceData
-	}
-	if RequestIdentifier != "" {
-		filterHeader[NR_CSEC_FUZZ_REQUEST_ID] = RequestIdentifier
-	}
-	if parentID != "" {
-		filterHeader[NR_CSEC_PARENT_ID] = parentID
-	}
+	traceData = hdrMap.Get(NR_CSEC_TRACING_DATA)
+	RequestIdentifier = hdrMap.Get(NR_CSEC_FUZZ_REQUEST_ID)
+	parentID = hdrMap.Get(NR_CSEC_PARENT_ID)
+	contentType := hdrMap.Get("content-type")
 	// record incoming request
 	infoReq := new(secUtils.Info_req)
 	(*infoReq).Request.URL = url
@@ -326,13 +308,13 @@ func TraceIncommingRequest(url, host string, hdrMap map[string][]string, method 
 	(*infoReq).Request.ClientPort = clientPort
 	(*infoReq).Request.ServerPort = getServerPort()
 	(*infoReq).Request.IsGRPC = false
-	(*infoReq).Request.Headers = filterHeader
+	(*infoReq).Request.Headers = hdrMap
 	(*infoReq).GrpcByte = make([][]byte, 0)
 	(*infoReq).Request.Method = method
 	(*infoReq).Request.Body = body
 	(*infoReq).Request.BodyReader = bodyReader
 	(*infoReq).Request.Protocol = protocol
-	(*infoReq).Request.ContentType = getContentType(filterHeader)
+	(*infoReq).Request.ContentType = contentType
 	(*infoReq).ReqTraceData = traceData
 	(*infoReq).RequestIdentifier = RequestIdentifier
 	(*infoReq).Request.ServerName = serverName
@@ -435,7 +417,7 @@ func tracerpcRequestWithHeader(header map[string]string, data []byte) {
 	}
 	infoReq := &secUtils.Info_req{}
 
-	(*infoReq).Request.Headers = make(map[string]string)
+	(*infoReq).Request.Headers = http.Header{}
 	(*infoReq).Request.ParameterMap = make(map[string][]string, 0)
 	(*infoReq).Request.Method = "gRPC"
 	(*infoReq).Request.ServerPort = getServerPort()
@@ -448,6 +430,7 @@ func tracerpcRequestWithHeader(header map[string]string, data []byte) {
 	host := ""
 
 	for k, v := range header {
+		(*infoReq).Request.Headers.Add(k, v)
 
 		if k == ":method" {
 			(*infoReq).Request.Method = v
@@ -481,7 +464,6 @@ func tracerpcRequestWithHeader(header map[string]string, data []byte) {
 	if (*infoReq).Request.ServerName == "" {
 		(*infoReq).Request.ServerName = host
 	}
-	(*infoReq).Request.Headers = header
 	secConfig.Secure.AssociateInboundRequest(infoReq)
 }
 
@@ -775,11 +757,7 @@ func httpresponseHandler(data ...interface{}) {
 	}
 	contentType := ""
 	if hdr, ok := header.(http.Header); ok {
-		for key, values := range hdr {
-			if secUtils.CaseInsensitiveEquals(key, "content-type") {
-				contentType = strings.Join(values, ",")
-			}
-		}
+		contentType = hdr.Get("content-type")
 	}
 
 	if contentType != "" && !secUtils.IsContentTypeSupported(contentType) {
@@ -910,6 +888,9 @@ func DistributedTraceHeaders(hdrs *http.Request, secureAgentevent interface{}) {
 	if secureAgentevent != nil {
 		secEvent := secureAgentevent.(*secUtils.EventTracker)
 		key, value := GetTraceHeader(secEvent)
+		if hdrs.Header == nil {
+			hdrs.Header = http.Header{}
+		}
 		if key != "" {
 			hdrs.Header.Add(key, value)
 		}
