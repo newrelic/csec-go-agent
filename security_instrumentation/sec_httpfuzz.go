@@ -71,17 +71,10 @@ func (httpFuzz SecHttpFuzz) ExecuteFuzzRequest(fuzzRequest *sechandler.FuzzRequr
 	var req *http.Request = nil
 	var err error = nil
 
-	switch fuzzRequest.Method {
-
-	case GET:
-		req, err = http.NewRequest(GET, fuzzRequestURL, nil)
-	case POST:
-		req, err = http.NewRequest(POST, fuzzRequestURL, strings.NewReader(fuzzRequest.Body))
-	default:
-		logger.Errorln("Unimplemented request type", fuzzRequest.Method)
-	}
+	req, err = http.NewRequest(fuzzRequest.Method, fuzzRequestURL, strings.NewReader(fuzzRequest.Body))
 	if req == nil || err != nil {
 		eventGeneration.SendFuzzFailEvent(fuzzRequestID)
+		logger.Infoln("ERROR: request type", fuzzRequest.Method, err)
 		return
 	}
 	req.URL.RawQuery = req.URL.Query().Encode()
