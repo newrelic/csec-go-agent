@@ -252,6 +252,9 @@ func SendVulnerableEvent(req *secUtils.Info_req, category string, args interface
 		category = "SQL_DB_COMMAND"
 	} else if category == "DYNAMO_DB_COMMAND" {
 		eventCategory = "DQL"
+	} else if category == "ELASTIC_SEARCH_DB_COMMAND" {
+		category = "NOSQL_DB_COMMAND"
+		eventCategory = "ES"
 	}
 
 	tmp_event.ID = eventId

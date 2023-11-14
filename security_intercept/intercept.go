@@ -729,6 +729,9 @@ func SendEvent(caseType string, data ...interface{}) interface{} {
 		dynamodbHandler(data...)
 	case "REDIS":
 		redisHandler(data...)
+	case "ELASTIC_SEARCH":
+		elasticSearchHandler(data...)
+
 	}
 	return nil
 }
@@ -933,6 +936,14 @@ func redisHandler(data ...interface{}) {
 	}
 
 	secConfig.Secure.SendEvent("REDIS_DB_COMMAND", data)
+}
+
+func elasticSearchHandler(data ...interface{}) {
+	if data == nil || !isAgentInitialized() {
+		return
+	}
+
+	secConfig.Secure.SendEvent("ELASTIC_SEARCH_DB_COMMAND", data)
 }
 
 func DeactivateSecurity() {
