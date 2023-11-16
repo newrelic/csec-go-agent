@@ -734,8 +734,11 @@ func SendEvent(caseType string, data ...interface{}) interface{} {
 }
 
 func inboundcallHandler(request interface{}) {
-	r := request.(webRequest)
-
+	r, ok := request.(webRequestv2)
+	if !ok {
+		inboundcallHandlerv1(request)
+		return
+	}
 	queryparam := map[string][]string{}
 	for key, value := range r.GetURL().Query() {
 		queryparam[key] = value
@@ -745,7 +748,27 @@ func inboundcallHandler(request interface{}) {
 		clientHost = r.GetHost()
 	}
 
-	reqBodyWriter, _ := r.GetBody().(secUtils.SecWriter)
+	reqBodyWriter := secUtils.SecWriter{GetBody: r.GetBody, IsDataTruncated: r.IsDataTruncated}
+	TraceIncommingRequest(r.GetURL().String(), clientHost, r.GetHeader(), r.GetMethod(), "", queryparam, r.GetTransport(), r.GetServerName(), r.Type1(), reqBodyWriter)
+}
+
+// merge inboundcallHandler and inboundcallHandlerv1 in the next major release(v1.0.0)
+func inboundcallHandlerv1(request interface{}) {
+	r, ok := request.(webRequest)
+	if !ok {
+		logger.Errorln("request is not a type of webRequest and webRequestv2 ")
+		return
+	}
+	queryparam := map[string][]string{}
+	for key, value := range r.GetURL().Query() {
+		queryparam[key] = value
+	}
+	clientHost := r.GetRemoteAddress()
+	if clientHost == "" {
+		clientHost = r.GetHost()
+	}
+
+	reqBodyWriter := secUtils.SecWriter{GetBody: r.GetBody, IsDataTruncated: IsDataTruncated}
 	TraceIncommingRequest(r.GetURL().String(), clientHost, r.GetHeader(), r.GetMethod(), "", queryparam, r.GetTransport(), r.GetServerName(), r.Type1(), reqBodyWriter)
 }
 

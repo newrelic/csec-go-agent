@@ -187,10 +187,20 @@ type webRequest interface {
 	GetMethod() string
 	GetTransport() string
 	GetHost() string
-	GetBody() interface{}
+	GetBody() []byte
 	GetServerName() string
 	Type1() string
 	GetRemoteAddress() string
+}
+
+// merge webRequest and webRequestv2 in next major release (v1.0.0)
+type webRequestv2 interface {
+	webRequest
+	IsDataTruncated() bool
+}
+
+func IsDataTruncated() bool {
+	return false
 }
 
 type parameters struct {
