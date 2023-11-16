@@ -1,6 +1,12 @@
 # Changelog
 
-## [v0.5.0] - 2023-10-23
+## [v0.5.1] - 2023-11-16
+### Bug Fixes
+* Added required changes for backward compatibility with APM agent.
+
+## [v0.5.0] - 2023-10-23 (retracted)
+
+This release was retracted due backward compatibility issue with APM agent
 
 ### Features
 * Last leg acknowledgement in IAST scanning.
