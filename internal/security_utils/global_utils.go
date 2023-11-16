@@ -43,13 +43,12 @@ type RequestInfo struct {
 	IsGRPC        bool                `json:"isGrpc"`
 	ServerName    string              `json:"serverName"`
 	DataTruncated bool                `json:"dataTruncated"`
-	BodyReader    SecWriter
+	BodyReader    SecWriter           `json:"-"`
 }
 
-type SecWriter interface {
-	Write(p []byte) (n int, err error)
-	Len() int
-	String() (string, bool)
+type SecWriter struct {
+	GetBody         func() []byte
+	IsDataTruncated func() bool
 }
 
 type ReqBodyWriter interface {

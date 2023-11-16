@@ -262,8 +262,11 @@ func SendVulnerableEvent(req *secUtils.Info_req, category string, args interface
 	tmp_event.BlockingProcessingTime = "1"
 	tmp_event.HTTPRequest = req.Request
 
-	if req.Request.BodyReader != nil {
-		tmp_event.HTTPRequest.Body, tmp_event.HTTPRequest.DataTruncated = req.Request.BodyReader.String()
+	if req.Request.BodyReader.GetBody != nil {
+		tmp_event.HTTPRequest.Body = string(req.Request.BodyReader.GetBody())
+	}
+	if req.Request.BodyReader.IsDataTruncated != nil {
+		tmp_event.HTTPRequest.DataTruncated = req.Request.BodyReader.IsDataTruncated()
 	}
 	tmp_event.VulnerabilityDetails = vulnerabilityDetails
 	tmp_event.ApplicationIdentifiers = getApplicationIdentifiers("Event")
