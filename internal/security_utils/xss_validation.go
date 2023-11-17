@@ -57,7 +57,7 @@ func IsContentTypeSupported(type1 string) bool {
 		"application/zip",
 	}
 
-	if !StartWithInArray(unSupportedMediaType, strings.ToLower(type1)) {
+	if StartWithInArray(unSupportedMediaType, strings.ToLower(type1)) {
 		return false
 	}
 

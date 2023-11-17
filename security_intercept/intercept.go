@@ -524,7 +524,7 @@ func XssCheck() {
 				logger.Debugln("No need to send RXSS event ContentType not supported for rxss event validation", cType)
 				return
 			}
-			if r.ResponseContentType != "" {
+			if r.ResponseContentType == "" {
 				r.ResponseContentType = cType
 			}
 
