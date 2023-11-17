@@ -46,27 +46,22 @@ const (
 )
 
 func IsContentTypeSupported(type1 string) bool {
-	supportedContentType := []string{
-		"text/css",
-		"text/csv",
-		"text/html",
-		"text/javascript",
-		"application/json",
-		"application/ld+json",
-		"text/javascript",
-		"application/vnd.oasis.opendocument.text",
-		"application/x-httpd-php",
-		"application/rtf",
-		"image/svg+xml",
-		"text/plain",
-		"application/xhtml+xml",
-		"application/xml",
-		"multipart/form-data",
-		"application/x-www-form-urlencoded",
-		"application/octet-stream",
+	unSupportedMediaType := []string{
+		"video/",
+		"image/",
+		"font/",
+		"audio/",
 	}
 
-	return ContainsInArray(supportedContentType, strings.ToLower(type1))
+	unSupportedContentType := []string{
+		"application/zip",
+	}
+
+	if !StartWithInArray(unSupportedMediaType, strings.ToLower(type1)) {
+		return false
+	}
+
+	return !ContainsInArray(unSupportedContentType, strings.ToLower(type1))
 }
 
 var tagNameRegex = regexp.MustCompile(`(?ims)<([a-zA-Z_\\-]+[0-9]*|!--)`)

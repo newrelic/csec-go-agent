@@ -261,7 +261,7 @@ func SendVulnerableEvent(req *secUtils.Info_req, category string, args interface
 	tmp_event.EventGenerationTime = strconv.FormatInt(time.Now().Unix()*1000, 10)
 	tmp_event.BlockingProcessingTime = "1"
 	tmp_event.HTTPRequest = req.Request
-
+	tmp_event.HTTPResponse = secUtils.ResponseInfo{ContentType: req.ResponseContentType}
 	if req.Request.BodyReader != nil {
 		tmp_event.HTTPRequest.Body, tmp_event.HTTPRequest.DataTruncated = req.Request.BodyReader.String()
 	}

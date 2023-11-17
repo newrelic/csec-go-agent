@@ -345,7 +345,7 @@ func TraceIncommingRequest(url, host string, hdrMap map[string][]string, method 
 	secConfig.Secure.AssociateInboundRequest(infoReq)
 }
 
-func AssociateResponseBody(body, contentType string) {
+func AssociateResponseBody(body, contentType string, header http.Header) {
 	if !isAgentInitialized() {
 		return
 	}
@@ -353,6 +353,7 @@ func AssociateResponseBody(body, contentType string) {
 	if r != nil {
 		r.ResponseBody = r.ResponseBody + body
 		r.ResponseContentType = contentType
+		r.ResponseHeader = header
 		secConfig.Secure.CalculateOutboundApiId()
 	}
 }
@@ -504,43 +505,43 @@ func DissociateInboundRequest() {
 }
 
 func XssCheck() {
-	if IsRXSSDisable() {
-		return
-	}
 	if !isAgentInitialized() {
 		return
 	}
 	r := secConfig.Secure.GetRequest()
-	if r != nil && r.ResponseBody != "" {
 
-		if r.ResponseContentType != "" && !secUtils.IsContentTypeSupported(r.ResponseContentType) {
-			logger.Debugln("No need to send RXSS event ContentType not supported for rxss event validation", r.ResponseContentType)
-			return
-		}
+	if r != nil {
+		if r.ResponseBody != "" && !IsRXSSDisable() {
 
-		// Double check befor rxss event validation becouse in some case we don't have contentType in response header.
-		cType := http.DetectContentType([]byte(r.ResponseBody))
-		if !secUtils.IsContentTypeSupported(cType) {
-			logger.Debugln("No need to send RXSS event ContentType not supported for rxss event validation", cType)
-			return
-		}
-		if r.ResponseContentType != "" {
-			r.ResponseContentType = cType
-		}
+			if r.ResponseContentType != "" && !secUtils.IsContentTypeSupported(r.ResponseContentType) {
+				logger.Debugln("No need to send RXSS event ContentType not supported for rxss event validation", r.ResponseContentType)
+				return
+			}
 
-		out := secUtils.CheckForReflectedXSS(r)
-		logger.Debugln("CheckForReflectedXSS out value is : ", out)
+			// Double check befor rxss event validation becouse in some case we don't have contentType in response header.
+			cType := http.DetectContentType([]byte(r.ResponseBody))
+			if !secUtils.IsContentTypeSupported(cType) {
+				logger.Debugln("No need to send RXSS event ContentType not supported for rxss event validation", cType)
+				return
+			}
+			if r.ResponseContentType != "" {
+				r.ResponseContentType = cType
+			}
 
-		if len(out) == 0 && !secConfig.GlobalInfo.IsIASTEnable() {
-			logger.Debugln("No need to send xss event as not attack and dynamic scanning is false")
-		} else {
-			logger.Debugln("return value of reflected xss string : ", out)
-			var arg []string
-			arg = append(arg, out)
-			arg = append(arg, r.ResponseBody)
-			secConfig.Secure.SendEvent("REFLECTED_XSS", arg)
+			out := secUtils.CheckForReflectedXSS(r)
+			logger.Debugln("CheckForReflectedXSS out value is : ", out)
+
+			if len(out) == 0 && !secConfig.GlobalInfo.IsIASTEnable() {
+				logger.Debugln("No need to send xss event as not attack and dynamic scanning is false")
+			} else {
+				logger.Debugln("return value of reflected xss string : ", out)
+				var arg []string
+				arg = append(arg, out)
+				arg = append(arg, r.ResponseBody)
+				secConfig.Secure.SendEvent("REFLECTED_XSS", arg)
+			}
+			logger.Debugln("Called check for reflected XSS" + out)
 		}
-		logger.Debugln("Called check for reflected XSS" + out)
 	}
 }
 
@@ -774,12 +775,10 @@ func httpresponseHandler(data ...interface{}) {
 		return
 	}
 	contentType := ""
+	responseHeader := http.Header{}
 	if hdr, ok := header.(http.Header); ok {
-		for key, values := range hdr {
-			if secUtils.CaseInsensitiveEquals(key, "content-type") {
-				contentType = strings.Join(values, ",")
-			}
-		}
+		contentType = hdr.Get("content-type")
+		responseHeader = hdr
 	}
 
 	if contentType != "" && !secUtils.IsContentTypeSupported(contentType) {
@@ -795,7 +794,7 @@ func httpresponseHandler(data ...interface{}) {
 			return
 		}
 
-		AssociateResponseBody(responseBody, contentType)
+		AssociateResponseBody(responseBody, contentType, responseHeader)
 	}
 }
 

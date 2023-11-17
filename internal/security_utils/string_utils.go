@@ -42,6 +42,15 @@ func ContainsInArray(s []string, substr string) bool {
 	return false
 }
 
+func StartWithInArray(s []string, substr string) bool {
+	for arr := range s {
+		if strings.HasPrefix(substr, s[arr]) {
+			return true
+		}
+	}
+	return false
+}
+
 func CheckGrpcByte(a [][]byte, b []byte) bool {
 	for x := range a {
 		// In Grpc Handling first 5 bytes used to identify length of data stream.

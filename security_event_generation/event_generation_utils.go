@@ -46,6 +46,7 @@ type eventJson struct {
 	Parameters             interface{}          `json:"parameters"`
 	EventGenerationTime    string               `json:"eventGenerationTime"`
 	HTTPRequest            secUtils.RequestInfo `json:"httpRequest"`
+	HTTPResponse           secUtils.ResponseInfo `json:"httpRequest"`
 	ID                     string               `json:"id"`
 	CaseType               string               `json:"caseType"`
 	EventCategory          string               `json:"eventCategory"`
