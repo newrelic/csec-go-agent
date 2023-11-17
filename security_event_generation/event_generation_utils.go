@@ -43,19 +43,19 @@ const statusTemplate = "Snapshot timestamp: : %s \n" +
 
 type eventJson struct {
 	ApplicationIdentifiers
-	Parameters             interface{}          `json:"parameters"`
-	EventGenerationTime    string               `json:"eventGenerationTime"`
-	HTTPRequest            secUtils.RequestInfo `json:"httpRequest"`
-	HTTPResponse           secUtils.ResponseInfo `json:"httpRequest"`
-	ID                     string               `json:"id"`
-	CaseType               string               `json:"caseType"`
-	EventCategory          string               `json:"eventCategory"`
-	MetaData               metaData             `json:"metaData"`
-	BlockingProcessingTime string               `json:"blockingProcessingTime"`
-	IsAPIBlocked           bool                 `json:"isAPIBlocked"`
-	IsIASTEnable           bool                 `json:"isIASTEnable"`
-	ParentId               string               `json:"parentId"`
-	IsIASTRequest          bool                 `json:"isIASTRequest"`
+	Parameters             interface{}           `json:"parameters"`
+	EventGenerationTime    string                `json:"eventGenerationTime"`
+	HTTPRequest            secUtils.RequestInfo  `json:"httpRequest"`
+	HTTPResponse           secUtils.ResponseInfo `json:"httpResponse"`
+	ID                     string                `json:"id"`
+	CaseType               string                `json:"caseType"`
+	EventCategory          string                `json:"eventCategory"`
+	MetaData               metaData              `json:"metaData"`
+	BlockingProcessingTime string                `json:"blockingProcessingTime"`
+	IsAPIBlocked           bool                  `json:"isAPIBlocked"`
+	IsIASTEnable           bool                  `json:"isIASTEnable"`
+	ParentId               string                `json:"parentId"`
+	IsIASTRequest          bool                  `json:"isIASTRequest"`
 	secUtils.VulnerabilityDetails
 }
 
