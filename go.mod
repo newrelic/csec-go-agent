@@ -7,3 +7,5 @@ require (
 	github.com/gorilla/websocket v1.5.0
 	github.com/k2io/hookingo v1.0.5
 )
+
+retract v0.5.0 // backward compatibility error corrected in v0.5.1
