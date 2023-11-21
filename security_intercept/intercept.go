@@ -667,7 +667,10 @@ func UpdateLinkData(linkingMetadata map[string]string) {
 		if ok {
 			secConfig.GlobalInfo.MetaData.SetEntityGuid(entityGuid)
 		}
-
+		entityname, ok := linkingMetadata["entity.name"]
+		if ok {
+			secConfig.GlobalInfo.MetaData.SetEntityName(entityname)
+		}
 		if !IsDisable() && !IsForceDisable() {
 			go secWs.InitializeWsConnecton()
 		}

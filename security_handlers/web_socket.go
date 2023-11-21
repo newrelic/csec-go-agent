@@ -382,6 +382,7 @@ func getConnectionHeader() http.Header {
 		"NR-ACCOUNT-ID":                   []string{secConfig.GlobalInfo.MetaData.GetAccountID()},
 		"NR-CSEC-IAST-DATA-TRANSFER-MODE": []string{"PULL"},
 		"NR-CSEC-ENTITY-GUID":             []string{secConfig.GlobalInfo.MetaData.GetEntityGuid()},
+		"NR-CSEC-ENTITY-NAME":             []string{secConfig.GlobalInfo.MetaData.GetEntityName()},
 	}
 
 }
