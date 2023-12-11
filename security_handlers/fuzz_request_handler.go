@@ -35,6 +35,7 @@ func (fTask *FuzzTask) Run() {
 
 	if fTask.fuzzRequrestHandler.IsGRPC {
 		if FuzzHandler.grpsFuzzRestClient == nil {
+			eventGeneration.SendLogMessage("gRPC rest client not initialised", "security_handlers")
 			logger.Errorln("gRPC rest client not initialised")
 		} else {
 			FuzzHandler.grpsFuzzRestClient.ExecuteFuzzRequest(fTask.fuzzRequrestHandler, fTask.caseType, fTask.requestID)
@@ -42,6 +43,7 @@ func (fTask *FuzzTask) Run() {
 		}
 	} else {
 		if FuzzHandler.httpFuzzRestClient == nil {
+			eventGeneration.SendLogMessage("http rest client not initialised", "security_handlers")
 			logger.Errorln("http rest client not initialised")
 		} else {
 			FuzzHandler.httpFuzzRestClient.ExecuteFuzzRequest(fTask.fuzzRequrestHandler, fTask.caseType, fTask.requestID)

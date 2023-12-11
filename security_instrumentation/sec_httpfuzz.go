@@ -75,6 +75,7 @@ func (httpFuzz SecHttpFuzz) ExecuteFuzzRequest(fuzzRequest *sechandler.FuzzRequr
 	if req == nil || err != nil {
 		eventGeneration.SendFuzzFailEvent(fuzzRequestID)
 		logger.Infoln("ERROR: request type", fuzzRequest.Method, err)
+		secIntercept.SendLogMessage(err.Error(), "security_instrumentation")
 		return
 	}
 	req.URL.RawQuery = req.URL.Query().Encode()

@@ -16,9 +16,9 @@ var agentLogger = DefaultLogger(false)
 var isInitilized = false
 var errorBuffer = secUtils.NewCring(5)
 
-func Init(logFileName, initlogFileName, logFilepath string, pid int) {
+func Init(logFileName, initlogFileName, logFilepath string, pid int) error {
 	isInitilized = true
-	rotateFileHook, writer, err := NewRotateFileHook(RotateFileConfig{
+	rotateFileHook, writer, isDefault, err := NewRotateFileHook(RotateFileConfig{
 		Filename:        filepath.Join(logFilepath, logFileName),
 		Filepath:        logFilepath,
 		MaxSize:         50, // megabytes
@@ -26,9 +26,10 @@ func Init(logFileName, initlogFileName, logFilepath string, pid int) {
 		BaseLogFilename: logFileName,
 	})
 
-	UpdateLogger(writer, "INFO", pid, agentLogger, rotateFileHook, err)
+	UpdateLogger(writer, "INFO", pid, agentLogger, rotateFileHook, isDefault)
 
 	init_initLogger(initlogFileName, logFilepath, pid)
+	return err
 }
 
 func SetLogLevel(level string) {

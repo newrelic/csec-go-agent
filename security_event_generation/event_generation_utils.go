@@ -179,6 +179,23 @@ type Urlmappings struct {
 	Handler string `json:"handler"`
 }
 
+type LogMessage struct {
+	JSONName        string    `json:"jsonName"`
+	ApplicationUUID string    `json:"applicationUUID"`
+	Timestamp       int64     `json:"timestamp"`
+	Level           string    `json:"level"`
+	Message         string    `json:"message"`
+	Caller          string    `json:"caller"`
+	Exception       Exception `json:"exception"`
+	ThreadName      string    `json:"threadName"`
+}
+
+type Exception struct {
+	Message    string      `json:"message"`
+	Cause      interface{} `json:"cause"`
+	StackTrace []string    `json:"stackTrace"`
+}
+
 //status utils function
 /////
 
@@ -209,17 +226,20 @@ func populateStatusLogs(service, process map[string]interface{}) {
 	statusFilePath := filepath.Join(secConfig.GlobalInfo.SecurityHomePath(), "nr-security-home", "logs", "snapshots")
 	err := os.MkdirAll(statusFilePath, os.ModePerm)
 	if err != nil {
+		SendLogMessage(err.Error(), "populateStatusLogs")
 		logger.Errorln(err)
 		return
 	}
 	err = os.Chmod(statusFilePath, 0777)
 	if err != nil {
+		SendLogMessage(err.Error(), "populateStatusLogs")
 		logger.Errorln(err)
 		return
 	}
 	statusFilePath1 := filepath.Join(statusFilePath, fmt.Sprintf("go-security-collector-status-%s.log", secConfig.GlobalInfo.ApplicationInfo.GetAppUUID()))
 	f, err := os.OpenFile(statusFilePath1, os.O_RDWR|os.O_CREATE, 0777)
 	if err != nil {
+		SendLogMessage(err.Error(), "populateStatusLogs")
 		logger.Errorln(err)
 		return
 	}

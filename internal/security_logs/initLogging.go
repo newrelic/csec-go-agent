@@ -12,7 +12,7 @@ var initLogger = DefaultLogger(true)
 
 func init_initLogger(initlogFileName, logFilepath string, pid int) {
 
-	rotateFileHook, writer, err := NewRotateFileHook(RotateFileConfig{
+	rotateFileHook, writer, isDefault, _ := NewRotateFileHook(RotateFileConfig{
 		Filename:        filepath.Join(logFilepath, initlogFileName),
 		Filepath:        logFilepath,
 		MaxSize:         50, // megabytes
@@ -20,7 +20,7 @@ func init_initLogger(initlogFileName, logFilepath string, pid int) {
 		BaseLogFilename: initlogFileName,
 	})
 
-	UpdateLogger(writer, "INFO", pid, initLogger, rotateFileHook, err)
+	UpdateLogger(writer, "INFO", pid, initLogger, rotateFileHook, isDefault)
 }
 
 func InitLogger() *logFile {

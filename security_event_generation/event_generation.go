@@ -36,11 +36,13 @@ var (
 	HcBuffer      *secUtils.Cring
 	logger        = logging.GetLogger("hook")
 	removeChannel = make(chan string)
+	errorBuffer   = secUtils.NewCring(5)
 )
 
 func InitHcScheduler() {
 	logging.EndStage("5", "Security agent components started")
 	SendSecHealthCheck()
+	sendBufferLogMessage()
 	t := time.NewTicker(5 * time.Minute)
 	for {
 		select {
@@ -372,6 +374,36 @@ func IASTDataRequest(batchSize int, completedRequestIds interface{}, pendingRequ
 	}
 }
 
+func sendBufferLogMessage() {
+	i := errorBuffer.Remove()
+	logger.Debugln("sendBufferLogMessage")
+	for i != nil {
+		if secConfig.SecureWS != nil {
+			if logger.IsDebug() {
+				logger.Debugln("ready to send : ", string(i.([]byte)))
+			}
+			(secConfig.SecureWS).RegisterEvent(i.([]byte), "", "LogMessage")
+		}
+		i = errorBuffer.Remove()
+	}
+}
+
+func SendLogMessage(log, caller string) {
+	var tmp_event LogMessage
+
+	tmp_event.ApplicationUUID = secConfig.GlobalInfo.ApplicationInfo.GetAppUUID()
+	tmp_event.JSONName = "log-message"
+	tmp_event.Timestamp = time.Now().Unix() * 1000
+	tmp_event.Level = "SEVERE"
+	tmp_event.Message = log
+	tmp_event.Caller = caller
+	tmp_event.Exception = Exception{Message: log}
+	_, err := sendEvent(tmp_event, "", "LogMessage")
+	if err != nil {
+		logger.Debugln("ERROR: ", err.Error())
+	}
+}
+
 func sendEvent(event interface{}, eventID, eventType string) ([]byte, error) {
 	event_json, err := json.Marshal(event)
 	if err != nil {
@@ -385,8 +417,12 @@ func sendEvent(event interface{}, eventID, eventType string) ([]byte, error) {
 		(secConfig.SecureWS).RegisterEvent(event_json, eventID, eventType)
 		return event_json, nil
 	} else {
-		logger.Errorln("websocket not configured to send event")
-		return event_json, errors.New("websocket not configured to send event")
+		if eventType == "LogMessage" {
+			errorBuffer.Add(event_json)
+		} else {
+			logger.Errorln("websocket not initialized to send event", string(event_json))
+		}
+		return event_json, errors.New("websocket not initialized to send event")
 	}
 }
 

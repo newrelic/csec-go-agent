@@ -687,6 +687,10 @@ func UpdateLinkData(linkingMetadata map[string]string) {
 
 }
 
+func SendLogMessage(message, caller string) {
+	eventGeneration.SendLogMessage(message, caller)
+}
+
 // security_api handlers
 
 func SendEvent(caseType string, data ...interface{}) interface{} {
@@ -760,6 +764,7 @@ func inboundcallHandler(request interface{}) {
 func inboundcallHandlerv1(request interface{}) {
 	r, ok := request.(webRequest)
 	if !ok {
+		SendLogMessage("ERROR: Request is not a type of webRequest and webRequestv2 ", "security_intercept")
 		logger.Errorln("request is not a type of webRequest and webRequestv2 ")
 		return
 	}
@@ -917,6 +922,7 @@ func mongoHandler(data ...interface{}) *secUtils.EventTracker {
 		}
 		err := json.Unmarshal(arg, &jsonMap)
 		if err != nil {
+			SendLogMessage("error in Unmarshal mongo arg"+err.Error(), "mongoHandler")
 			logger.Errorln("error in Unmarshal mongo arg", err)
 			return nil
 		}
