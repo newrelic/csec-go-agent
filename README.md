@@ -10,7 +10,7 @@ The IAST capability should only be used in pre-production environments as the ap
 # Installation
 #### Compatibility and Requirements
 For the latest version of the agent, Go 1.17+ is required.
-Linux, MacOS, and Windows are supported.
+Linux, MacOS, and Windows are supported
 
 
 #### Installing and using the Go agent
