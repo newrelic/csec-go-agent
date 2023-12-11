@@ -16,16 +16,16 @@ const id = "github.com/newrelic/csec-go-agent"
 
 var (
 	constant = map[string]string{
-		"github.com/go-ldap/ldap/v3":    id + "/instrumentation/csec_ldap_v3",
-		"github.com/mongo-driver/mongo": id + "/instrumentation/csec_mongodb_mongo",
-		"github.com/robertkrimen/otto":  id + "/instrumentation/csec_robertkrimen_otto",
-		"github.com/augustoroman/v8":    id + "/instrumentation/csec_augustoroman_v8",
-		"github.com/antchfx/xpath":      id + "/instrumentation/csec_antchfx_xpath",
-		"github.com/antchfx/xmlquery":   id + "/instrumentation/csec_antchfx_xmlquery",
-		"github.com/antchfx/jsonquery":  id + "/instrumentation/csec_antchfx_jsonquery",
-		"github.com/antchfx/htmlquery":  id + "/instrumentation/csec_antchfx_htmlquery",
-		"google.golang.org/grpc":        id + "/instrumentation/csec_grpc",
-		"github.com/valyala/fasthttp":   id + "/instrumentation/csec_valyala_fasthttp",
+		"github.com/go-ldap/ldap/v3":        id + "/instrumentation/csec_ldap_v3",
+		"go.mongodb.org/mongo-driver/mongo": id + "/instrumentation/csec_mongodb_mongo",
+		"github.com/robertkrimen/otto":      id + "/instrumentation/csec_robertkrimen_otto",
+		"github.com/augustoroman/v8":        id + "/instrumentation/csec_augustoroman_v8",
+		"github.com/antchfx/xpath":          id + "/instrumentation/csec_antchfx_xpath",
+		"github.com/antchfx/xmlquery":       id + "/instrumentation/csec_antchfx_xmlquery",
+		"github.com/antchfx/jsonquery":      id + "/instrumentation/csec_antchfx_jsonquery",
+		"github.com/antchfx/htmlquery":      id + "/instrumentation/csec_antchfx_htmlquery",
+		"google.golang.org/grpc":            id + "/instrumentation/csec_grpc",
+		"github.com/valyala/fasthttp":       id + "/instrumentation/csec_valyala_fasthttp",
 	}
 )
 

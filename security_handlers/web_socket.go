@@ -219,7 +219,7 @@ func (ws *websocket) closeWs() {
 
 func (ws *websocket) RegisterEvent(s []byte, eventID string, eventType string) {
 	increaseEventProcessed(eventType)
-	if !ws.isWsConnected() {
+	if !ws.isWsConnected() && eventType != "LogMessage" {
 		increaseEventDropCount(eventType)
 		logger.Debugln("Drop event WS not connected or Reconnecting", len(ws.eventBuffer), cap(ws.eventBuffer))
 		return
@@ -362,6 +362,7 @@ func readThread(ws *websocket) {
 		}
 		err, _ = parseControlCommand(buf)
 		if err != nil {
+			eventGeneration.SendLogMessage("Unable to unmarshall control command", "security_handlers")
 			logger.Errorln("Unable to unmarshall cc ", err)
 		}
 	}
