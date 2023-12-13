@@ -80,10 +80,6 @@ func main() {
 		newrelic.ConfigAppLogForwardingEnabled(true),
 		newrelic.ConfigCodeLevelMetricsEnabled(true),
 		newrelic.ConfigCodeLevelMetricsPathPrefix("go-agent/v3"),
-		func(config *newrelic.Config) {
-			config.Host = "staging-collector.newrelic.com"
-
-		},
 	)
 	if err != nil {
 		fmt.Println(err)
@@ -93,7 +89,7 @@ func main() {
 	err = nrsecurityagent.InitSecurityAgent(
 		app,
 		nrsecurityagent.ConfigSecurityMode("IAST"),
-		nrsecurityagent.ConfigSecurityValidatorServiceEndPointUrl("wss://csec-staging.nr-data.net"),
+		nrsecurityagent.ConfigSecurityValidatorServiceEndPointUrl("wss://csec.nr-data.net"),
 		nrsecurityagent.ConfigSecurityEnable(true),
 	)
 	if err != nil {
