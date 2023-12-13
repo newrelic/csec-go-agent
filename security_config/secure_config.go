@@ -21,7 +21,7 @@ type Security struct {
 			Enabled bool `json:"enabled"`
 		} `json:"deserialization"`
 	} `json:"detection"`
-	SecurityHomePath string // SecurityHomePath not part of user config file default is pwd
+	SecurityHomePath string `json:"-"` // SecurityHomePath not part of user config file default is pwd
 	Request          struct {
 		BodyLimit int `yaml:"body_limit"`
 	} `yaml:"request"`
