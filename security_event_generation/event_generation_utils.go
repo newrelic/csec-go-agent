@@ -134,7 +134,7 @@ type Exitevent struct {
 	ApplicationIdentifiers
 	ExecutionId       string `json:"executionId"`
 	CaseType          string `json:"caseType"`
-	RequestIdentifier string `json:"RequestIdentifier"`
+	RequestIdentifier string `json:"k2RequestIdentifier"`
 }
 
 type ApplicationIdentifiers struct {

@@ -373,7 +373,7 @@ func getConnectionHeader() http.Header {
 	return http.Header{
 		"NR-CSEC-CONNECTION-TYPE":         []string{"LANGUAGE_COLLECTOR"},
 		"NR-LICENSE-KEY":                  []string{secConfig.GlobalInfo.ApplicationInfo.GetApiAccessorToken()},
-		"NR-AGENT-RUN-TOKEN":              []string{secConfig.GlobalInfo.MetaData.GetAccountID()},
+		"NR-AGENT-RUN-TOKEN":              []string{secConfig.GlobalInfo.MetaData.GetAgentRunId()},
 		"NR-CSEC-VERSION":                 []string{secUtils.CollectorVersion},
 		"NR-CSEC-COLLECTOR-TYPE":          []string{secUtils.CollectorType},
 		"NR-CSEC-MODE":                    []string{secConfig.GlobalInfo.SecurityMode()},
