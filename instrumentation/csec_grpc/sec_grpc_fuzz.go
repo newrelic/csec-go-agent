@@ -24,7 +24,7 @@ type SecGrpcFuzz struct {
 
 func (grpcFuzz SecGrpcFuzz) ExecuteFuzzRequest(fuzzRequest *sechandler.FuzzRequrestHandler, caseType string, fuzzId string) {
 	fuzzRequestID := fmt.Sprintf("%v", fuzzRequest.Headers[secIntercept.NR_CSEC_FUZZ_REQUEST_ID])
-
+	sechandler.FuzzHandler.AppendCompletedRequestIds(fuzzId, "")
 	var grpcBody []interface{}
 	err := json.Unmarshal([]byte(fuzzRequest.Body), &grpcBody)
 	if err != nil {
@@ -65,7 +65,6 @@ func (grpcFuzz SecGrpcFuzz) ExecuteFuzzRequest(fuzzRequest *sechandler.FuzzRequr
 		url = url[1:]
 	}
 
-	sechandler.FuzzHandler.AppendCompletedRequestIds(fuzzId, "")
 	tmp := fmt.Sprintf("%s: %s", "nr-csec-parent-id", fuzzId)
 	headers = append(headers, tmp)
 
