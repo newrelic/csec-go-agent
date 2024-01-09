@@ -4,6 +4,7 @@
 package security_instrumentation
 
 import (
+	"fmt"
 	"runtime/debug"
 
 	logging "github.com/newrelic/csec-go-agent/internal/security_logs"
@@ -40,9 +41,9 @@ func init() {
 	if secIntercept.IsForceDisable() {
 		return
 	}
-
+	locateImports()
 	if secIntercept.IsHookingoIsSupported() {
-		//locateImports()
+		locateImports()
 		secIntercept.InitSyms()
 		init_hooks()
 	}
@@ -74,7 +75,7 @@ func locateImports() {
 	buildInfo, ok := debug.ReadBuildInfo() // ReadBuildInfo returns the build information embedded in the running binary
 
 	if buildInfo == nil || !ok {
-		logger.Infoln("No import found, Please make sure binary built with module support")
+		logger.Debugln("No import found, Please make sure binary built with module support")
 		return
 	}
 	dependencieMap := make(map[string]string, 0)
@@ -84,7 +85,8 @@ func locateImports() {
 	for wrapper, secWrapper := range constant {
 		if _, ok := dependencieMap[wrapper]; ok {
 			if _, ok := dependencieMap[secWrapper]; !ok {
-				logging.PrintWarnlog("Suggested Sec protect imports :" + secWrapper + " for: " + wrapper)
+				printlogs := fmt.Sprintf("Warning : Your application seems to be using package %s. Please make sure you import %s package to enable security for package %s.", wrapper, secWrapper, wrapper)
+				logging.PrintWarnlog(printlogs)
 			}
 		}
 	}
