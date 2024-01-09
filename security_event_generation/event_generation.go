@@ -392,12 +392,14 @@ func SendLogMessage(log, caller string) {
 	var tmp_event LogMessage
 
 	tmp_event.ApplicationUUID = secConfig.GlobalInfo.ApplicationInfo.GetAppUUID()
-	tmp_event.JSONName = "log-message"
+	tmp_event.JSONName = "critical-log-messages"
 	tmp_event.Timestamp = time.Now().Unix() * 1000
 	tmp_event.Level = "SEVERE"
 	tmp_event.Message = log
 	tmp_event.Caller = caller
 	tmp_event.Exception = Exception{Message: log}
+	tmp_event.ThreadName = caller
+	tmp_event.LinkingMetadata = secConfig.GlobalInfo.MetaData.GetLinkingMetadata()
 	_, err := sendEvent(tmp_event, "", "LogMessage")
 	if err != nil {
 		logger.Debugln("ERROR: ", err.Error())

@@ -180,14 +180,15 @@ type Urlmappings struct {
 }
 
 type LogMessage struct {
-	JSONName        string    `json:"jsonName"`
-	ApplicationUUID string    `json:"applicationUUID"`
-	Timestamp       int64     `json:"timestamp"`
-	Level           string    `json:"level"`
-	Message         string    `json:"message"`
-	Caller          string    `json:"caller"`
-	Exception       Exception `json:"exception"`
-	ThreadName      string    `json:"threadName"`
+	JSONName        string      `json:"jsonName"`
+	ApplicationUUID string      `json:"applicationUUID"`
+	Timestamp       int64       `json:"timestamp"`
+	Level           string      `json:"level"`
+	Message         string      `json:"message"`
+	Caller          string      `json:"caller"`
+	Exception       Exception   `json:"exception"`
+	ThreadName      string      `json:"threadName"`
+	LinkingMetadata interface{} `json:"linkingMetadata"`
 }
 
 type Exception struct {
