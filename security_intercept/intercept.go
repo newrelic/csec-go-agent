@@ -511,6 +511,9 @@ func XssCheck() {
 	r := secConfig.Secure.GetRequest()
 
 	if r != nil {
+		if isLowPriority() {
+			secureCookies(r.ResponseHeader)
+		}
 		if r.ResponseBody != "" && !IsRXSSDisable() {
 
 			if r.ResponseContentType != "" && !secUtils.IsContentTypeSupported(r.ResponseContentType) {
@@ -543,6 +546,25 @@ func XssCheck() {
 			logger.Debugln("Called check for reflected XSS" + out)
 		}
 	}
+}
+
+/**
+ * Handling for low priority events
+ */
+
+func secureCookies(header http.Header) {
+	res := http.Response{Header: header}
+	cookies := res.Cookies()
+	isSecure := false
+	for i := range cookies {
+		if cookies[i].Secure {
+			isSecure = true
+			break
+		}
+	}
+	var arg []bool
+	arg = append(arg, isSecure)
+	secConfig.Secure.SendEvent("SECURE_COOKIE", arg)
 }
 
 /**

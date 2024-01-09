@@ -65,6 +65,10 @@ func isAgentInitialized() bool {
 	return true
 }
 
+func isLowPriority() bool {
+	return true
+}
+
 func getServerPort() string {
 	serverPort := secConfig.GlobalInfo.ApplicationInfo.GetPorts()
 	if serverPort != nil && len(serverPort) > 0 {
