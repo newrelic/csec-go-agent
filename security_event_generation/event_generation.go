@@ -392,7 +392,7 @@ func SendLogMessage(log, caller string) {
 	var tmp_event LogMessage
 
 	tmp_event.ApplicationUUID = secConfig.GlobalInfo.ApplicationInfo.GetAppUUID()
-	tmp_event.JSONName = "critical-log-messages"
+	tmp_event.JSONName = "critical-messages"
 	tmp_event.Timestamp = time.Now().Unix() * 1000
 	tmp_event.Level = "SEVERE"
 	tmp_event.Message = log
