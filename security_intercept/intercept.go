@@ -909,9 +909,14 @@ func mongoHandler(data ...interface{}) *secUtils.EventTracker {
 	if !isAgentInitialized() {
 		return nil
 	}
+	if len(data) < 2 {
+		return nil
+	}
 	queryType, ok := data[1].(string)
 	if (ok && queryType == "delete") || !secConfig.GlobalInfo.InstrumentationData.TraceHooksApplied.Mongo {
-
+		if secUtils.CaseInsensitiveEquals(queryType, "findAndModify") {
+			queryType = "update"
+		}
 		var arg11 []interface{}
 		var arg12 []interface{}
 
