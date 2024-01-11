@@ -13,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	secUtils "github.com/newrelic/csec-go-agent/internal/security_utils"
 	secConfig "github.com/newrelic/csec-go-agent/security_config"
 	eventGeneration "github.com/newrelic/csec-go-agent/security_event_generation"
 	sechandler "github.com/newrelic/csec-go-agent/security_handlers"
@@ -59,7 +60,7 @@ func (httpFuzz SecHttpFuzz) ExecuteFuzzRequest(fuzzRequest *sechandler.FuzzRequr
 	fuzzRequestURL := secConfig.GlobalInfo.ApplicationInfo.GetServerIp() + applicationPort + fuzzRequest.Url
 	var fuzzRequestClient *http.Client
 
-	if fuzzRequest.Protocol == "https" {
+	if secUtils.CaseInsensitiveEquals(fuzzRequest.Protocol, "https") {
 		fuzzRequestURL = HTTPS + fuzzRequestURL
 		fuzzRequestClient = getHttpsClient()
 		fuzzRequestClient.Transport = getTransport(fuzzRequest.ServerName)
@@ -93,6 +94,7 @@ func (httpFuzz SecHttpFuzz) ExecuteFuzzRequest(fuzzRequest *sechandler.FuzzRequr
 	response, err := fuzzRequestClient.Do(req)
 	if err != nil {
 		logger.Debugln("ERROR: fuzz request fail : ", fuzzRequestID, err.Error())
+		secIntercept.SendLogMessage("fuzz request fail :"+err.Error(), "security_instrumentation")
 		eventGeneration.SendFuzzFailEvent(fuzzRequestID)
 	} else {
 		defer response.Body.Close()

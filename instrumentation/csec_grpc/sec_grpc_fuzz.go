@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 
+	secUtils "github.com/newrelic/csec-go-agent/internal/security_utils"
 	secConfig "github.com/newrelic/csec-go-agent/security_config"
 	secevent "github.com/newrelic/csec-go-agent/security_event_generation"
 	sechandler "github.com/newrelic/csec-go-agent/security_handlers"
@@ -90,7 +91,7 @@ func (grpcFuzz SecGrpcFuzz) ExecuteFuzzRequest(fuzzRequest *sechandler.FuzzRequr
 }
 
 func getFuzzClient(protocol, url, serverName string) (*grpc.ClientConn, error) {
-	if protocol == "https" {
+	if secUtils.CaseInsensitiveEquals(protocol, "https") {
 		return getHttpsClient(url, serverName)
 	} else {
 		return getHttpClient(url)
