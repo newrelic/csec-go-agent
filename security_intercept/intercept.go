@@ -943,9 +943,8 @@ func mongoHandler(data ...interface{}) *secUtils.EventTracker {
 	}
 	return nil
 }
-
 func DistributedTraceHeaders(hdrs *http.Request, secureAgentevent interface{}) {
-	if secureAgentevent != nil {
+	if secureAgentevent != nil && hdrs != nil {
 		secEvent, ok := secureAgentevent.(*secUtils.EventTracker)
 		if !ok || secEvent == nil {
 			return
