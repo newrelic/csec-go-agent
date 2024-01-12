@@ -51,11 +51,12 @@ func (k *SecGrpcServe) secServe(l net.Listener) error {
 }
 
 func init() {
+	secIntercept.InitGrpsFuzzRestClient(SecGrpcFuzz{})
+
 	if !secIntercept.IsAgentInitializedForHook() || secIntercept.IsForceDisable() || !secIntercept.IsHookingoIsSupported() {
 		return
 	}
 
 	e := secIntercept.HookWrapInterface((*grpc.Server).Serve, (*SecGrpcServe).secServe, (*SecGrpcServe).secServe_s)
 	secIntercept.IsHookedLog("(*grpc.Server).Serve", e)
-	secIntercept.InitGrpsFuzzRestClient(SecGrpcFuzz{})
 }
