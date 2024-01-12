@@ -514,6 +514,7 @@ func XssCheck() {
 		if r.ResponseBody != "" && !IsRXSSDisable() {
 
 			if r.ResponseContentType != "" && !secUtils.IsContentTypeSupported(r.ResponseContentType) {
+				SendLogMessage("No need to send RXSS event ContentType not supported for rxss event validation "+r.ResponseContentType, "XssCheck")
 				logger.Debugln("No need to send RXSS event ContentType not supported for rxss event validation", r.ResponseContentType)
 				return
 			}
@@ -521,6 +522,7 @@ func XssCheck() {
 			// Double check befor rxss event validation becouse in some case we don't have contentType in response header.
 			cType := http.DetectContentType([]byte(r.ResponseBody))
 			if !secUtils.IsContentTypeSupported(cType) {
+				SendLogMessage("No need to send RXSS event ContentType not supported for rxss event validation "+cType, "XssCheck")
 				logger.Debugln("No need to send RXSS event ContentType not supported for rxss event validation", cType)
 				return
 			}
@@ -743,7 +745,7 @@ func SendEvent(caseType string, data ...interface{}) interface{} {
 
 func inboundcallHandler(request interface{}) {
 	r, ok := request.(webRequestv2)
-	if !ok {
+	if !ok || r == nil {
 		inboundcallHandlerv1(request)
 		return
 	}
@@ -763,7 +765,7 @@ func inboundcallHandler(request interface{}) {
 // merge inboundcallHandler and inboundcallHandlerv1 in the next major release(v1.0.0)
 func inboundcallHandlerv1(request interface{}) {
 	r, ok := request.(webRequest)
-	if !ok {
+	if !ok || r == nil {
 		SendLogMessage("ERROR: Request is not a type of webRequest and webRequestv2 ", "security_intercept")
 		logger.Errorln("request is not a type of webRequest and webRequestv2 ")
 		return
@@ -786,7 +788,7 @@ func outboundcallHandler(req interface{}) *secUtils.EventTracker {
 		return nil
 	}
 	r, ok := req.(*http.Request)
-	if !ok || r.URL.String() == "" {
+	if !ok || r == nil || r.URL == nil || r.URL.String() == "" {
 		return nil
 	}
 	var args []interface{}
@@ -807,7 +809,7 @@ func httpresponseHandler(data ...interface{}) {
 	}
 	contentType := ""
 	responseHeader := http.Header{}
-	if hdr, ok := header.(http.Header); ok {
+	if hdr, ok := header.(http.Header); ok && hdr != nil {
 		contentType = hdr.Get("content-type")
 		responseHeader = hdr
 	}
@@ -922,7 +924,7 @@ func mongoHandler(data ...interface{}) *secUtils.EventTracker {
 
 		var jsonMap map[string]interface{}
 		arg, ok := data[0].([]byte)
-		if !ok {
+		if !ok || arg == nil {
 			return nil
 		}
 		err := json.Unmarshal(arg, &jsonMap)
@@ -944,7 +946,10 @@ func mongoHandler(data ...interface{}) *secUtils.EventTracker {
 
 func DistributedTraceHeaders(hdrs *http.Request, secureAgentevent interface{}) {
 	if secureAgentevent != nil {
-		secEvent := secureAgentevent.(*secUtils.EventTracker)
+		secEvent, ok := secureAgentevent.(*secUtils.EventTracker)
+		if !ok || secEvent == nil {
+			return
+		}
 		key, value := GetTraceHeader(secEvent)
 		if key != "" {
 			hdrs.Header.Add(key, value)
