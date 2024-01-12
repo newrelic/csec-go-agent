@@ -97,7 +97,12 @@ func TraceFileOperation(fname string, flag int, isFileOpen bool) *secUtils.Event
 	}
 	var args []string
 
-	args = append(args, fname)
+	absolutePath, err := fileAbs(fname)
+	if err != nil {
+		args = append(args, fname)
+	} else {
+		args = append(args, absolutePath)
+	}
 	if isFileOpen && isFileModified(flag) && fileInApplicationPath(fname) && fileExecByExtension(fname) {
 		return secConfig.Secure.SendEvent("FILE_INTEGRITY", args)
 	} else {
