@@ -43,18 +43,19 @@ const statusTemplate = "Snapshot timestamp: : %s \n" +
 
 type eventJson struct {
 	ApplicationIdentifiers
-	Parameters             interface{}          `json:"parameters"`
-	EventGenerationTime    string               `json:"eventGenerationTime"`
-	HTTPRequest            secUtils.RequestInfo `json:"httpRequest"`
-	ID                     string               `json:"id"`
-	CaseType               string               `json:"caseType"`
-	EventCategory          string               `json:"eventCategory"`
-	MetaData               metaData             `json:"metaData"`
-	BlockingProcessingTime string               `json:"blockingProcessingTime"`
-	IsAPIBlocked           bool                 `json:"isAPIBlocked"`
-	IsIASTEnable           bool                 `json:"isIASTEnable"`
-	ParentId               string               `json:"parentId"`
-	IsIASTRequest          bool                 `json:"isIASTRequest"`
+	Parameters             interface{}           `json:"parameters"`
+	EventGenerationTime    string                `json:"eventGenerationTime"`
+	HTTPRequest            secUtils.RequestInfo  `json:"httpRequest"`
+	HTTPResponse           secUtils.ResponseInfo `json:"httpResponse"`
+	ID                     string                `json:"id"`
+	CaseType               string                `json:"caseType"`
+	EventCategory          string                `json:"eventCategory"`
+	MetaData               metaData              `json:"metaData"`
+	BlockingProcessingTime string                `json:"blockingProcessingTime"`
+	IsAPIBlocked           bool                  `json:"isAPIBlocked"`
+	IsIASTEnable           bool                  `json:"isIASTEnable"`
+	ParentId               string                `json:"parentId"`
+	IsIASTRequest          bool                  `json:"isIASTRequest"`
 	secUtils.VulnerabilityDetails
 }
 
@@ -133,7 +134,7 @@ type Exitevent struct {
 	ApplicationIdentifiers
 	ExecutionId       string `json:"executionId"`
 	CaseType          string `json:"caseType"`
-	RequestIdentifier string `json:"RequestIdentifier"`
+	RequestIdentifier string `json:"k2RequestIdentifier"`
 }
 
 type ApplicationIdentifiers struct {
@@ -178,6 +179,24 @@ type Urlmappings struct {
 	Handler string `json:"handler"`
 }
 
+type LogMessage struct {
+	JSONName        string      `json:"jsonName"`
+	ApplicationUUID string      `json:"applicationUUID"`
+	Timestamp       int64       `json:"timestamp"`
+	Level           string      `json:"level"`
+	Message         string      `json:"message"`
+	Caller          string      `json:"caller"`
+	Exception       Exception   `json:"exception"`
+	ThreadName      string      `json:"threadName"`
+	LinkingMetadata interface{} `json:"linkingMetadata"`
+}
+
+type Exception struct {
+	Message    string      `json:"message"`
+	Cause      interface{} `json:"cause"`
+	StackTrace []string    `json:"stackTrace"`
+}
+
 //status utils function
 /////
 
@@ -208,17 +227,20 @@ func populateStatusLogs(service, process map[string]interface{}) {
 	statusFilePath := filepath.Join(secConfig.GlobalInfo.SecurityHomePath(), "nr-security-home", "logs", "snapshots")
 	err := os.MkdirAll(statusFilePath, os.ModePerm)
 	if err != nil {
+		SendLogMessage(err.Error(), "populateStatusLogs")
 		logger.Errorln(err)
 		return
 	}
 	err = os.Chmod(statusFilePath, 0777)
 	if err != nil {
+		SendLogMessage(err.Error(), "populateStatusLogs")
 		logger.Errorln(err)
 		return
 	}
 	statusFilePath1 := filepath.Join(statusFilePath, fmt.Sprintf("go-security-collector-status-%s.log", secConfig.GlobalInfo.ApplicationInfo.GetAppUUID()))
 	f, err := os.OpenFile(statusFilePath1, os.O_RDWR|os.O_CREATE, 0777)
 	if err != nil {
+		SendLogMessage(err.Error(), "populateStatusLogs")
 		logger.Errorln(err)
 		return
 	}

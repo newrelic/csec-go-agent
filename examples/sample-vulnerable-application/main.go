@@ -1,6 +1,6 @@
 // Copyright 2023 New Relic Corporation. All rights reserved.
 // SPDX-License-Identifier: New Relic Pre-Release
-
+// warning! sample-vulnerable-application is a vulnerable web application.Use it for demo purposes only, run it only on test environment
 package main
 
 import (

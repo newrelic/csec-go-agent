@@ -97,7 +97,12 @@ func TraceFileOperation(fname string, flag int, isFileOpen bool) *secUtils.Event
 	}
 	var args []string
 
-	args = append(args, fname)
+	absolutePath, err := fileAbs(fname)
+	if err != nil {
+		args = append(args, fname)
+	} else {
+		args = append(args, absolutePath)
+	}
 	if isFileOpen && isFileModified(flag) && fileInApplicationPath(fname) && fileExecByExtension(fname) {
 		return secConfig.Secure.SendEvent("FILE_INTEGRITY", args)
 	} else {
@@ -345,7 +350,7 @@ func TraceIncommingRequest(url, host string, hdrMap map[string][]string, method 
 	secConfig.Secure.AssociateInboundRequest(infoReq)
 }
 
-func AssociateResponseBody(body, contentType string) {
+func AssociateResponseBody(body, contentType string, header http.Header) {
 	if !isAgentInitialized() {
 		return
 	}
@@ -353,6 +358,7 @@ func AssociateResponseBody(body, contentType string) {
 	if r != nil {
 		r.ResponseBody = r.ResponseBody + body
 		r.ResponseContentType = contentType
+		r.ResponseHeader = header
 		secConfig.Secure.CalculateOutboundApiId()
 	}
 }
@@ -504,43 +510,45 @@ func DissociateInboundRequest() {
 }
 
 func XssCheck() {
-	if IsRXSSDisable() {
-		return
-	}
 	if !isAgentInitialized() {
 		return
 	}
 	r := secConfig.Secure.GetRequest()
-	if r != nil && r.ResponseBody != "" {
 
-		if r.ResponseContentType != "" && !secUtils.IsContentTypeSupported(r.ResponseContentType) {
-			logger.Debugln("No need to send RXSS event ContentType not supported for rxss event validation", r.ResponseContentType)
-			return
-		}
+	if r != nil {
+		if r.ResponseBody != "" && !IsRXSSDisable() {
 
-		// Double check befor rxss event validation becouse in some case we don't have contentType in response header.
-		cType := http.DetectContentType([]byte(r.ResponseBody))
-		if !secUtils.IsContentTypeSupported(cType) {
-			logger.Debugln("No need to send RXSS event ContentType not supported for rxss event validation", cType)
-			return
-		}
-		if r.ResponseContentType != "" {
-			r.ResponseContentType = cType
-		}
+			if r.ResponseContentType != "" && !secUtils.IsContentTypeSupported(r.ResponseContentType) {
+				SendLogMessage("No need to send RXSS event ContentType not supported for rxss event validation "+r.ResponseContentType, "XssCheck")
+				logger.Debugln("No need to send RXSS event ContentType not supported for rxss event validation", r.ResponseContentType)
+				return
+			}
 
-		out := secUtils.CheckForReflectedXSS(r)
-		logger.Debugln("CheckForReflectedXSS out value is : ", out)
+			// Double check befor rxss event validation becouse in some case we don't have contentType in response header.
+			cType := http.DetectContentType([]byte(r.ResponseBody))
+			if !secUtils.IsContentTypeSupported(cType) {
+				SendLogMessage("No need to send RXSS event ContentType not supported for rxss event validation "+cType, "XssCheck")
+				logger.Debugln("No need to send RXSS event ContentType not supported for rxss event validation", cType)
+				return
+			}
+			if r.ResponseContentType == "" {
+				r.ResponseContentType = cType
+			}
 
-		if len(out) == 0 && !secConfig.GlobalInfo.IsIASTEnable() {
-			logger.Debugln("No need to send xss event as not attack and dynamic scanning is false")
-		} else {
-			logger.Debugln("return value of reflected xss string : ", out)
-			var arg []string
-			arg = append(arg, out)
-			arg = append(arg, r.ResponseBody)
-			secConfig.Secure.SendEvent("REFLECTED_XSS", arg)
+			out := secUtils.CheckForReflectedXSS(r)
+			logger.Debugln("CheckForReflectedXSS out value is : ", out)
+
+			if len(out) == 0 && !secConfig.GlobalInfo.IsIASTEnable() {
+				logger.Debugln("No need to send xss event as not attack and dynamic scanning is false")
+			} else {
+				logger.Debugln("return value of reflected xss string : ", out)
+				var arg []string
+				arg = append(arg, out)
+				arg = append(arg, r.ResponseBody)
+				secConfig.Secure.SendEvent("REFLECTED_XSS", arg)
+			}
+			logger.Debugln("Called check for reflected XSS" + out)
 		}
-		logger.Debugln("Called check for reflected XSS" + out)
 	}
 }
 
@@ -666,7 +674,10 @@ func UpdateLinkData(linkingMetadata map[string]string) {
 		if ok {
 			secConfig.GlobalInfo.MetaData.SetEntityGuid(entityGuid)
 		}
-
+		entityname, ok := linkingMetadata["entity.name"]
+		if ok {
+			secConfig.GlobalInfo.MetaData.SetEntityName(entityname)
+		}
 		if !IsDisable() && !IsForceDisable() {
 			go secWs.InitializeWsConnecton()
 		}
@@ -681,6 +692,10 @@ func UpdateLinkData(linkingMetadata map[string]string) {
 		}
 	}
 
+}
+
+func SendLogMessage(message, caller string) {
+	eventGeneration.SendLogMessage(message, caller)
 }
 
 // security_api handlers
@@ -735,7 +750,7 @@ func SendEvent(caseType string, data ...interface{}) interface{} {
 
 func inboundcallHandler(request interface{}) {
 	r, ok := request.(webRequestv2)
-	if !ok {
+	if !ok || r == nil {
 		inboundcallHandlerv1(request)
 		return
 	}
@@ -755,7 +770,8 @@ func inboundcallHandler(request interface{}) {
 // merge inboundcallHandler and inboundcallHandlerv1 in the next major release(v1.0.0)
 func inboundcallHandlerv1(request interface{}) {
 	r, ok := request.(webRequest)
-	if !ok {
+	if !ok || r == nil {
+		SendLogMessage("ERROR: Request is not a type of webRequest and webRequestv2 ", "security_intercept")
 		logger.Errorln("request is not a type of webRequest and webRequestv2 ")
 		return
 	}
@@ -777,7 +793,7 @@ func outboundcallHandler(req interface{}) *secUtils.EventTracker {
 		return nil
 	}
 	r, ok := req.(*http.Request)
-	if !ok || r.URL.String() == "" {
+	if !ok || r == nil || r.URL == nil || r.URL.String() == "" {
 		return nil
 	}
 	var args []interface{}
@@ -797,12 +813,10 @@ func httpresponseHandler(data ...interface{}) {
 		return
 	}
 	contentType := ""
-	if hdr, ok := header.(http.Header); ok {
-		for key, values := range hdr {
-			if secUtils.CaseInsensitiveEquals(key, "content-type") {
-				contentType = strings.Join(values, ",")
-			}
-		}
+	responseHeader := http.Header{}
+	if hdr, ok := header.(http.Header); ok && hdr != nil {
+		contentType = hdr.Get("content-type")
+		responseHeader = hdr
 	}
 
 	if contentType != "" && !secUtils.IsContentTypeSupported(contentType) {
@@ -818,7 +832,7 @@ func httpresponseHandler(data ...interface{}) {
 			return
 		}
 
-		AssociateResponseBody(responseBody, contentType)
+		AssociateResponseBody(responseBody, contentType, responseHeader)
 	}
 }
 
@@ -902,19 +916,25 @@ func mongoHandler(data ...interface{}) *secUtils.EventTracker {
 	if !isAgentInitialized() {
 		return nil
 	}
+	if len(data) < 2 {
+		return nil
+	}
 	queryType, ok := data[1].(string)
 	if (ok && queryType == "delete") || !secConfig.GlobalInfo.InstrumentationData.TraceHooksApplied.Mongo {
-
+		if secUtils.CaseInsensitiveEquals(queryType, "findAndModify") {
+			queryType = "update"
+		}
 		var arg11 []interface{}
 		var arg12 []interface{}
 
 		var jsonMap map[string]interface{}
 		arg, ok := data[0].([]byte)
-		if !ok {
+		if !ok || arg == nil {
 			return nil
 		}
 		err := json.Unmarshal(arg, &jsonMap)
 		if err != nil {
+			SendLogMessage("error in Unmarshal mongo arg"+err.Error(), "mongoHandler")
 			logger.Errorln("error in Unmarshal mongo arg", err)
 			return nil
 		}
@@ -928,10 +948,12 @@ func mongoHandler(data ...interface{}) *secUtils.EventTracker {
 	}
 	return nil
 }
-
 func DistributedTraceHeaders(hdrs *http.Request, secureAgentevent interface{}) {
-	if secureAgentevent != nil {
-		secEvent := secureAgentevent.(*secUtils.EventTracker)
+	if secureAgentevent != nil && hdrs != nil {
+		secEvent, ok := secureAgentevent.(*secUtils.EventTracker)
+		if !ok || secEvent == nil {
+			return
+		}
 		key, value := GetTraceHeader(secEvent)
 		if key != "" {
 			hdrs.Header.Add(key, value)

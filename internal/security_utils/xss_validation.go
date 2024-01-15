@@ -46,27 +46,52 @@ const (
 )
 
 func IsContentTypeSupported(type1 string) bool {
-	supportedContentType := []string{
-		"text/css",
-		"text/csv",
-		"text/html",
-		"text/javascript",
-		"application/json",
-		"application/ld+json",
-		"text/javascript",
-		"application/vnd.oasis.opendocument.text",
-		"application/x-httpd-php",
-		"application/rtf",
-		"image/svg+xml",
-		"text/plain",
-		"application/xhtml+xml",
-		"application/xml",
-		"multipart/form-data",
-		"application/x-www-form-urlencoded",
-		"application/octet-stream",
+	unSupportedMediaType := []string{
+		"video/",
+		"image/",
+		"font/",
+		"audio/",
 	}
 
-	return ContainsInArray(supportedContentType, strings.ToLower(type1))
+	unSupportedContentType := []string{
+		"application/zip",
+		"application/epub+zip",
+		"application/gzip",
+		"application/java-archive",
+		"application/msword",
+		"application/octet-stream",
+		"application/ogg",
+		"application/pdf",
+		"application/rtf",
+		"application/vnd.amazon.ebook",
+		"application/vnd.apple.installer+xml",
+		"application/vnd.ms-excel",
+		"application/vnd.ms-fontobject",
+		"application/vnd.ms-powerpoint",
+		"application/vnd.oasis.opendocument.presentation",
+		"application/vnd.oasis.opendocument.spreadsheet",
+		"application/vnd.oasis.opendocument.text",
+		"application/vnd.openxmlformats-officedocument.presentationml.presentation",
+		"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+		"application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+		"application/vnd.rar",
+		"application/vnd.visio",
+		"application/x-7z-compressed",
+		"application/x-abiword",
+		"application/x-bzip",
+		"application/x-bzip2",
+		"application/x-cdf",
+		"application/x-freearc",
+		"application/x-tar",
+		"application/zip",
+		"text/calendar",
+	}
+
+	if StartWithInArray(unSupportedMediaType, strings.ToLower(type1)) {
+		return false
+	}
+
+	return !ContainsInArray(unSupportedContentType, strings.ToLower(type1))
 }
 
 var tagNameRegex = regexp.MustCompile(`(?ims)<([a-zA-Z_\\-]+[0-9]*|!--)`)

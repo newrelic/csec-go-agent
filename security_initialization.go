@@ -14,6 +14,7 @@ import (
 	logging "github.com/newrelic/csec-go-agent/internal/security_logs"
 	secUtils "github.com/newrelic/csec-go-agent/internal/security_utils"
 	secConfig "github.com/newrelic/csec-go-agent/security_config"
+	secIntercept "github.com/newrelic/csec-go-agent/security_intercept"
 )
 
 var logger logging.Logger
@@ -40,13 +41,15 @@ func initLogger(logFilePath string, isDebugLog bool) {
 	if isDebugLog {
 		logLevel = "DEBUG"
 	}
-	logging.Init(LOG_FILE, INIT_LOG_FILE, logFilePath, os.Getpid())
+	err := logging.Init(LOG_FILE, INIT_LOG_FILE, logFilePath, os.Getpid())
+	if err != nil {
+		secIntercept.SendLogMessage(err.Error(), "logging")
+	}
 	logging.SetLogLevel(logLevel)
 	logger = logging.GetLogger("Init")
 }
 
 func initApplicationInfo(appName string) {
-	secConfig.GlobalInfo.ApplicationInfo.SetAppUUID(secUtils.GetUniqueUUID())
 	secConfig.GlobalInfo.ApplicationInfo.SetAppName(appName)
 	secConfig.GlobalInfo.ApplicationInfo.SetPid(secUtils.IntToString(os.Getpid()))
 	binaryPath, err := os.Executable()
@@ -111,6 +114,7 @@ func initSecurityAgent(applicationName, licenseKey string, isDebugLog bool, secu
 	if secConfig.GlobalInfo.IsForceDisable() {
 		return
 	}
+	secConfig.GlobalInfo.ApplicationInfo.SetAppUUID(secUtils.GetUniqueUUID())
 	secConfig.GlobalInfo.SetSecurity(securityAgentConfig)
 	secConfig.GlobalInfo.ApplicationInfo.SetApiAccessorToken(licenseKey)
 	secConfig.GlobalInfo.SetSecurityHomePath(secUtils.GetCurrentWorkingDir())
