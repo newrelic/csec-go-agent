@@ -33,7 +33,6 @@ func TestMongoInsertOneHook(t *testing.T) {
 	secConfig.RegisterListener()
 
 	mt := ConnectMongoDB(t)
-	defer mt.Close()
 
 	mt.Run("success", func(mt *mtest.T) {
 		userCollection = mt.Coll
@@ -63,7 +62,6 @@ func TestMongoInsertManyHook(t *testing.T) {
 	secConfig.RegisterListener()
 
 	mt := ConnectMongoDB(t)
-	defer mt.Close()
 
 	mt.Run("success", func(mt *mtest.T) {
 		userCollection = mt.Coll
@@ -92,7 +90,6 @@ func TestMongoFindHook(t *testing.T) {
 	secConfig.RegisterListener()
 
 	mt := ConnectMongoDB(t)
-	defer mt.Close()
 
 	mt.Run("success", func(mt *mtest.T) {
 		userCollection = mt.Coll
@@ -130,7 +127,6 @@ func TestMongoFindOneHook(t *testing.T) {
 	secConfig.RegisterListener()
 
 	mt := ConnectMongoDB(t)
-	defer mt.Close()
 
 	mt.Run("success", func(mt *mtest.T) {
 		userCollection = mt.Coll
@@ -163,7 +159,6 @@ func TestMongoFindOneAndReplaceHook(t *testing.T) {
 	secConfig.RegisterListener()
 
 	mt := ConnectMongoDB(t)
-	defer mt.Close()
 
 	mt.Run("success", func(mt *mtest.T) {
 		userCollection = mt.Coll
@@ -192,7 +187,6 @@ func TestMongoFindOneAndUpdateHook(t *testing.T) {
 	secConfig.RegisterListener()
 
 	mt := ConnectMongoDB(t)
-	defer mt.Close()
 
 	mt.Run("success", func(mt *mtest.T) {
 		userCollection = mt.Coll
@@ -222,7 +216,6 @@ func TestMongoFindOneAndDeleteHook(t *testing.T) {
 	secConfig.RegisterListener()
 
 	mt := ConnectMongoDB(t)
-	defer mt.Close()
 
 	mt.Run("success", func(mt *mtest.T) {
 		userCollection = mt.Coll
@@ -251,7 +244,6 @@ func TestMongoUpdateOneHook(t *testing.T) {
 	secConfig.RegisterListener()
 
 	mt := ConnectMongoDB(t)
-	defer mt.Close()
 
 	mt.Run("success", func(mt *mtest.T) {
 		userCollection = mt.Coll
@@ -280,7 +272,6 @@ func TestMongoUpdateManyHook(t *testing.T) {
 	secConfig.RegisterListener()
 
 	mt := ConnectMongoDB(t)
-	defer mt.Close()
 
 	mt.Run("success", func(mt *mtest.T) {
 		userCollection = mt.Coll
@@ -310,7 +301,6 @@ func TestMongoReplaceOneHook(t *testing.T) {
 	secConfig.RegisterListener()
 
 	mt := ConnectMongoDB(t)
-	defer mt.Close()
 
 	mt.Run("success", func(mt *mtest.T) {
 		userCollection = mt.Coll
@@ -340,7 +330,6 @@ func TestMongoDeleteOneHook(t *testing.T) {
 	secConfig.RegisterListener()
 
 	mt := ConnectMongoDB(t)
-	defer mt.Close()
 
 	mt.Run("success", func(mt *mtest.T) {
 		userCollection = mt.Coll
@@ -369,7 +358,6 @@ func TestMongoDeleteManyHook(t *testing.T) {
 	secConfig.RegisterListener()
 
 	mt := ConnectMongoDB(t)
-	defer mt.Close()
 
 	mt.Run("success", func(mt *mtest.T) {
 		userCollection = mt.Coll
