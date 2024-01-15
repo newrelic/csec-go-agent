@@ -1,5 +1,25 @@
 # Changelog
 
+## [v0.6.0] - 2024-15-01
+### Changes
+* Added exclusion based filtering of RXSS events.
+* Added ws headers NR-CSEC-ENTITY-GUID and NR-CSEC-ENTITY-NAME.
+* Added Support for PUT, PATCH and DELETE http requests type. NR-175410
+* Added Support for FastHttp framework.
+* Implemented API to send important logs to Security Engine.
+* Added support for warning messages in case of missing security wrappers
+* Updated jsonVersion to 1.1.1 in security events.
+* Updated example/test application directory.
+* Updated unit test-cases for mongo.
+* Updated file access hook and sent absolute file path.
+### Changes
+* Incorrect query type for mongo findAndModify case.
+* Fixed empty complete request ID for lastleg .
+* Incorrect server protocol in case of grpc.
+* Nil query for sql prepared statement for MAC environment.
+* Fixed for NPE in case of outbound request.
+
+
 ## [v0.5.1] - 2023-11-16
 ### Bug Fixes
 * Added required changes for backward compatibility with APM agent.
