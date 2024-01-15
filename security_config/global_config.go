@@ -135,7 +135,20 @@ type metaData struct {
 	accountID       string
 	agentRunId      string
 	entityGuid      string
+	entityName      string
 	sync.Mutex
+}
+
+func (m *metaData) GetEntityName() string {
+	m.Lock()
+	defer m.Unlock()
+	return m.entityName
+}
+
+func (m *metaData) SetEntityName(value string) {
+	m.Lock()
+	defer m.Unlock()
+	m.entityName = value
 }
 
 func (m *metaData) GetEntityGuid() string {

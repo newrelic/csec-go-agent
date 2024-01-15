@@ -133,6 +133,18 @@ func fileExecByExtension(fn string) bool {
 	return false
 }
 
+// fileAbs return the file absolute path without clean process
+func fileAbs(path string) (string, error) {
+	if filepath.IsAbs(path) {
+		return path, nil
+	}
+	wd, err := os.Getwd()
+	if err != nil {
+		return "", err
+	}
+	return strings.Join([]string{wd, path}, string(os.PathSeparator)), nil
+}
+
 // // fileExecByExtension is used to check opened file is elf binary or not
 // func fileIsBinaryExec(fn string) bool {
 // 	f, err := os.Open(fn)

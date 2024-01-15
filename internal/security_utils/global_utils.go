@@ -3,10 +3,13 @@
 
 package security_utils
 
+import "net/http"
+
 const MaxReadBodyLen = 300000
 
 type Info_req struct {
 	ResponseBody         string
+	ResponseHeader       http.Header
 	ResponseContentType  string
 	GrpcByte             [][]byte
 	GrpcBody             []interface{}
@@ -25,6 +28,10 @@ type ReflectedMetaData struct {
 	IsServerStream     bool   `json:"isGrpcServerStream"`
 	GrcpMessageType    string `json:"grcpMessageType"`
 	GrcpMessageVersion string `json:"grcpMessageVersion"`
+}
+
+type ResponseInfo struct {
+	ContentType string `json:"contentType"`
 }
 
 type RequestInfo struct {

@@ -49,7 +49,7 @@ func parseControlCommand(arg []byte) (error, bool) {
 
 	if err != nil {
 		logger.Errorln("Unable to unmarshall cc ", err)
-		return errors.New("unable to unmarshall cc "), false
+		return errors.New("unable to unmarshall cc " + err.Error()), false
 	}
 	logger.Debugln("Received control command", cc.ControlCommand)
 

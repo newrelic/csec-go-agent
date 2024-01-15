@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 
+	secUtils "github.com/newrelic/csec-go-agent/internal/security_utils"
 	secConfig "github.com/newrelic/csec-go-agent/security_config"
 	secevent "github.com/newrelic/csec-go-agent/security_event_generation"
 	sechandler "github.com/newrelic/csec-go-agent/security_handlers"
@@ -24,11 +25,12 @@ type SecGrpcFuzz struct {
 
 func (grpcFuzz SecGrpcFuzz) ExecuteFuzzRequest(fuzzRequest *sechandler.FuzzRequrestHandler, caseType string, fuzzId string) {
 	fuzzRequestID := fmt.Sprintf("%v", fuzzRequest.Headers[secIntercept.NR_CSEC_FUZZ_REQUEST_ID])
-
+	sechandler.FuzzHandler.AppendCompletedRequestIds(fuzzId, "")
 	var grpcBody []interface{}
 	err := json.Unmarshal([]byte(fuzzRequest.Body), &grpcBody)
 	if err != nil {
 		logger.Debugln("ERROR: error in unmarshal gRPC body : ", err.Error(), fuzzRequest.Body)
+		secIntercept.SendLogMessage("ERROR: error in unmarshal gRPC body : "+err.Error(), "csec_grpc")
 		secevent.SendFuzzFailEvent(fuzzRequestID)
 		return
 	}
@@ -55,6 +57,7 @@ func (grpcFuzz SecGrpcFuzz) ExecuteFuzzRequest(fuzzRequest *sechandler.FuzzRequr
 
 	if err != nil {
 		logger.Errorln("ERROR: Failed to create fuzz client : ", secConfig.GlobalInfo.ApplicationInfo.ServerIp, gPort, err.Error())
+		secIntercept.SendLogMessage("ERROR: Failed to create fuzz client : "+secConfig.GlobalInfo.ApplicationInfo.ServerIp+gPort+err.Error(), "csec_grpc")
 		secevent.SendFuzzFailEvent(fuzzRequestID)
 	}
 
@@ -63,7 +66,6 @@ func (grpcFuzz SecGrpcFuzz) ExecuteFuzzRequest(fuzzRequest *sechandler.FuzzRequr
 		url = url[1:]
 	}
 
-	sechandler.FuzzHandler.AppendCompletedRequestIds(fuzzId, "")
 	tmp := fmt.Sprintf("%s: %s", "nr-csec-parent-id", fuzzId)
 	headers = append(headers, tmp)
 
@@ -89,7 +91,7 @@ func (grpcFuzz SecGrpcFuzz) ExecuteFuzzRequest(fuzzRequest *sechandler.FuzzRequr
 }
 
 func getFuzzClient(protocol, url, serverName string) (*grpc.ClientConn, error) {
-	if protocol == "https" {
+	if secUtils.CaseInsensitiveEquals(protocol, "https") {
 		return getHttpsClient(url, serverName)
 	} else {
 		return getHttpClient(url)

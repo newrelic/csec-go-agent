@@ -57,20 +57,20 @@ func (config *RotateFileConfig) createLogDir() (io.Writer, error) {
 
 }
 
-func NewRotateFileHook(config RotateFileConfig) (*RotateFileHook, io.Writer, bool) {
+func NewRotateFileHook(config RotateFileConfig) (*RotateFileHook, io.Writer, bool, error) {
 	logfile, err := config.createLogDir()
-	idDefault := false
+	isDefault := false
 	if err != nil {
 		fmt.Println(err)
 		logfile = os.Stdout
-		idDefault = true
+		isDefault = true
 	}
 
 	hook := RotateFileHook{
 		Config: config,
 	}
 
-	return &hook, logfile, idDefault
+	return &hook, logfile, isDefault, err
 }
 
 func (hook *RotateFileHook) Fire(logMessege, mode string, isDefault bool) string {

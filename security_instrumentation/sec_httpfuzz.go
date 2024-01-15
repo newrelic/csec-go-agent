@@ -13,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	secUtils "github.com/newrelic/csec-go-agent/internal/security_utils"
 	secConfig "github.com/newrelic/csec-go-agent/security_config"
 	eventGeneration "github.com/newrelic/csec-go-agent/security_event_generation"
 	sechandler "github.com/newrelic/csec-go-agent/security_handlers"
@@ -59,7 +60,7 @@ func (httpFuzz SecHttpFuzz) ExecuteFuzzRequest(fuzzRequest *sechandler.FuzzRequr
 	fuzzRequestURL := secConfig.GlobalInfo.ApplicationInfo.GetServerIp() + applicationPort + fuzzRequest.Url
 	var fuzzRequestClient *http.Client
 
-	if fuzzRequest.Protocol == "https" {
+	if secUtils.CaseInsensitiveEquals(fuzzRequest.Protocol, "https") {
 		fuzzRequestURL = HTTPS + fuzzRequestURL
 		fuzzRequestClient = getHttpsClient()
 		fuzzRequestClient.Transport = getTransport(fuzzRequest.ServerName)
@@ -67,21 +68,15 @@ func (httpFuzz SecHttpFuzz) ExecuteFuzzRequest(fuzzRequest *sechandler.FuzzRequr
 		fuzzRequestURL = HTTP + fuzzRequestURL
 		fuzzRequestClient = getHttpClient()
 	}
-
+	sechandler.FuzzHandler.AppendCompletedRequestIds(fuzzId, "")
 	var req *http.Request = nil
 	var err error = nil
 
-	switch fuzzRequest.Method {
-
-	case GET:
-		req, err = http.NewRequest(GET, fuzzRequestURL, nil)
-	case POST:
-		req, err = http.NewRequest(POST, fuzzRequestURL, strings.NewReader(fuzzRequest.Body))
-	default:
-		logger.Errorln("Unimplemented request type", fuzzRequest.Method)
-	}
+	req, err = http.NewRequest(fuzzRequest.Method, fuzzRequestURL, strings.NewReader(fuzzRequest.Body))
 	if req == nil || err != nil {
 		eventGeneration.SendFuzzFailEvent(fuzzRequestID)
+		logger.Infoln("ERROR: request type", fuzzRequest.Method, err)
+		secIntercept.SendLogMessage(err.Error(), "security_instrumentation")
 		return
 	}
 	req.URL.RawQuery = req.URL.Query().Encode()
@@ -90,7 +85,6 @@ func (httpFuzz SecHttpFuzz) ExecuteFuzzRequest(fuzzRequest *sechandler.FuzzRequr
 		value := fmt.Sprintf("%v", headerValue)
 		req.Header.Set(headerKey, value)
 	}
-	sechandler.FuzzHandler.AppendCompletedRequestIds(fuzzId, "")
 	req.Header.Set("Content-Type", fuzzRequest.ContentType)
 	req.Header.Set("nr-csec-parent-id", fuzzId)
 
@@ -100,6 +94,7 @@ func (httpFuzz SecHttpFuzz) ExecuteFuzzRequest(fuzzRequest *sechandler.FuzzRequr
 	response, err := fuzzRequestClient.Do(req)
 	if err != nil {
 		logger.Debugln("ERROR: fuzz request fail : ", fuzzRequestID, err.Error())
+		secIntercept.SendLogMessage("fuzz request fail :"+err.Error(), "security_instrumentation")
 		eventGeneration.SendFuzzFailEvent(fuzzRequestID)
 	} else {
 		defer response.Body.Close()

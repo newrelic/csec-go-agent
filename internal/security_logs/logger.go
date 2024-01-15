@@ -46,9 +46,11 @@ func DefaultLogger(iscache1 bool) *logFile {
 
 func (f *logFile) fire(level string, msg ...interface{}) {
 	logm := fmt.Sprintln(msg...)
-
 	if level == "ERROR" {
 		errLevel := fmt.Sprintf("\x1b[%dm%s\x1b[0m", 31, "ERROR")
+		logm = fmt.Sprintf(" [%s] %s", errLevel, logm)
+	} else if level == "WARN" {
+		errLevel := fmt.Sprintf("\x1b[%dm%s\x1b[0m", 33, "WARN")
 		logm = fmt.Sprintf(" [%s] %s", errLevel, logm)
 	} else {
 		logm = fmt.Sprintf(" [%s] %s", level, logm)
@@ -104,6 +106,6 @@ func (f *logFile) cleanCache() {
 	f.cache = make([]interface{}, 0)
 }
 
-func (f *logFile) IsDebug() bool{
+func (f *logFile) IsDebug() bool {
 	return f.isDebugMode
 }

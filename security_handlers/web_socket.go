@@ -219,7 +219,7 @@ func (ws *websocket) closeWs() {
 
 func (ws *websocket) RegisterEvent(s []byte, eventID string, eventType string) {
 	increaseEventProcessed(eventType)
-	if !ws.isWsConnected() {
+	if !ws.isWsConnected() && eventType != "LogMessage" {
 		increaseEventDropCount(eventType)
 		logger.Debugln("Drop event WS not connected or Reconnecting", len(ws.eventBuffer), cap(ws.eventBuffer))
 		return
@@ -362,6 +362,7 @@ func readThread(ws *websocket) {
 		}
 		err, _ = parseControlCommand(buf)
 		if err != nil {
+			eventGeneration.SendLogMessage("Unable to unmarshall control command"+err.Error(), "security_handlers")
 			logger.Errorln("Unable to unmarshall cc ", err)
 		}
 	}
@@ -372,7 +373,7 @@ func getConnectionHeader() http.Header {
 	return http.Header{
 		"NR-CSEC-CONNECTION-TYPE":         []string{"LANGUAGE_COLLECTOR"},
 		"NR-LICENSE-KEY":                  []string{secConfig.GlobalInfo.ApplicationInfo.GetApiAccessorToken()},
-		"NR-AGENT-RUN-TOKEN":              []string{secConfig.GlobalInfo.MetaData.GetAccountID()},
+		"NR-AGENT-RUN-TOKEN":              []string{secConfig.GlobalInfo.MetaData.GetAgentRunId()},
 		"NR-CSEC-VERSION":                 []string{secUtils.CollectorVersion},
 		"NR-CSEC-COLLECTOR-TYPE":          []string{secUtils.CollectorType},
 		"NR-CSEC-MODE":                    []string{secConfig.GlobalInfo.SecurityMode()},
@@ -382,6 +383,7 @@ func getConnectionHeader() http.Header {
 		"NR-ACCOUNT-ID":                   []string{secConfig.GlobalInfo.MetaData.GetAccountID()},
 		"NR-CSEC-IAST-DATA-TRANSFER-MODE": []string{"PULL"},
 		"NR-CSEC-ENTITY-GUID":             []string{secConfig.GlobalInfo.MetaData.GetEntityGuid()},
+		"NR-CSEC-ENTITY-NAME":             []string{secConfig.GlobalInfo.MetaData.GetEntityName()},
 	}
 
 }

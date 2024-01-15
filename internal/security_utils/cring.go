@@ -115,7 +115,7 @@ func (cr *Cring) ForceInsert(astr string) {
 	return
 }
 
-func (cr *Cring) Get() interface{} {
+func (cr *Cring) Get() []interface{} {
 	return cr.data
 }
 
