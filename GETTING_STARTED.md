@@ -42,4 +42,11 @@ After instantiating your app, Init nrsecurityagent as given below
     )
 ```
 
+If you are opening an HTTP protocol endpoint, place the newrelic.WrapListen function around the endpoint name to enable vulnerability scanning against that endpoint. For example:
+
+Note: Skip this step if you are on linux environment.
+```
+    http.ListenAndServe(newrelic.WrapListen(":8000"), nil)
+```
+
 Generate traffic against your application for the IAST agent to detect vulnerabilities. Once vulnerabilities are detected they will be reported in the vulnerabilities list.
