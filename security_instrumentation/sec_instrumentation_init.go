@@ -43,7 +43,6 @@ func init() {
 	}
 	locateImports()
 	if secIntercept.IsHookingoIsSupported() {
-		locateImports()
 		secIntercept.InitSyms()
 		init_hooks()
 	}
