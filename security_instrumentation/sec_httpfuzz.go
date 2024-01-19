@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"sync"
@@ -79,7 +80,11 @@ func (httpFuzz SecHttpFuzz) ExecuteFuzzRequest(fuzzRequest *sechandler.FuzzRequr
 		secIntercept.SendLogMessage(err.Error(), "security_instrumentation")
 		return
 	}
-	req.URL.RawQuery = req.URL.Query().Encode()
+
+	v, err := url.ParseQuery(req.URL.RawQuery)
+	if err == nil {
+		req.URL.RawQuery = v.Encode()
+	}
 
 	for headerKey, headerValue := range fuzzRequest.Headers {
 		value := fmt.Sprintf("%v", headerValue)
