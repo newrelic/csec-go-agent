@@ -3,5 +3,5 @@ module github.com/newrelic/csec-go-agent/instrumentation/csec_antchfx_jsonquery
 go 1.17
 
 require (
-	github.com/newrelic/csec-go-agent v0.6.0
+	github.com/newrelic/csec-go-agent v0.7.0
 )
