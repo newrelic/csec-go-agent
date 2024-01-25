@@ -390,7 +390,7 @@ func presentStack(method string) (vulnerabilityDetails secUtils.VulnerabilityDet
 				lineNumber = k.lineNumber
 			}
 		}
-		if !isSecureAgentCode {
+		if !isSecureAgentCode && !isStartProcessHook(functionName) {
 			generateStackTrace(fileName, functionName, lineNumber)
 		}
 		if !more {
@@ -438,6 +438,10 @@ func isSecureAgentCode(name string) bool {
 	}
 
 	return false
+}
+
+func isStartProcessHook(functionName string) bool {
+	return functionName == "os/exec.(*Cmd).Start"
 }
 
 func increaseCount() string {

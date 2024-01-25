@@ -78,7 +78,7 @@ func (cr *Cring) Remove() interface{} {
 }
 
 // add object from cring
-func (cr *Cring) Add(astr []byte) int {
+func (cr *Cring) Add(astr interface{}) int {
 	cr.Lock()
 	defer cr.Unlock()
 	if cr.IscringFull() {

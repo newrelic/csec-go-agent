@@ -17,11 +17,11 @@ Linux, MacOS, and Windows are supported.
 To install the agent, follow the instructions in our [GETTING_STARTED](https://github.com/newrelic/csec-go-agent/blob/main/GETTING_STARTED.md) document.
 
 # Getting Started
-examples/server/main.go is an example that will appear as "Example App" in your New Relic applications list. To run it:
+examples/sample-vulnerable-application/main.go is an example that will appear as "Example App" in your New Relic applications list. To run it:
 
 ```
 env NEW_RELIC_LICENSE_KEY=__YOUR_NEW_RELIC_LICENSE_KEY__LICENSE__ \
-    go run examples/server/main.go
+    go run examples/sample-vulnerable-application/main.go
 ```
 ## Support Matrix
 

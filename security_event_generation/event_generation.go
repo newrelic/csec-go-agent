@@ -36,7 +36,7 @@ var (
 	HcBuffer      *secUtils.Cring
 	logger        = logging.GetLogger("hook")
 	removeChannel = make(chan string)
-	errorBuffer   = secUtils.NewCring(5)
+	errorBuffer   = secUtils.NewCring(15)
 )
 
 func InitHcScheduler() {
@@ -95,6 +95,14 @@ func SendSecHealthCheck() {
 	hc.RaspEventStats = *secConfig.GlobalInfo.EventData.GetRaspEventStats()
 	hc.ExitEventStats = *secConfig.GlobalInfo.EventData.GetExitEventStats()
 
+	var threadPoolStats ThreadPoolStats
+	if secConfig.SecureWS != nil {
+		threadPoolStats.FuzzRequestQueueSize = secConfig.SecureWS.PendingFuzzTask()
+		threadPoolStats.FuzzRequestCount = secConfig.GlobalInfo.EventData.GetFuzzRequestCount()
+		threadPoolStats.EventSendQueueSize = secConfig.SecureWS.PendingEvent()
+	}
+	hc.ThreadPoolStats = threadPoolStats
+
 	hc.EventDropCount = hc.IastEventStats.Rejected + hc.RaspEventStats.Rejected + hc.ExitEventStats.Rejected
 	hc.EventProcessed = hc.IastEventStats.Processed + hc.RaspEventStats.Processed + hc.ExitEventStats.Processed
 	hc.EventSentCount = hc.IastEventStats.Sent + hc.RaspEventStats.Sent + hc.ExitEventStats.Sent
@@ -110,6 +118,7 @@ func SendSecHealthCheck() {
 	populateStatusLogs(serviceStatus, stats)
 
 	secConfig.GlobalInfo.EventData.SetHttpRequestCount(0)
+	secConfig.GlobalInfo.EventData.SetFuzzRequestCount(0)
 	secConfig.GlobalInfo.EventData.ResetEventStats()
 }
 
@@ -379,30 +388,40 @@ func sendBufferLogMessage() {
 	logger.Debugln("sendBufferLogMessage")
 	for i != nil {
 		if secConfig.SecureWS != nil {
-			if logger.IsDebug() {
-				logger.Debugln("ready to send : ", string(i.([]byte)))
+			tmp_event, ok := i.(LogMessage)
+			if ok {
+				tmp_event.ApplicationUUID = secConfig.GlobalInfo.ApplicationInfo.GetAppUUID()
+				tmp_event.LinkingMetadata = secConfig.GlobalInfo.MetaData.GetLinkingMetadata()
+				sendEvent(tmp_event, "", "LogMessage")
 			}
-			(secConfig.SecureWS).RegisterEvent(i.([]byte), "", "LogMessage")
 		}
 		i = errorBuffer.Remove()
 	}
 }
 
-func SendLogMessage(log, caller string) {
+func SendLogMessage(log, caller, logLevel string) {
+
 	var tmp_event LogMessage
 
 	tmp_event.ApplicationUUID = secConfig.GlobalInfo.ApplicationInfo.GetAppUUID()
 	tmp_event.JSONName = "critical-messages"
 	tmp_event.Timestamp = time.Now().Unix() * 1000
-	tmp_event.Level = "SEVERE"
+	tmp_event.Level = logLevel
 	tmp_event.Message = log
 	tmp_event.Caller = caller
-	tmp_event.Exception = Exception{Message: log}
+	if log != "INFO" {
+		tmp_event.Exception = Exception{Message: log}
+	}
 	tmp_event.ThreadName = caller
 	tmp_event.LinkingMetadata = secConfig.GlobalInfo.MetaData.GetLinkingMetadata()
-	_, err := sendEvent(tmp_event, "", "LogMessage")
-	if err != nil {
-		logger.Debugln("ERROR: ", err.Error())
+
+	if secConfig.SecureWS == nil {
+		errorBuffer.Add(tmp_event)
+	} else {
+		_, err := sendEvent(tmp_event, "", "LogMessage")
+		if err != nil {
+			logger.Debugln("ERROR: ", err.Error())
+		}
 	}
 }
 
@@ -419,11 +438,7 @@ func sendEvent(event interface{}, eventID, eventType string) ([]byte, error) {
 		(secConfig.SecureWS).RegisterEvent(event_json, eventID, eventType)
 		return event_json, nil
 	} else {
-		if eventType == "LogMessage" {
-			errorBuffer.Add(event_json)
-		} else {
-			logger.Errorln("websocket not initialized to send event", string(event_json))
-		}
+		logger.Errorln("websocket not initialized to send event", string(event_json))
 		return event_json, errors.New("websocket not initialized to send event")
 	}
 }

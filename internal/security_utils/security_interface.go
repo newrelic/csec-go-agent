@@ -48,4 +48,6 @@ type SecureWSiface interface {
 	CloseWSConnection()
 	SendPriorityEvent([]byte)
 	AddCompletedRequests(string, string)
+	PendingEvent() int
+	PendingFuzzTask() int
 }

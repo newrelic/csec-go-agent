@@ -202,6 +202,7 @@ func (m *metaData) SetLinkingMetadata(value interface{}) {
 // EventData used to track number of request
 type eventData struct {
 	httpRequestCount uint64
+	fuzzRequestCount uint64
 	iastEventStats   EventStats
 	raspEventStats   EventStats
 	exitEventStats   EventStats
@@ -262,6 +263,38 @@ func (e *eventData) IncreaseHttpRequestCount() {
 	e.httpRequestCount++
 	if e.httpRequestCount == 0 {
 		e.httpRequestCount = math.MaxUint64
+	}
+}
+
+func (e *eventData) GetFuzzRequestCount() uint64 {
+	var out uint64
+	if e == nil {
+		return out
+	}
+	e.Lock()
+	defer e.Unlock()
+	return e.fuzzRequestCount
+}
+
+func (e *eventData) SetFuzzRequestCount(value uint64) {
+	if e == nil {
+		return
+	}
+	e.Lock()
+	defer e.Unlock()
+	e.fuzzRequestCount = value
+}
+
+func (e *eventData) IncreaseFuzzRequestCount() {
+	if e == nil {
+		return
+	}
+	e.Lock()
+	defer e.Unlock()
+
+	e.fuzzRequestCount++
+	if e.fuzzRequestCount == 0 {
+		e.fuzzRequestCount = math.MaxUint64
 	}
 }
 
