@@ -117,6 +117,13 @@ type healthcheck struct {
 	IastEventStats   secConfig.EventStats `json:"iastEventStats"`
 	RaspEventStats   secConfig.EventStats `json:"raspEventStats"`
 	ExitEventStats   secConfig.EventStats `json:"exitEventStats"`
+	ThreadPoolStats  ThreadPoolStats      `json:"threadPoolStats"`
+}
+
+type ThreadPoolStats struct {
+	FuzzRequestCount     uint64 `json:"fuzzRequestCount"`
+	FuzzRequestQueueSize int    `json:"fuzzRequestQueueSize"`
+	EventSendQueueSize   int    `json:"eventSendQueueSize"`
 }
 
 type SourceID struct {

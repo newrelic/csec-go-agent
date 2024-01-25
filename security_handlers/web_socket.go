@@ -309,6 +309,16 @@ func (ws *websocket) AddCompletedRequests(parentId, apiID string) {
 	FuzzHandler.AppendCompletedRequestIds(parentId, apiID)
 }
 
+func (ws *websocket) PendingEvent() int {
+	return ws.pendingEvent()
+}
+func (ws *websocket) PendingFuzzTask() int {
+	if FuzzHandler.threadPool == nil {
+		return 0
+	}
+	return FuzzHandler.threadPool.PendingTask()
+}
+
 func InitializeWsConnecton() {
 	ws := new(websocket)
 	ws.eventBuffer = make(chan eventStruct, 10240)

@@ -688,6 +688,7 @@ func UpdateLinkData(linkingMetadata map[string]string) {
 			secConfig.GlobalInfo.MetaData.SetAgentRunId(agentRunId)
 		}
 		if secConfig.SecureWS != nil {
+			SendLogMessage("Reconnect security agent at refresh call", "UpdateLinkData", "INFO")
 			secConfig.SecureWS.ReconnectAtAgentRefresh()
 		}
 	}
@@ -982,6 +983,7 @@ func redisHandler(data ...interface{}) {
 }
 
 func DeactivateSecurity() {
+	SendLogMessage("deactivating security agent", "DeactivateSecurity", "INFO")
 	eventGeneration.RemoveHcScheduler()
 	secConfig.GlobalInfo.SetSecurityEnabled(false)
 	secConfig.GlobalInfo.SetSecurityAgentEnabled(false)
@@ -991,10 +993,12 @@ func DeactivateSecurity() {
 }
 
 func InitHttpFuzzRestClient(rest secWs.SecureFuzz) {
+	SendLogMessage("initialize http fuzz Client", "InitHttpFuzzRestClient", "INFO")
 	secWs.FuzzHandler.InitHttpFuzzRestClient(rest)
 }
 
 func InitGrpsFuzzRestClient(rest secWs.SecureFuzz) {
+	SendLogMessage("initialize gRPC fuzz Client", "InitGrpsFuzzRestClient", "INFO")
 	secWs.FuzzHandler.InitGrpsFuzzRestClient(rest)
 
 }

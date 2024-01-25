@@ -95,6 +95,14 @@ func SendSecHealthCheck() {
 	hc.RaspEventStats = *secConfig.GlobalInfo.EventData.GetRaspEventStats()
 	hc.ExitEventStats = *secConfig.GlobalInfo.EventData.GetExitEventStats()
 
+	var threadPoolStats ThreadPoolStats
+	if secConfig.SecureWS != nil {
+		threadPoolStats.FuzzRequestQueueSize = secConfig.SecureWS.PendingFuzzTask()
+		threadPoolStats.FuzzRequestCount = secConfig.GlobalInfo.EventData.GetFuzzRequestCount()
+		threadPoolStats.EventSendQueueSize = secConfig.SecureWS.PendingEvent()
+	}
+	hc.ThreadPoolStats = threadPoolStats
+
 	hc.EventDropCount = hc.IastEventStats.Rejected + hc.RaspEventStats.Rejected + hc.ExitEventStats.Rejected
 	hc.EventProcessed = hc.IastEventStats.Processed + hc.RaspEventStats.Processed + hc.ExitEventStats.Processed
 	hc.EventSentCount = hc.IastEventStats.Sent + hc.RaspEventStats.Sent + hc.ExitEventStats.Sent
@@ -110,6 +118,7 @@ func SendSecHealthCheck() {
 	populateStatusLogs(serviceStatus, stats)
 
 	secConfig.GlobalInfo.EventData.SetHttpRequestCount(0)
+	secConfig.GlobalInfo.EventData.SetFuzzRequestCount(0)
 	secConfig.GlobalInfo.EventData.ResetEventStats()
 }
 

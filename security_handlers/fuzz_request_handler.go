@@ -65,6 +65,7 @@ func registerFuzzTask(kcc11 *FuzzRequrestHandler, caseType, requestID string) {
 		printlogs := fmt.Sprintf("IAST Scan for API %s with ID : %s started.", kcc11.RequestURI, ids[0])
 		logger.Infoln(printlogs)
 	}
+	secConfig.GlobalInfo.EventData.IncreaseFuzzRequestCount()
 	FuzzHandler.AppendPendingRequestIds(requestID)
 	FuzzHandler.threadPool.RegisterTask(task)
 	FuzzHandler.SetLastFuzzRequestTime()
@@ -92,6 +93,7 @@ func InitFuzzScheduler() {
 	if FuzzHandler.threadPool == nil {
 		initRestRequestThreadPool()
 	}
+	eventGeneration.SendLogMessage("initializing fuzz request scheduler", "InitFuzzScheduler", "INFO")
 	for {
 		time.Sleep(1 * time.Second)
 		if !secConfig.SecureWS.GetStatus() {

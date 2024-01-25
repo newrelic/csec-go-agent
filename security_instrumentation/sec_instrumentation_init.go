@@ -47,7 +47,7 @@ func init() {
 		secIntercept.InitSyms()
 		init_hooks()
 	} else {
-		printlogs := fmt.Sprintf("Go Security Agent running enviroement = %s ,%s ", runtime.GOOS, runtime.GOARCH)
+		printlogs := fmt.Sprintf("Go Security Agent running environment = %s ,%s ", runtime.GOOS, runtime.GOARCH)
 		secIntercept.SendLogMessage(printlogs, "security_instrumentation", "SEVERE")
 	}
 	initBlackops()
@@ -91,6 +91,9 @@ func locateImports() {
 				printlogs := fmt.Sprintf("Warning : Your application seems to be using package %s. Please make sure you import %s package to enable security for package %s.", wrapper, secWrapper, wrapper)
 				secIntercept.SendLogMessage(printlogs, "locateImports", "INFO")
 				logging.PrintWarnlog(printlogs)
+			} else {
+				printlogs := fmt.Sprintf("Application imports %s wrapper package ", secWrapper)
+				secIntercept.SendLogMessage(printlogs, "locateImports", "INFO")
 			}
 		}
 	}
