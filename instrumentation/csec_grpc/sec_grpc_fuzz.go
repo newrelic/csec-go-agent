@@ -30,7 +30,7 @@ func (grpcFuzz SecGrpcFuzz) ExecuteFuzzRequest(fuzzRequest *sechandler.FuzzRequr
 	err := json.Unmarshal([]byte(fuzzRequest.Body), &grpcBody)
 	if err != nil {
 		logger.Debugln("ERROR: error in unmarshal gRPC body : ", err.Error(), fuzzRequest.Body)
-		secIntercept.SendLogMessage("ERROR: error in unmarshal gRPC body : "+err.Error(), "csec_grpc", "SEVERE")
+		//secIntercept.SendLogMessage("ERROR: error in unmarshal gRPC body : "+err.Error(), "csec_grpc", "SEVERE")
 		secevent.SendFuzzFailEvent(fuzzRequestID)
 		return
 	}
