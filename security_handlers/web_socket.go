@@ -362,7 +362,7 @@ func readThread(ws *websocket) {
 		}
 		err, _ = parseControlCommand(buf)
 		if err != nil {
-			eventGeneration.SendLogMessage("Unable to unmarshall control command"+err.Error(), "security_handlers")
+			eventGeneration.SendLogMessage("Unable to unmarshall control command"+err.Error(), "security_handlers", "SEVERE")
 			logger.Errorln("Unable to unmarshall cc ", err)
 		}
 	}

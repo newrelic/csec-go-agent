@@ -76,7 +76,7 @@ func (httpFuzz SecHttpFuzz) ExecuteFuzzRequest(fuzzRequest *sechandler.FuzzRequr
 	if req == nil || err != nil {
 		eventGeneration.SendFuzzFailEvent(fuzzRequestID)
 		logger.Infoln("ERROR: request type", fuzzRequest.Method, err)
-		secIntercept.SendLogMessage(err.Error(), "security_instrumentation")
+		secIntercept.SendLogMessage(err.Error(), "security_instrumentation", "SEVERE")
 		return
 	}
 	req.URL.RawQuery = req.URL.Query().Encode()
@@ -94,7 +94,7 @@ func (httpFuzz SecHttpFuzz) ExecuteFuzzRequest(fuzzRequest *sechandler.FuzzRequr
 	response, err := fuzzRequestClient.Do(req)
 	if err != nil {
 		logger.Debugln("ERROR: fuzz request fail : ", fuzzRequestID, err.Error())
-		secIntercept.SendLogMessage("fuzz request fail :"+err.Error(), "security_instrumentation")
+		secIntercept.SendLogMessage("fuzz request fail :"+err.Error(), "security_instrumentation", "SEVERE")
 		eventGeneration.SendFuzzFailEvent(fuzzRequestID)
 	} else {
 		defer response.Body.Close()

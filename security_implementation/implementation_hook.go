@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/k2io/hookingo"
+	eventGeneration "github.com/newrelic/csec-go-agent/security_event_generation"
 )
 
 type hookedMethodTuple struct {
@@ -28,6 +29,7 @@ func (k Secureimpl) HookWrap(from, to, toc interface{}) error {
 	_, err := hookingo.ApplyWrap(from, to, toc)
 	if err != nil {
 		err = errors.New("unable to apply hook hookingo failure " + err.Error())
+		eventGeneration.SendLogMessage(err.Error(), "logging", "SEVERE")
 	} else {
 		setAddrMapInterface(from, to, toc)
 	}
@@ -40,6 +42,7 @@ func (k Secureimpl) HookWrapInterface(from, to, toc interface{}) error {
 	_, err := hookingo.ApplyWrapInterface(from, to, toc)
 	if err != nil {
 		err = errors.New("unable to apply hook hookingo failure " + err.Error())
+		eventGeneration.SendLogMessage(err.Error(), "logging", "SEVERE")
 	} else {
 		setAddrMapInterface(from, to, toc)
 	}
@@ -50,6 +53,7 @@ func (k Secureimpl) HookWrapRaw(from uintptr, to, toc interface{}) error {
 	_, err := hookingo.ApplyWrapRaw(from, to, toc)
 	if err != nil {
 		err = errors.New("unable to apply hook hookingo failure " + err.Error())
+		eventGeneration.SendLogMessage(err.Error(), "logging", "SEVERE")
 	} else {
 		setAddrMap(from, to, toc)
 	}
@@ -66,11 +70,14 @@ func (k Secureimpl) HookWrapRawNamed(xstrfrom string, to, toc interface{}) (stri
 	methodName := convertPtrReceiver(xstrfrom)
 	from, ok := symbolTable[methodName]
 	if !ok {
-		return "", errors.New("Unable to locate and Hook for :" + xstrfrom)
+		err := errors.New("Unable to locate and Hook for :" + xstrfrom)
+		eventGeneration.SendLogMessage(err.Error(), "logging", "SEVERE")
+		return "", err
 	}
 	_, err := hookingo.ApplyWrapRaw(from, to, toc)
 	if err != nil {
 		err = errors.New("Unable to apply hook hookingo failure " + err.Error())
+		eventGeneration.SendLogMessage(err.Error(), "logging", "SEVERE")
 	} else {
 		setAddrMap(from, to, toc)
 	}

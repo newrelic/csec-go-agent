@@ -379,30 +379,38 @@ func sendBufferLogMessage() {
 	logger.Debugln("sendBufferLogMessage")
 	for i != nil {
 		if secConfig.SecureWS != nil {
-			if logger.IsDebug() {
-				logger.Debugln("ready to send : ", string(i.([]byte)))
+			tmp_event, ok := i.(LogMessage)
+			if ok {
+				tmp_event.ApplicationUUID = secConfig.GlobalInfo.ApplicationInfo.GetAppUUID()
+				tmp_event.LinkingMetadata = secConfig.GlobalInfo.MetaData.GetLinkingMetadata()
 			}
-			(secConfig.SecureWS).RegisterEvent(i.([]byte), "", "LogMessage")
+			sendEvent(tmp_event, "", "LogMessage")
 		}
 		i = errorBuffer.Remove()
 	}
 }
 
-func SendLogMessage(log, caller string) {
+func SendLogMessage(log, caller, logLevel string) {
+
 	var tmp_event LogMessage
 
 	tmp_event.ApplicationUUID = secConfig.GlobalInfo.ApplicationInfo.GetAppUUID()
 	tmp_event.JSONName = "critical-messages"
 	tmp_event.Timestamp = time.Now().Unix() * 1000
-	tmp_event.Level = "SEVERE"
+	tmp_event.Level = logLevel
 	tmp_event.Message = log
 	tmp_event.Caller = caller
 	tmp_event.Exception = Exception{Message: log}
 	tmp_event.ThreadName = caller
 	tmp_event.LinkingMetadata = secConfig.GlobalInfo.MetaData.GetLinkingMetadata()
-	_, err := sendEvent(tmp_event, "", "LogMessage")
-	if err != nil {
-		logger.Debugln("ERROR: ", err.Error())
+
+	if secConfig.SecureWS == nil {
+		errorBuffer.Add(tmp_event)
+	} else {
+		_, err := sendEvent(tmp_event, "", "LogMessage")
+		if err != nil {
+			logger.Debugln("ERROR: ", err.Error())
+		}
 	}
 }
 
@@ -419,11 +427,7 @@ func sendEvent(event interface{}, eventID, eventType string) ([]byte, error) {
 		(secConfig.SecureWS).RegisterEvent(event_json, eventID, eventType)
 		return event_json, nil
 	} else {
-		if eventType == "LogMessage" {
-			errorBuffer.Add(event_json)
-		} else {
-			logger.Errorln("websocket not initialized to send event", string(event_json))
-		}
+		logger.Errorln("websocket not initialized to send event", string(event_json))
 		return event_json, errors.New("websocket not initialized to send event")
 	}
 }

@@ -30,7 +30,7 @@ func (grpcFuzz SecGrpcFuzz) ExecuteFuzzRequest(fuzzRequest *sechandler.FuzzRequr
 	err := json.Unmarshal([]byte(fuzzRequest.Body), &grpcBody)
 	if err != nil {
 		logger.Debugln("ERROR: error in unmarshal gRPC body : ", err.Error(), fuzzRequest.Body)
-		secIntercept.SendLogMessage("ERROR: error in unmarshal gRPC body : "+err.Error(), "csec_grpc")
+		secIntercept.SendLogMessage("ERROR: error in unmarshal gRPC body : "+err.Error(), "csec_grpc", "SEVERE")
 		secevent.SendFuzzFailEvent(fuzzRequestID)
 		return
 	}
@@ -57,7 +57,7 @@ func (grpcFuzz SecGrpcFuzz) ExecuteFuzzRequest(fuzzRequest *sechandler.FuzzRequr
 
 	if err != nil {
 		logger.Errorln("ERROR: Failed to create fuzz client : ", secConfig.GlobalInfo.ApplicationInfo.ServerIp, gPort, err.Error())
-		secIntercept.SendLogMessage("ERROR: Failed to create fuzz client : "+secConfig.GlobalInfo.ApplicationInfo.ServerIp+gPort+err.Error(), "csec_grpc")
+		secIntercept.SendLogMessage("ERROR: Failed to create fuzz client : "+secConfig.GlobalInfo.ApplicationInfo.ServerIp+gPort+err.Error(), "csec_grpc", "SEVERE")
 		secevent.SendFuzzFailEvent(fuzzRequestID)
 	}
 
