@@ -519,7 +519,7 @@ func XssCheck() {
 		if r.ResponseBody != "" && !IsRXSSDisable() {
 
 			if r.ResponseContentType != "" && !secUtils.IsContentTypeSupported(r.ResponseContentType) {
-				SendLogMessage("No need to send RXSS event ContentType not supported for rxss event validation "+r.ResponseContentType, "XssCheck")
+				SendLogMessage("No need to send RXSS event ContentType not supported for rxss event validation "+r.ResponseContentType, "XssCheck", "SEVERE")
 				logger.Debugln("No need to send RXSS event ContentType not supported for rxss event validation", r.ResponseContentType)
 				return
 			}
@@ -527,7 +527,7 @@ func XssCheck() {
 			// Double check befor rxss event validation becouse in some case we don't have contentType in response header.
 			cType := http.DetectContentType([]byte(r.ResponseBody))
 			if !secUtils.IsContentTypeSupported(cType) {
-				SendLogMessage("No need to send RXSS event ContentType not supported for rxss event validation "+cType, "XssCheck")
+				SendLogMessage("No need to send RXSS event ContentType not supported for rxss event validation "+cType, "XssCheck", "SEVERE")
 				logger.Debugln("No need to send RXSS event ContentType not supported for rxss event validation", cType)
 				return
 			}
@@ -694,8 +694,8 @@ func UpdateLinkData(linkingMetadata map[string]string) {
 
 }
 
-func SendLogMessage(message, caller string) {
-	eventGeneration.SendLogMessage(message, caller)
+func SendLogMessage(message, caller, logLevel string) {
+	eventGeneration.SendLogMessage(message, caller, logLevel)
 }
 
 // security_api handlers
@@ -771,7 +771,7 @@ func inboundcallHandler(request interface{}) {
 func inboundcallHandlerv1(request interface{}) {
 	r, ok := request.(webRequest)
 	if !ok || r == nil {
-		SendLogMessage("ERROR: Request is not a type of webRequest and webRequestv2 ", "security_intercept")
+		SendLogMessage("ERROR: Request is not a type of webRequest and webRequestv2 ", "security_intercept", "SEVERE")
 		logger.Errorln("request is not a type of webRequest and webRequestv2 ")
 		return
 	}
@@ -934,7 +934,7 @@ func mongoHandler(data ...interface{}) *secUtils.EventTracker {
 		}
 		err := json.Unmarshal(arg, &jsonMap)
 		if err != nil {
-			SendLogMessage("error in Unmarshal mongo arg"+err.Error(), "mongoHandler")
+			SendLogMessage("error in Unmarshal mongo arg"+err.Error(), "mongoHandler", "SEVERE")
 			logger.Errorln("error in Unmarshal mongo arg", err)
 			return nil
 		}
