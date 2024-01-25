@@ -309,6 +309,16 @@ func (ws *websocket) AddCompletedRequests(parentId, apiID string) {
 	FuzzHandler.AppendCompletedRequestIds(parentId, apiID)
 }
 
+func (ws *websocket) PendingEvent() int {
+	return ws.pendingEvent()
+}
+func (ws *websocket) PendingFuzzTask() int {
+	if FuzzHandler.threadPool == nil {
+		return 0
+	}
+	return FuzzHandler.threadPool.PendingTask()
+}
+
 func InitializeWsConnecton() {
 	ws := new(websocket)
 	ws.eventBuffer = make(chan eventStruct, 10240)
@@ -362,7 +372,7 @@ func readThread(ws *websocket) {
 		}
 		err, _ = parseControlCommand(buf)
 		if err != nil {
-			eventGeneration.SendLogMessage("Unable to unmarshall control command"+err.Error(), "security_handlers")
+			eventGeneration.SendLogMessage("Unable to unmarshall control command"+err.Error(), "security_handlers", "SEVERE")
 			logger.Errorln("Unable to unmarshall cc ", err)
 		}
 	}

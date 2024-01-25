@@ -43,7 +43,7 @@ func initLogger(logFilePath string, isDebugLog bool) {
 	}
 	err := logging.Init(LOG_FILE, INIT_LOG_FILE, logFilePath, os.Getpid())
 	if err != nil {
-		secIntercept.SendLogMessage(err.Error(), "logging")
+		secIntercept.SendLogMessage(err.Error(), "logging", "SEVERE")
 	}
 	logging.SetLogLevel(logLevel)
 	logger = logging.GetLogger("Init")

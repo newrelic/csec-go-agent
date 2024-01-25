@@ -71,6 +71,7 @@ func parseControlCommand(arg []byte) (error, bool) {
 		var cc11 FuzzRequrestHandler
 		err = json.Unmarshal(arg, &cc11)
 		if err != nil {
+			eventGeneration.SendLogMessage("Unable to unmarshall cc11 : "+err.Error(), "parseControlCommand", "SEVERE")
 			return errors.New("Unable to unmarshall cc11 : " + err.Error()), false
 		} else {
 			logger.Debugln("Fuzz request received :", cc.Id, cc.Arguments[1], string(arg))

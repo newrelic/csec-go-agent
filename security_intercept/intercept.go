@@ -519,7 +519,7 @@ func XssCheck() {
 		if r.ResponseBody != "" && !IsRXSSDisable() {
 
 			if r.ResponseContentType != "" && !secUtils.IsContentTypeSupported(r.ResponseContentType) {
-				SendLogMessage("No need to send RXSS event ContentType not supported for rxss event validation "+r.ResponseContentType, "XssCheck")
+				SendLogMessage("No need to send RXSS event ContentType not supported for rxss event validation "+r.ResponseContentType, "XssCheck", "SEVERE")
 				logger.Debugln("No need to send RXSS event ContentType not supported for rxss event validation", r.ResponseContentType)
 				return
 			}
@@ -527,7 +527,7 @@ func XssCheck() {
 			// Double check befor rxss event validation becouse in some case we don't have contentType in response header.
 			cType := http.DetectContentType([]byte(r.ResponseBody))
 			if !secUtils.IsContentTypeSupported(cType) {
-				SendLogMessage("No need to send RXSS event ContentType not supported for rxss event validation "+cType, "XssCheck")
+				SendLogMessage("No need to send RXSS event ContentType not supported for rxss event validation "+cType, "XssCheck", "SEVERE")
 				logger.Debugln("No need to send RXSS event ContentType not supported for rxss event validation", cType)
 				return
 			}
@@ -688,14 +688,15 @@ func UpdateLinkData(linkingMetadata map[string]string) {
 			secConfig.GlobalInfo.MetaData.SetAgentRunId(agentRunId)
 		}
 		if secConfig.SecureWS != nil {
+			SendLogMessage("Reconnect security agent at refresh call", "UpdateLinkData", "INFO")
 			secConfig.SecureWS.ReconnectAtAgentRefresh()
 		}
 	}
 
 }
 
-func SendLogMessage(message, caller string) {
-	eventGeneration.SendLogMessage(message, caller)
+func SendLogMessage(message, caller, logLevel string) {
+	eventGeneration.SendLogMessage(message, caller, logLevel)
 }
 
 // security_api handlers
@@ -709,6 +710,7 @@ func SendEvent(caseType string, data ...interface{}) interface{} {
 		return nil
 	}
 	logger.Debugln("Sendevent api call", caseType)
+	defer recoverFromPanic("SendEventApi")
 
 	switch caseType {
 	case "INBOUND":
@@ -771,7 +773,7 @@ func inboundcallHandler(request interface{}) {
 func inboundcallHandlerv1(request interface{}) {
 	r, ok := request.(webRequest)
 	if !ok || r == nil {
-		SendLogMessage("ERROR: Request is not a type of webRequest and webRequestv2 ", "security_intercept")
+		SendLogMessage("ERROR: Request is not a type of webRequest and webRequestv2 ", "security_intercept", "SEVERE")
 		logger.Errorln("request is not a type of webRequest and webRequestv2 ")
 		return
 	}
@@ -934,7 +936,7 @@ func mongoHandler(data ...interface{}) *secUtils.EventTracker {
 		}
 		err := json.Unmarshal(arg, &jsonMap)
 		if err != nil {
-			SendLogMessage("error in Unmarshal mongo arg"+err.Error(), "mongoHandler")
+			SendLogMessage("error in Unmarshal mongo arg"+err.Error(), "mongoHandler", "SEVERE")
 			logger.Errorln("error in Unmarshal mongo arg", err)
 			return nil
 		}
@@ -981,6 +983,7 @@ func redisHandler(data ...interface{}) {
 }
 
 func DeactivateSecurity() {
+	SendLogMessage("deactivating security agent", "DeactivateSecurity", "INFO")
 	eventGeneration.RemoveHcScheduler()
 	secConfig.GlobalInfo.SetSecurityEnabled(false)
 	secConfig.GlobalInfo.SetSecurityAgentEnabled(false)
@@ -990,10 +993,12 @@ func DeactivateSecurity() {
 }
 
 func InitHttpFuzzRestClient(rest secWs.SecureFuzz) {
+	SendLogMessage("initialize http fuzz Client", "InitHttpFuzzRestClient", "INFO")
 	secWs.FuzzHandler.InitHttpFuzzRestClient(rest)
 }
 
 func InitGrpsFuzzRestClient(rest secWs.SecureFuzz) {
+	SendLogMessage("initialize gRPC fuzz Client", "InitGrpsFuzzRestClient", "INFO")
 	secWs.FuzzHandler.InitGrpsFuzzRestClient(rest)
 
 }

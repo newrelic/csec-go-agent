@@ -117,6 +117,13 @@ type healthcheck struct {
 	IastEventStats   secConfig.EventStats `json:"iastEventStats"`
 	RaspEventStats   secConfig.EventStats `json:"raspEventStats"`
 	ExitEventStats   secConfig.EventStats `json:"exitEventStats"`
+	ThreadPoolStats  ThreadPoolStats      `json:"threadPoolStats"`
+}
+
+type ThreadPoolStats struct {
+	FuzzRequestCount     uint64 `json:"fuzzRequestCount"`
+	FuzzRequestQueueSize int    `json:"fuzzRequestQueueSize"`
+	EventSendQueueSize   int    `json:"eventSendQueueSize"`
 }
 
 type SourceID struct {
@@ -227,20 +234,20 @@ func populateStatusLogs(service, process map[string]interface{}) {
 	statusFilePath := filepath.Join(secConfig.GlobalInfo.SecurityHomePath(), "nr-security-home", "logs", "snapshots")
 	err := os.MkdirAll(statusFilePath, os.ModePerm)
 	if err != nil {
-		SendLogMessage(err.Error(), "populateStatusLogs")
+		SendLogMessage(err.Error(), "populateStatusLogs", "SEVERE")
 		logger.Errorln(err)
 		return
 	}
 	err = os.Chmod(statusFilePath, 0777)
 	if err != nil {
-		SendLogMessage(err.Error(), "populateStatusLogs")
+		SendLogMessage(err.Error(), "populateStatusLogs", "SEVERE")
 		logger.Errorln(err)
 		return
 	}
 	statusFilePath1 := filepath.Join(statusFilePath, fmt.Sprintf("go-security-collector-status-%s.log", secConfig.GlobalInfo.ApplicationInfo.GetAppUUID()))
 	f, err := os.OpenFile(statusFilePath1, os.O_RDWR|os.O_CREATE, 0777)
 	if err != nil {
-		SendLogMessage(err.Error(), "populateStatusLogs")
+		SendLogMessage(err.Error(), "populateStatusLogs", "SEVERE")
 		logger.Errorln(err)
 		return
 	}

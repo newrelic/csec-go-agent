@@ -5,6 +5,7 @@ package security_instrumentation
 
 import (
 	"fmt"
+	"runtime"
 	"runtime/debug"
 
 	logging "github.com/newrelic/csec-go-agent/internal/security_logs"
@@ -45,6 +46,9 @@ func init() {
 	if secIntercept.IsHookingoIsSupported() {
 		secIntercept.InitSyms()
 		init_hooks()
+	} else {
+		printlogs := fmt.Sprintf("Go Security Agent running environment = %s ,%s ", runtime.GOOS, runtime.GOARCH)
+		secIntercept.SendLogMessage(printlogs, "security_instrumentation", "SEVERE")
 	}
 	initBlackops()
 }
@@ -85,7 +89,11 @@ func locateImports() {
 		if _, ok := dependencieMap[wrapper]; ok {
 			if _, ok := dependencieMap[secWrapper]; !ok {
 				printlogs := fmt.Sprintf("Warning : Your application seems to be using package %s. Please make sure you import %s package to enable security for package %s.", wrapper, secWrapper, wrapper)
+				secIntercept.SendLogMessage(printlogs, "locateImports", "INFO")
 				logging.PrintWarnlog(printlogs)
+			} else {
+				printlogs := fmt.Sprintf("Application imports %s wrapper package ", secWrapper)
+				secIntercept.SendLogMessage(printlogs, "locateImports", "INFO")
 			}
 		}
 	}
