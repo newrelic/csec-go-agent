@@ -389,7 +389,7 @@ func sendBufferLogMessage() {
 	for i != nil {
 		if secConfig.SecureWS != nil {
 			tmp_event, ok := i.(LogMessage)
-			if !ok {
+			if ok {
 				tmp_event.ApplicationUUID = secConfig.GlobalInfo.ApplicationInfo.GetAppUUID()
 				tmp_event.LinkingMetadata = secConfig.GlobalInfo.MetaData.GetLinkingMetadata()
 				sendEvent(tmp_event, "", "LogMessage")
