@@ -36,7 +36,7 @@ var (
 	HcBuffer      *secUtils.Cring
 	logger        = logging.GetLogger("hook")
 	removeChannel = make(chan string)
-	errorBuffer   = secUtils.NewCring(5)
+	errorBuffer   = secUtils.NewCring(15)
 )
 
 func InitHcScheduler() {
@@ -400,7 +400,9 @@ func SendLogMessage(log, caller, logLevel string) {
 	tmp_event.Level = logLevel
 	tmp_event.Message = log
 	tmp_event.Caller = caller
-	tmp_event.Exception = Exception{Message: log}
+	if log != "INFO" {
+		tmp_event.Exception = Exception{Message: log}
+	}
 	tmp_event.ThreadName = caller
 	tmp_event.LinkingMetadata = secConfig.GlobalInfo.MetaData.GetLinkingMetadata()
 
