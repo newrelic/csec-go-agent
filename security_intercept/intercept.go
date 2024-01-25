@@ -709,6 +709,7 @@ func SendEvent(caseType string, data ...interface{}) interface{} {
 		return nil
 	}
 	logger.Debugln("Sendevent api call", caseType)
+	defer recoverFromPanic("SendEventApi")
 
 	switch caseType {
 	case "INBOUND":

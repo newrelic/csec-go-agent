@@ -4,6 +4,7 @@
 package security_intercept
 
 import (
+	"fmt"
 	"net/http"
 	"net/url"
 	"os"
@@ -155,6 +156,13 @@ func fileAbs(path string) (string, error) {
 // 	f.Close()
 // 	return err == nil
 // }
+
+func recoverFromPanic(functionName string) {
+	if r := recover(); r != nil {
+		printlogs := fmt.Sprintf("Recovered from panic: %s", r)
+		SendLogMessage(printlogs, functionName, "SEVERE")
+	}
+}
 
 func getContentType(header map[string]string) string {
 
