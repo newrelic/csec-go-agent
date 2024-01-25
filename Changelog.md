@@ -1,6 +1,14 @@
 # Changelog
 
-## [v0.6.0] - 2024-15-01
+## [v0.7.0] - 2024-01-25
+### Changes
+* Added new critical log messages.
+* Added thread pool stats in HC messages.
+### Bug Fixes
+* Fixed incorrect query parameter encoding.
+* Fixed multiple API ID issues for RCE events
+
+## [v0.6.0] - 2024-01-15
 ### Changes
 * Added exclusion based filtering of RXSS events.
 * Added ws headers NR-CSEC-ENTITY-GUID and NR-CSEC-ENTITY-NAME.
@@ -12,7 +20,7 @@
 * Updated example/test application directory.
 * Updated unit test-cases for mongo.
 * Updated file access hook and sent absolute file path.
-### Changes
+### Bug Fixes
 * Incorrect query type for mongo findAndModify case.
 * Fixed empty complete request ID for lastleg .
 * Incorrect server protocol in case of grpc.
