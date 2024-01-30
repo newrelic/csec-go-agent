@@ -1,13 +1,14 @@
 // Copyright 2023 New Relic Corporation. All rights reserved.
-// SPDX-License-Identifier: New Relic Pre-Release
+// SPDX-License-Identifier: New Relic Software License v1.0
 package csec_ldap_v3
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/go-ldap/ldap/v3"
 	_ "github.com/newrelic/csec-go-agent"
 	secConfig "github.com/newrelic/csec-go-agent/security_config"
-	"testing"
 )
 
 func TestLDAPSearchHook(t *testing.T) {
