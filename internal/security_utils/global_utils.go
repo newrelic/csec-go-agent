@@ -53,6 +53,12 @@ type RequestInfo struct {
 	BodyReader    SecWriter           `json:"-"`
 }
 
+type Exception struct {
+	Message    interface{} `json:"message"`
+	Cause      interface{} `json:"cause"`
+	StackTrace []string    `json:"stackTrace"`
+}
+
 type SecWriter struct {
 	GetBody         func() []byte
 	IsDataTruncated func() bool

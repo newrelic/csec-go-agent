@@ -746,6 +746,8 @@ func SendEvent(caseType string, data ...interface{}) interface{} {
 		dynamodbHandler(data...)
 	case "REDIS":
 		redisHandler(data...)
+	case "PANIC":
+		panicHandler(data...)
 	}
 	return nil
 }
@@ -980,6 +982,13 @@ func redisHandler(data ...interface{}) {
 	}
 
 	secConfig.Secure.SendEvent("REDIS_DB_COMMAND", data)
+}
+
+func panicHandler(data ...interface{}) {
+	if data == nil || !isAgentInitialized() {
+		return
+	}
+	secConfig.Secure.ExceptionGenerationMessage(data[0])
 }
 
 func DeactivateSecurity() {

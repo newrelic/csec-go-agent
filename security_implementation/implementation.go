@@ -253,6 +253,21 @@ func (k Secureimpl) SendExitEvent(event *secUtils.EventTracker) {
 	eventGeneration.SendExitEvent(event, requestIdentifier)
 }
 
+func (k Secureimpl) ExceptionGenerationMessage(message interface{}) {
+	if !isAgentReady() {
+		return
+	}
+	id := getID()
+	req := getRequest(id)
+	if !isAgentReady() || (req == nil) {
+		return
+	}
+	vulnerabilityDetails := presentStack("")
+	exception := secUtils.Exception{Message: message, StackTrace: vulnerabilityDetails.Stacktrace}
+	eventGeneration.ExceptionGenerationMessage(req, exception)
+	return
+}
+
 func sendEvent(eventId, category string, args interface{}) *secUtils.EventTracker {
 	id := getID()
 	req := getRequest(id)

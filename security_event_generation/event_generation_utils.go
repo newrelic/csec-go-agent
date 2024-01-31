@@ -187,21 +187,22 @@ type Urlmappings struct {
 }
 
 type LogMessage struct {
-	JSONName        string      `json:"jsonName"`
-	ApplicationUUID string      `json:"applicationUUID"`
-	Timestamp       int64       `json:"timestamp"`
-	Level           string      `json:"level"`
-	Message         string      `json:"message"`
-	Caller          string      `json:"caller"`
-	Exception       Exception   `json:"exception"`
-	ThreadName      string      `json:"threadName"`
-	LinkingMetadata interface{} `json:"linkingMetadata"`
+	JSONName        string             `json:"jsonName"`
+	ApplicationUUID string             `json:"applicationUUID"`
+	Timestamp       int64              `json:"timestamp"`
+	Level           string             `json:"level"`
+	Message         string             `json:"message"`
+	Caller          string             `json:"caller"`
+	Exception       secUtils.Exception `json:"exception"`
+	ThreadName      string             `json:"threadName"`
+	LinkingMetadata interface{}        `json:"linkingMetadata"`
 }
 
-type Exception struct {
-	Message    string      `json:"message"`
-	Cause      interface{} `json:"cause"`
-	StackTrace []string    `json:"stackTrace"`
+type ExceptionGeneration struct {
+	ApplicationIdentifiers
+	ParentID    string               `json:"parentId"`
+	HTTPRequest secUtils.RequestInfo `json:"httpRequest"`
+	Exception   secUtils.Exception   `json:"exception"`
 }
 
 //status utils function

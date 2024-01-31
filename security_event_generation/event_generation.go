@@ -410,7 +410,7 @@ func SendLogMessage(log, caller, logLevel string) {
 	tmp_event.Message = log
 	tmp_event.Caller = caller
 	if log != "INFO" {
-		tmp_event.Exception = Exception{Message: log}
+		tmp_event.Exception = secUtils.Exception{Message: log}
 	}
 	tmp_event.ThreadName = caller
 	tmp_event.LinkingMetadata = secConfig.GlobalInfo.MetaData.GetLinkingMetadata()
@@ -423,6 +423,17 @@ func SendLogMessage(log, caller, logLevel string) {
 			logger.Debugln("ERROR: ", err.Error())
 		}
 	}
+}
+
+func ExceptionGenerationMessage(req *secUtils.Info_req, exception secUtils.Exception) {
+	var tmp_event ExceptionGeneration
+	tmp_event.ApplicationIdentifiers = getApplicationIdentifiers("Exception")
+	tmp_event.ParentID = req.ParentID
+	tmp_event.HTTPRequest = req.Request
+	if req.Request.BodyReader.GetBody != nil {
+		tmp_event.HTTPRequest.Body = string(req.Request.BodyReader.GetBody())
+	}
+	tmp_event.Exception = exception
 }
 
 func sendEvent(event interface{}, eventID, eventType string) ([]byte, error) {
