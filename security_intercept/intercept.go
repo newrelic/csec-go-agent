@@ -504,9 +504,9 @@ func AssociateGoRoutine(caller, callee int64) {
 }
 
 func DissociateInboundRequest() {
-	tmpFiles := secConfig.Secure.GetTmpFiles()
+	//tmpFiles := secConfig.Secure.GetTmpFiles()
 	secConfig.Secure.DissociateInboundRequest()
-	removeFuzzFile(tmpFiles)
+	//removeFuzzFile(tmpFiles)
 }
 
 func XssCheck() {
@@ -568,12 +568,27 @@ func createFuzzFile(fuzzheaders string) (tmpFiles []string) {
 				dsFilePath := filepath.Join(secConfig.GlobalInfo.SecurityHomePath(), "nr-security-home", "tmp")
 				fileName = strings.Replace(fileName, "{{NR_CSEC_VALIDATOR_HOME_TMP}}", dsFilePath, -1)
 				fileName = strings.Replace(fileName, "%7B%7BNR_CSEC_VALIDATOR_HOME_TMP%7D%7D", dsFilePath, -1)
-				tmpFiles = append(tmpFiles, fileName)
+				fileName, _ = filepath.Abs(fileName)
+				if secUtils.IsFileExist(fileName) {
+					return tmpFiles
+				}
+				logger.Debugln("created iast temp file", fileName)
+				parentPath := filepath.Dir(fileName)
+				if parentPath != "." {
+					parentPath = fileName
+					for parentPath != "." && filepath.Dir(parentPath) != "." && !IsFileExist(filepath.Dir(parentPath)) {
+						parentPath = filepath.Dir(parentPath)
+					}
+				}
+				if !strings.HasPrefix(parentPath, dsFilePath) {
+					logger.Debugln("Added file name for clenup", parentPath)
+					secWs.SetFilesToRemove(parentPath)
+				}
 				dir := filepath.Dir(fileName)
-				if dir != "" {
-					err := os.MkdirAll(dir, os.ModePerm)
+				if dir != "." {
+					err := os.MkdirAll(dir, 0770)
 					if err != nil {
-						logger.Debugln("Error while creating file : ", err.Error())
+						logger.Debugln("Error while creating dir : ", err.Error())
 					}
 				}
 				emptyFile, err := os.Create(fileName)
