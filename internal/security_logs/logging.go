@@ -47,7 +47,7 @@ func GetLogger(loggerName string) *logFile {
 func trackError(err string) {
 	errorBuffer.ForceInsert(err)
 }
-func GetErrorLogs() interface{} {
+func GetErrorLogs() []interface{} {
 	return errorBuffer.Get()
 }
 
