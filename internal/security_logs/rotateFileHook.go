@@ -66,6 +66,10 @@ func NewRotateFileHook(config RotateFileConfig) (*RotateFileHook, io.Writer, boo
 		isDefault = true
 	}
 
+	if readBoolEnv("NEW_RELIC_SECURITY_STDOUT_LOGGING") {
+		logfile = os.Stdout
+		isDefault = true
+	}
 	hook := RotateFileHook{
 		Config: config,
 	}
@@ -171,4 +175,15 @@ func (hook *RotateFileHook) DeleteFileIdNeeded(filename, dirpath string) error {
 		}
 	}
 	return nil
+}
+
+func readBoolEnv(name string) bool {
+	if env := os.Getenv(name); env != "" {
+		if b, err := strconv.ParseBool(env); nil != err {
+			return false
+		} else {
+			return b
+		}
+	}
+	return false
 }
