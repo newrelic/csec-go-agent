@@ -575,7 +575,7 @@ func createFuzzFile(fuzzheaders string) (tmpFiles []string) {
 				tmpFiles = append(tmpFiles, fileName)
 				dir := filepath.Dir(fileName)
 				if dir != "" {
-					err := os.MkdirAll(dir, os.ModePerm)
+					err := os.MkdirAll(dir, 0770)
 					if err != nil {
 						logger.Debugln("Error while creating file : ", err.Error())
 					}
