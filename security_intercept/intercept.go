@@ -568,6 +568,10 @@ func createFuzzFile(fuzzheaders string) (tmpFiles []string) {
 				dsFilePath := filepath.Join(secConfig.GlobalInfo.SecurityHomePath(), "nr-security-home", "tmp")
 				fileName = strings.Replace(fileName, "{{NR_CSEC_VALIDATOR_HOME_TMP}}", dsFilePath, -1)
 				fileName = strings.Replace(fileName, "%7B%7BNR_CSEC_VALIDATOR_HOME_TMP%7D%7D", dsFilePath, -1)
+				absfileName, _ := filepath.Abs(fileName)
+				if absfileName != "" {
+					fileName = absfileName
+				}
 				tmpFiles = append(tmpFiles, fileName)
 				dir := filepath.Dir(fileName)
 				if dir != "" {
