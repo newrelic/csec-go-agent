@@ -58,18 +58,24 @@ func (config *RotateFileConfig) createLogDir() (io.Writer, error) {
 }
 
 func NewRotateFileHook(config RotateFileConfig) (*RotateFileHook, io.Writer, bool, error) {
-	logfile, err := config.createLogDir()
-	isDefault := false
-	if err != nil {
-		fmt.Println(err)
-		logfile = os.Stdout
-		isDefault = true
-	}
+	var logfile io.Writer
+	var isDefault bool
+	var err error
 
 	if readBoolEnv("NEW_RELIC_SECURITY_STDOUT_LOGGING") {
 		logfile = os.Stdout
 		isDefault = true
+	} else {
+		var err error
+		logfile, err = config.createLogDir()
+		isDefault = false
+		if err != nil {
+			fmt.Println(err)
+			logfile = os.Stdout
+			isDefault = true
+		}
 	}
+
 	hook := RotateFileHook{
 		Config: config,
 	}
