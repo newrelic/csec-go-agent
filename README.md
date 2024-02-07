@@ -1,10 +1,10 @@
-# The New Relic Security Agent for Go is in preview and licensed under the New Relic Software License v1.0 Software Notice.
+#New Relic Security Agent for Go under the New Relic Software License v1.0 Software Notice.
 
 ##### Repo : [newrelic/csec-go-agent ](https://github.com/newrelic/csec-go-agent)
 
 ##### Package Name: newrelic_security_agent
 #
-The New Relic security agent for Go is in preview and is not generally available.This module enables instrumentation of golang application for interactive application security analysis (IAST) and exposes exploitable vulnerabilities. 
+The New Relic Security Agent for Go under the New Relic Software License v1.0 Software Notice.This module enables instrumentation of golang application for interactive application security analysis (IAST) and exposes exploitable vulnerabilities. 
 The IAST capability should only be used in pre-production environments as the application is tested for real exploitable vulnerabilities.
 
 # Installation
@@ -52,6 +52,22 @@ For the latest version of the agent, Go 1.17+ is required.
 * jackc/pgx
 * jackc/pgx/v5
 
+###Supported Vulnerabilities
+
+* Remote Code Execution
+* SQL Injection
+* NoSQL Injection
+* Stored XSS
+* Reflected XSS
+* File Access
+* SSRF
+* Application Integrity Violation
+* LDAP Injection
+* XPath Injection
+* XQuery Injection
+* JavaScript Code Injection
+
+
 ### Instrumentation Packages
 
 The following [instrumentation packages](https://github.com/newrelic/csec-go-agent/tree/main/instrumentation) extend the base newrelic csec-go-agent package to support the following frameworks and libraries.
@@ -77,7 +93,7 @@ Based on additional packages imported by the user application, add suitable impo
 New Relic hosts and moderates an online forum where you can interact with New Relic employees as well as other customers to get help and share best practices. You can find this project’s topic/threads here: Add the url for the support thread here: https://forum.newrelic.com/s/
 
 # Contribute
-Any feedback provided to New Relic about the New Relic csec-go-agent, including feedback provided as source code, comments, or other copyrightable or patentable material, is provided to New Relic under the terms of the Apache Software License, version 2. If you do not provide attribution information or a copy of the license with your feedback, you waive the performance of those requirements of the Apache License with respect to New Relic. The license grant regarding any feedback is irrevocable and persists past the termination of the preview license.
+Any feedback provided to New Relic about the New Relic csec-go-agent, including feedback provided as source code, comments, or other copyrightable or patentable material, is provided to New Relic under the terms of the Apache Software License, version 2. If you do not provide attribution information or a copy of the license with your feedback, you waive the performance of those requirements of the Apache License with respect to New Relic. The license grant regarding any feedback is irrevocable and persists past the termination of the New Relic Software License v1.0.
 Keep in mind that when you submit a pull request or other feedback, you’ll need to sign the CLA via the click-through using CLA-Assistant. You only have to sign the CLA one time per project.
 If you have any questions drop us an email at opensource@newrelic.com.
 
