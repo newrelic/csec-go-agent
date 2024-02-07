@@ -1,5 +1,5 @@
 // Copyright 2023 New Relic Corporation. All rights reserved.
-// SPDX-License-Identifier: New Relic Pre-Release
+// SPDX-License-Identifier: New Relic Software License v1.0
 
 package security_config
 
@@ -8,6 +8,7 @@ import (
 	"os"
 	"strconv"
 	"sync"
+	"time"
 
 	logging "github.com/newrelic/csec-go-agent/internal/security_logs"
 	secUtils "github.com/newrelic/csec-go-agent/internal/security_utils"
@@ -398,7 +399,7 @@ type runningApplicationInfo struct {
 	cmdline          []string
 	ports            []int
 	ServerIp         string
-	starttimestr     string
+	starttimestr     time.Time
 	binaryPath       string
 	serverName       []string
 }
@@ -503,11 +504,11 @@ func (r *runningApplicationInfo) SetServerIp(value string) {
 	r.ServerIp = value
 }
 
-func (r *runningApplicationInfo) GetStarttimestr() string {
+func (r *runningApplicationInfo) GetStarttimestr() time.Time {
 	return r.starttimestr
 }
 
-func (r *runningApplicationInfo) SetStarttimestr(value string) {
+func (r *runningApplicationInfo) SetStarttimestr(value time.Time) {
 	r.starttimestr = value
 }
 

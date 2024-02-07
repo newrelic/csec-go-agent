@@ -1,5 +1,14 @@
 # Changelog
 
+## [v1.0.0] - 2024-02-07
+### Changes
+* Added env variable to print logs on stdout.
+### Miscellaneous chores
+* Improved logging.
+* Updated software license to New Relic Software License Version 1.0
+* Updated Copyright headers.
+* Updated license in readme.
+
 ## [v0.7.0] - 2024-01-25
 ### Changes
 * Added new critical log messages.

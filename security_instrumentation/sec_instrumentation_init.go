@@ -1,5 +1,5 @@
 // Copyright 2023 New Relic Corporation. All rights reserved.
-// SPDX-License-Identifier: New Relic Pre-Release
+// SPDX-License-Identifier: New Relic Software License v1.0
 
 package security_instrumentation
 
@@ -50,6 +50,7 @@ func init() {
 		printlogs := fmt.Sprintf("Go Security Agent running environment = %s ,%s ", runtime.GOOS, runtime.GOARCH)
 		secIntercept.SendLogMessage(printlogs, "security_instrumentation", "SEVERE")
 	}
+	logging.EndStage("6", "Application instrumentation applied successfully")
 	initBlackops()
 }
 
@@ -59,7 +60,6 @@ func init_hooks() {
 	initOshooks()
 	initFilehooks()
 	secIntercept.SetHooked()
-	logging.EndStage("6", "Application instrumentation applied successfully")
 
 }
 

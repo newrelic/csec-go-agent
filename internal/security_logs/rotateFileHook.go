@@ -1,5 +1,5 @@
 // Copyright 2023 New Relic Corporation. All rights reserved.
-// SPDX-License-Identifier: New Relic Pre-Release
+// SPDX-License-Identifier: New Relic Software License v1.0
 
 package security_logs
 
@@ -58,12 +58,22 @@ func (config *RotateFileConfig) createLogDir() (io.Writer, error) {
 }
 
 func NewRotateFileHook(config RotateFileConfig) (*RotateFileHook, io.Writer, bool, error) {
-	logfile, err := config.createLogDir()
-	isDefault := false
-	if err != nil {
-		fmt.Println(err)
+	var logfile io.Writer
+	var isDefault bool
+	var err error
+
+	if readBoolEnv("NEW_RELIC_SECURITY_STDOUT_LOGGING") {
 		logfile = os.Stdout
 		isDefault = true
+	} else {
+		var err error
+		logfile, err = config.createLogDir()
+		isDefault = false
+		if err != nil {
+			fmt.Println(err)
+			logfile = os.Stdout
+			isDefault = true
+		}
 	}
 
 	hook := RotateFileHook{
@@ -171,4 +181,15 @@ func (hook *RotateFileHook) DeleteFileIdNeeded(filename, dirpath string) error {
 		}
 	}
 	return nil
+}
+
+func readBoolEnv(name string) bool {
+	if env := os.Getenv(name); env != "" {
+		if b, err := strconv.ParseBool(env); nil != err {
+			return false
+		} else {
+			return b
+		}
+	}
+	return false
 }

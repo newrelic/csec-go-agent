@@ -1,5 +1,5 @@
 // Copyright 2023 New Relic Corporation. All rights reserved.
-// SPDX-License-Identifier: New Relic Pre-Release
+// SPDX-License-Identifier: New Relic Software License v1.0
 
 package security_event_generation
 
@@ -77,7 +77,8 @@ func getApplicationIdentifiers(jsonName string) ApplicationIdentifiers {
 	applicationIdentifier.NodeID = secConfig.GlobalInfo.EnvironmentInfo.NodeId
 	applicationIdentifier.PolicyVersion = secConfig.GlobalInfo.GetCurrentPolicy().Version
 	applicationIdentifier.Pid = secConfig.GlobalInfo.ApplicationInfo.GetPid()
-	applicationIdentifier.StartTime = secConfig.GlobalInfo.ApplicationInfo.GetStarttimestr()
+	agentStartTime := secConfig.GlobalInfo.ApplicationInfo.GetStarttimestr().Unix() * 1000
+	applicationIdentifier.StartTime = secUtils.Int64ToString(agentStartTime)
 	applicationIdentifier.LinkingMetadata = secConfig.GlobalInfo.MetaData.GetLinkingMetadata()
 	return applicationIdentifier
 

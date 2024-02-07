@@ -33,13 +33,16 @@ func EndStage(stageId, logs interface{}) {
 }
 func PrintInitlog(logs interface{}) {
 	initLogger.Infoln(logs)
+	agentLogger.Infoln(logs)
 }
 
 func PrintInitErrolog(logs string) {
 	initLogger.Errorln(logs)
+	agentLogger.Errorln(logs)
 }
 func PrintWarnlog(logs string) {
 	initLogger.Warnln(logs)
+	agentLogger.Warnln(logs)
 }
 func Disableinitlogs() {
 	initLogger.isActive = false

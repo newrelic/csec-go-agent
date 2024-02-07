@@ -1,5 +1,5 @@
 // Copyright 2023 New Relic Corporation. All rights reserved.
-// SPDX-License-Identifier: New Relic Pre-Release
+// SPDX-License-Identifier: New Relic Software License v1.0
 
 package newrelic_security_agent
 
@@ -60,9 +60,7 @@ func initApplicationInfo(appName string) {
 	secConfig.GlobalInfo.ApplicationInfo.SetSha256(secUtils.CalculateSha256(binaryPath))
 	secConfig.GlobalInfo.ApplicationInfo.SetCmd(os.Args[0])
 	secConfig.GlobalInfo.ApplicationInfo.SetCmdline(os.Args[0:])
-	startTime := time.Now().Unix() * 1000
-
-	secConfig.GlobalInfo.ApplicationInfo.SetStarttimestr(secUtils.Int64ToString(startTime))
+	secConfig.GlobalInfo.ApplicationInfo.SetStarttimestr(time.Now())
 	secConfig.GlobalInfo.ApplicationInfo.SetSize(secUtils.CalculateFileSize(binaryPath))
 
 	logger.Infoln("Security Agent is now INACTIVE for ", secConfig.GlobalInfo.ApplicationInfo.GetAppUUID())

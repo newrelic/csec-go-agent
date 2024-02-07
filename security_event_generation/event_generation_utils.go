@@ -1,5 +1,5 @@
 // Copyright 2023 New Relic Corporation. All rights reserved.
-// SPDX-License-Identifier: New Relic Pre-Release
+// SPDX-License-Identifier: New Relic Software License v1.0
 
 package security_event_generation
 
@@ -39,7 +39,7 @@ const statusTemplate = "Snapshot timestamp: : %s \n" +
 	"\nProcess stats:\n\n%s\n" +
 	"\nService stats:\n\n%s\n" +
 	"\nLast 5 errors: \n%s\n" +
-	"\nLast 5 Health Checks are:\n\n %s"
+	"\nLast 5 Health Checks are:\n\n"
 
 type eventJson struct {
 	ApplicationIdentifiers
@@ -208,7 +208,12 @@ type Exception struct {
 /////
 
 func populateStatusLogs(service, process map[string]interface{}) {
-
+	bufferError := ""
+	for _, err := range logging.GetErrorLogs() {
+		if err != nil {
+			bufferError = bufferError + fmt.Sprintf("%s", err)
+		}
+	}
 	status := fmt.Sprintf(statusTemplate,
 		time.Now(),
 		secConfig.GlobalInfo.ApplicationInfo.GetStarttimestr(),
@@ -229,8 +234,15 @@ func populateStatusLogs(service, process map[string]interface{}) {
 		secConfig.GlobalInfo.GetCurrentPolicy().Version,
 		secUtils.MapToString(process),
 		secUtils.MapToString(service),
-		logging.GetErrorLogs(),
-		HcBuffer.Get())
+		bufferError)
+
+	bufferHc := HcBuffer.Get()
+	for _, hc := range bufferHc {
+		if hc != nil {
+			status = status + fmt.Sprintf("%s\n", hc)
+		}
+	}
+
 	statusFilePath := filepath.Join(secConfig.GlobalInfo.SecurityHomePath(), "nr-security-home", "logs", "snapshots")
 	err := os.MkdirAll(statusFilePath, os.ModePerm)
 	if err != nil {
