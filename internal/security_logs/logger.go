@@ -88,6 +88,10 @@ func (f *logFile) Debugln(msg ...interface{}) {
 		f.fire("DEBUG", msg...)
 	}
 }
+func (f *logFile) Print(msg ...interface{}) {
+	logm := fmt.Sprintln(msg...)
+	f.logger.Output(3, logm)
+}
 func (f *logFile) DebugEnabled() bool { return f.isDebugMode }
 
 func (f *logFile) setLevel(mode string) {
@@ -103,7 +107,7 @@ func (f *logFile) cleanCache() {
 	for i := range f.cache {
 		f.logger.Output(3, fmt.Sprintf("%s", f.cache[i]))
 		if f != agentLogger {
-			agentLogger.Infoln(fmt.Sprintf("%s", f.cache[i]))
+			agentLogger.Print(fmt.Sprintf("%s", f.cache[i]))
 		}
 	}
 	f.cache = make([]interface{}, 0)
