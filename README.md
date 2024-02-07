@@ -1,4 +1,4 @@
-# The New Relic Security Agent for Go is in preview and licensed under the New Relic Pre-Release Software Notice.
+# The New Relic Security Agent for Go is in preview and licensed under the New Relic Software License v1.0 Software Notice.
 
 ##### Repo : [newrelic/csec-go-agent ](https://github.com/newrelic/csec-go-agent)
 
@@ -91,5 +91,5 @@ If you would like to contribute to this project, review [these guidelines](https
 
 # License
 
-newrelic/csec-go-agent is licensed under the New Relic Software Notice. 
+newrelic/csec-go-agent is licensed under the New Relic Software License v1.0
 The newrelic/csec-go-agent also uses source code from third-party libraries. You can find full details on which libraries are used and the terms under which they are licensed in the third-party notices document.
