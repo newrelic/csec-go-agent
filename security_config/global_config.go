@@ -20,6 +20,8 @@ var SecureWS secUtils.SecureWSiface
 
 type Info_struct struct {
 	EventData           eventData
+	ApiData             []Urlmappings
+	ApiDataMutex        sync.Mutex
 	EnvironmentInfo     EnvironmentInfo
 	ApplicationInfo     runningApplicationInfo
 	InstrumentationData Instrumentation
@@ -128,6 +130,19 @@ func (info *Info_struct) BodyLimit() int {
 
 func (info *Info_struct) SetBodyLimit(bodyLimit int) {
 	info.security.Request.BodyLimit = bodyLimit
+	return
+}
+
+func (info *Info_struct) GetApiData() interface{} {
+	info.ApiDataMutex.Lock()
+	defer info.ApiDataMutex.Unlock()
+	return info.ApiData
+}
+
+func (info *Info_struct) SetApiData(data Urlmappings) {
+	info.ApiDataMutex.Lock()
+	defer info.ApiDataMutex.Unlock()
+	info.ApiData = append(info.ApiData, data)
 	return
 }
 
@@ -358,6 +373,12 @@ func (e *EventStats) IncreaseEventErrorCount() {
 	if e.ErrorCount == 0 {
 		e.ErrorCount = math.MaxUint64
 	}
+}
+
+type Urlmappings struct {
+	Method  string `json:"method"`
+	Path    string `json:"path"`
+	Handler string `json:"handler"`
 }
 
 type EnvironmentInfo struct {
