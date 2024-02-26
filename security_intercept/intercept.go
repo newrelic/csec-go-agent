@@ -111,6 +111,14 @@ func TraceFileOperation(fname string, flag int, isFileOpen bool) *secUtils.Event
 }
 
 /**
+ * Handling for file operations hooks
+ */
+
+func TraceCryptoOperation(fname string) {
+	fmt.Println("fname", fname)
+}
+
+/**
  * Handling for System command hooks
  */
 
