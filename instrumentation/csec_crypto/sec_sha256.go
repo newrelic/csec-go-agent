@@ -87,15 +87,16 @@ func secSum256_s(data []byte) [sha256.Size]byte {
 	return secSum256_s(data)
 }
 
-func PluginStart() {
+func initSha256Hook() {
 
 	e := secIntercept.HookWrap(sha256.New, secNew256, secNew256_s)
-	secIntercept.IsHookedLog("sha512.Sum512", e)
+	secIntercept.IsHookedLog("sha256.New", e)
 	e = secIntercept.HookWrap(sha256.New224, secNew224, secNew224_s)
-	secIntercept.IsHookedLog("sha512.Sum384", e)
+	secIntercept.IsHookedLog("sha256.New224", e)
 
 	e = secIntercept.HookWrap(sha256.Sum224, secSum224, secSum224_s)
-	secIntercept.IsHookedLog("sha512.Sum512", e)
+	secIntercept.IsHookedLog("sha256.Sum224", e)
 	e = secIntercept.HookWrap(sha256.Sum256, secSum256, secSum256_s)
+	secIntercept.IsHookedLog("sha256.Sum256", e)
 
 }

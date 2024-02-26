@@ -170,13 +170,13 @@ func secNew384_s() hash.Hash {
 func PluginStart() {
 
 	e := secIntercept.HookWrap(sha512.New, secNew, secNew_s)
-	secIntercept.IsHookedLog("sha512.Sum512", e)
+	secIntercept.IsHookedLog("sha512.New", e)
 	e = secIntercept.HookWrap(sha512.New512_224, secNew512_224, secNew512_224_s)
-	secIntercept.IsHookedLog("sha512.Sum384", e)
+	secIntercept.IsHookedLog("sha512.New512_224", e)
 	e = secIntercept.HookWrap(sha512.New512_256, secNew512_256, secNew512_256_s)
-	secIntercept.IsHookedLog("sha512.Sum512_224", e)
+	secIntercept.IsHookedLog("sha512.New512_256", e)
 	e = secIntercept.HookWrap(sha512.New384, secNew384, secNew384_s)
-	secIntercept.IsHookedLog("sha512.Sum512_256", e)
+	secIntercept.IsHookedLog("sha512.New384", e)
 
 	e = secIntercept.HookWrap(sha512.Sum512, secSum512, secSum512_s)
 	secIntercept.IsHookedLog("sha512.Sum512", e)
@@ -186,11 +186,11 @@ func PluginStart() {
 	secIntercept.IsHookedLog("sha512.Sum512_224", e)
 	e = secIntercept.HookWrap(sha512.Sum512_256, secSum512_256, secSum512_256_s)
 	secIntercept.IsHookedLog("sha512.Sum512_256", e)
-
 }
 func init() {
 	if !secIntercept.IsAgentInitializedForHook() || secIntercept.IsForceDisable() || !secIntercept.IsHookingoIsSupported() {
 		return
 	}
 	PluginStart()
+	initSha256Hook()
 }
