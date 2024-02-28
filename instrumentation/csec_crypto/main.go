@@ -195,4 +195,5 @@ func init() {
 	initSha256Hook()
 	PluginStart_sha1()
 	PluginStart_md5()
+	PluginStart_sha3()
 }
