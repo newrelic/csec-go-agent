@@ -196,4 +196,5 @@ func init() {
 	PluginStart_sha1()
 	PluginStart_md5()
 	PluginStart_sha3()
+	PluginStart_blake2b()
 }
