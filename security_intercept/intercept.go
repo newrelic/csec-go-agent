@@ -862,8 +862,8 @@ func apiEndPointsHandler(data ...interface{}) {
 		return
 	}
 	if len(data) >= 3 {
-		method, _ := data[0].(string)
-		path, _ := data[1].(string)
+		path, _ := data[0].(string)
+		method, _ := data[1].(string)
 		handler, _ := data[2].(string)
 		secConfig.GlobalInfo.SetApiData(secConfig.Urlmappings{
 			Path:    path,
