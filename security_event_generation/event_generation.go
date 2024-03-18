@@ -256,6 +256,10 @@ func sendUrlMappingEvent() {
 	var urlMappingBeen UrlMappingBeen
 	urlMappingBeen.EventType = "sec-application-url-mapping"
 	urlMappingBeen.ApplicationIdentifiers = getApplicationIdentifiers("sec-application-url-mapping")
+	mappings := secConfig.GlobalInfo.GetApiData()
+	if len(mappings) <= 0 {
+		return
+	}
 	urlMappingBeen.Mappings = secConfig.GlobalInfo.GetApiData()
 	_, err := sendEvent(urlMappingBeen, "", "")
 	if err != nil {
