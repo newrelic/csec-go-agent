@@ -36,6 +36,8 @@ var LDAP = "LDAP"
 var SQL = "SQL_DB_COMMAND"
 var JS_INJECTION = "JAVASCRIPT_INJECTION"
 var NOSQL = "NOSQL_DB_COMMAND"
+var CRYPTO = "CRYPTO"
+var HASH = "HASH"
 
 // Validates the event Data
 func ValidateResult(expected []TestArgs, t *testing.T) {

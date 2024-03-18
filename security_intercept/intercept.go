@@ -111,11 +111,13 @@ func TraceFileOperation(fname string, flag int, isFileOpen bool) *secUtils.Event
 }
 
 /**
- * Handling for file operations hooks
+ * Handling for Hash Operation hooks
  */
 
-func TraceCryptoOperation(fname string) {
-	fmt.Println("fname", fname)
+func TraceHashOperation(fname string) {
+	var arg []string
+	arg = append(arg, fname)
+	secConfig.Secure.SendEvent("HASH", arg)
 }
 
 /**

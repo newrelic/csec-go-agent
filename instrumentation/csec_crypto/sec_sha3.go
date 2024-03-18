@@ -9,7 +9,7 @@ func secSha3Sum224(data []byte) (digest [28]byte) {
 	if secIntercept.IsDisable() {
 		return secSha3Sum224_s(data)
 	}
-	secIntercept.TraceCryptoOperation("SHA-224")
+	secIntercept.TraceHashOperation("SHA-224")
 	return secSha3Sum224_s(data)
 }
 
@@ -17,7 +17,7 @@ func secSha3Sum224_s(data []byte) (digest [28]byte) {
 	if secIntercept.IsDisable() {
 		return secSha3Sum224_s(data)
 	}
-	secIntercept.TraceCryptoOperation("SHA-224")
+	secIntercept.TraceHashOperation("SHA-224")
 	return secSha3Sum224_s(data)
 }
 
@@ -25,7 +25,7 @@ func secSha3Sum256(data []byte) (digest [32]byte) {
 	if secIntercept.IsDisable() {
 		return secSha3Sum256_s(data)
 	}
-	secIntercept.TraceCryptoOperation("SHA-256")
+	secIntercept.TraceHashOperation("SHA-256")
 	return secSha3Sum256_s(data)
 }
 
@@ -33,7 +33,7 @@ func secSha3Sum256_s(data []byte) (digest [32]byte) {
 	if secIntercept.IsDisable() {
 		return secSha3Sum256_s(data)
 	}
-	secIntercept.TraceCryptoOperation("SHA-256")
+	secIntercept.TraceHashOperation("SHA-256")
 	return secSha3Sum256_s(data)
 }
 
@@ -41,7 +41,7 @@ func secSha3Sum384(data []byte) (digest [48]byte) {
 	if secIntercept.IsDisable() {
 		return secSha3Sum384_s(data)
 	}
-	secIntercept.TraceCryptoOperation("SHA-384")
+	secIntercept.TraceHashOperation("SHA-384")
 	return secSha3Sum384_s(data)
 }
 
@@ -49,7 +49,7 @@ func secSha3Sum384_s(data []byte) (digest [48]byte) {
 	if secIntercept.IsDisable() {
 		return secSha3Sum384_s(data)
 	}
-	secIntercept.TraceCryptoOperation("SHA-384")
+	secIntercept.TraceHashOperation("SHA-384")
 	return secSha3Sum384_s(data)
 }
 
@@ -57,7 +57,7 @@ func secSha3Sum512(data []byte) (digest [64]byte) {
 	if secIntercept.IsDisable() {
 		return secSha3Sum512_s(data)
 	}
-	secIntercept.TraceCryptoOperation("SHA-512")
+	secIntercept.TraceHashOperation("SHA-512")
 	return secSha3Sum512_s(data)
 }
 
@@ -65,7 +65,7 @@ func secSha3Sum512_s(data []byte) (digest [64]byte) {
 	if secIntercept.IsDisable() {
 		return secSha3Sum512_s(data)
 	}
-	secIntercept.TraceCryptoOperation("SHA-512")
+	secIntercept.TraceHashOperation("SHA-512")
 	return secSha3Sum512_s(data)
 }
 

@@ -10,14 +10,14 @@ func secBlake2sSum256(data []byte) [blake2s.Size]byte {
 	if secIntercept.IsDisable() {
 		return secBlake2sSum256_s(data)
 	}
-	secIntercept.TraceCryptoOperation("SHA-256")
+	secIntercept.TraceHashOperation("SHA-256")
 	return secBlake2sSum256_s(data)
 }
 func secBlake2sSum256_s(data []byte) [blake2s.Size]byte {
 	if secIntercept.IsDisable() {
 		return secBlake2sSum256_s(data)
 	}
-	secIntercept.TraceCryptoOperation("SHA-256")
+	secIntercept.TraceHashOperation("SHA-256")
 	return secBlake2sSum256_s(data)
 }
 

@@ -11,7 +11,7 @@ func secSum(data []byte) [md5.Size]byte {
 	if secIntercept.IsDisable() {
 		return secSum_s(data)
 	}
-	secIntercept.TraceCryptoOperation("MD5")
+	secIntercept.TraceHashOperation("MD5")
 	return secSum_s(data)
 }
 
@@ -20,7 +20,7 @@ func secSum_s(data []byte) [md5.Size]byte {
 	if secIntercept.IsDisable() {
 		return secSum_s(data)
 	}
-	secIntercept.TraceCryptoOperation("MD5")
+	secIntercept.TraceHashOperation("MD5")
 	return secSum_s(data)
 }
 
