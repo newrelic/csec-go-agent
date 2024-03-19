@@ -120,6 +120,12 @@ func TraceHashOperation(fname string) {
 	secConfig.Secure.SendEvent("HASH", arg)
 }
 
+func TraceCryptoOperation(fname string) {
+	var arg []string
+	arg = append(arg, fname)
+	secConfig.Secure.SendEvent("CRYPTO", arg)
+}
+
 /**
  * Handling for System command hooks
  */
