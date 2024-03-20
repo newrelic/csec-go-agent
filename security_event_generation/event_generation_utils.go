@@ -176,8 +176,8 @@ type IASTDataRequestBeen struct {
 
 type UrlMappingBeen struct {
 	ApplicationIdentifiers
-	EventType string        `json:"eventType"`
-	Mappings  []Urlmappings `json:"mappings"`
+	EventType string      `json:"eventType"`
+	Mappings  interface{} `json:"mappings"`
 }
 
 type Urlmappings struct {
