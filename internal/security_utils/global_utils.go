@@ -69,6 +69,7 @@ type EventTracker struct {
 	ID                string
 	TracingHeader     string
 	RequestIdentifier string
+	ParentID          string
 }
 
 type VulnerabilityDetails struct {

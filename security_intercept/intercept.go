@@ -603,6 +603,9 @@ func removeFuzzFile(tmpFiles []string) {
 func GetFuzzHeader() string {
 	return secConfig.Secure.GetFuzzHeader()
 }
+func GetParentID() (string, string) {
+	return secConfig.Secure.GetParentID()
+}
 
 /**
  * Utility for miroservice validation
@@ -964,9 +967,14 @@ func DistributedTraceHeaders(hdrs *http.Request, secureAgentevent interface{}) {
 		if key != "" {
 			hdrs.Header.Add(key, value)
 		}
-		value = GetFuzzHeader()
-		if value != "" {
-			hdrs.Header.Add("NR_CSEC_FUZZ_REQUEST_ID", value)
+		fuzz_request_value, parent_id := GetParentID()
+
+		if fuzz_request_value != "" {
+			hdrs.Header.Add(NR_CSEC_FUZZ_REQUEST_ID, fuzz_request_value)
+		}
+
+		if parent_id != "" {
+			hdrs.Header.Add(NR_CSEC_PARENT_ID, parent_id)
 		}
 	}
 

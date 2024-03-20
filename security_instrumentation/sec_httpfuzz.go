@@ -69,7 +69,7 @@ func (httpFuzz SecHttpFuzz) ExecuteFuzzRequest(fuzzRequest *sechandler.FuzzRequr
 		fuzzRequestURL = HTTP + fuzzRequestURL
 		fuzzRequestClient = getHttpClient()
 	}
-	sechandler.FuzzHandler.AppendCompletedRequestIds(fuzzId, "")
+	sechandler.FuzzHandler.AppendErrorInReplayIds(fuzzId)
 	var req *http.Request = nil
 	var err error = nil
 
@@ -93,9 +93,6 @@ func (httpFuzz SecHttpFuzz) ExecuteFuzzRequest(fuzzRequest *sechandler.FuzzRequr
 	req.Header.Set("Content-Type", fuzzRequest.ContentType)
 	req.Header.Set("nr-csec-parent-id", fuzzId)
 
-	if fuzzRequestClient == nil {
-		logger.Debugln("Blackops client = nil")
-	}
 	response, err := fuzzRequestClient.Do(req)
 	if err != nil {
 		logger.Debugln("ERROR: fuzz request fail : ", fuzzRequestID, err.Error())

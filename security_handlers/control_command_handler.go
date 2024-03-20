@@ -41,6 +41,14 @@ type ControlComandHandler struct {
 	ControlComand
 	CCData
 }
+type CC14Data struct {
+	ControlComand
+	Data struct {
+		GeneratedEvent  map[string]map[string][]string `json:"generatedEvent"`
+		CompletedReplay []string                       `json:"completedReplay"`
+		ErrorInReplay   []string                       `json:"errorInReplay"`
+	} `json:"data"`
+}
 
 func parseControlCommand(arg []byte) (error, bool) {
 
@@ -108,10 +116,15 @@ func parseControlCommand(arg []byte) (error, bool) {
 		logger.Debugln("coolDownSleepTime", coolDownSleepTime)
 		FuzzHandler.SetCoolDownSleepTime(coolDownSleepTime)
 	case IAST_RECORD_DELETE_CONFIRMATION:
-		logger.Debugln("Purging confirmed IAST processed records count ", len(cc.Arguments))
-		logger.Debugln("Purging confirmed IAST processed records  ", cc.Arguments)
-		removeRequestID(cc.Arguments)
+		var cc CC14Data
+		err := json.Unmarshal(arg, &cc)
 
+		if err != nil {
+			logger.Errorln("Unable to unmarshall cc ", err)
+			return errors.New("unable to unmarshall cc " + err.Error()), false
+		}
+		logger.Debugln("cc14", string(arg))
+		removeRequestID(cc.Data.GeneratedEvent, cc.Data.ErrorInReplay, cc.Data.CompletedReplay)
 	}
 	return nil, false
 }

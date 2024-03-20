@@ -324,7 +324,7 @@ func SendVulnerableEvent(req *secUtils.Info_req, category string, args interface
 		tmp_event.ParentId = req.ParentID
 		apiId := strings.Split(req.RequestIdentifier, ":")[0]
 		if apiId == vulnerabilityDetails.APIID {
-			(secConfig.SecureWS).AddCompletedRequests(req.ParentID, eventId)
+			(secConfig.SecureWS).AddCompletedRequests(getOriginAppUUID(req.ReqTraceData), req.ParentID, eventId)
 		}
 	}
 
@@ -371,10 +371,11 @@ func SendUpdatedPolicy(policy secConfig.Policy) {
 	}
 }
 
-func IASTDataRequest(batchSize int, completedRequestIds interface{}, pendingRequestIds []string) {
+func IASTDataRequest(batchSize int, completedReplay, errorInReplay []string, generatedEvents interface{}) {
 	var tmp_event IASTDataRequestBeen
-	tmp_event.CompletedRequests = completedRequestIds
-	tmp_event.PendingRequestIds = pendingRequestIds
+	tmp_event.CompletedReplay = completedReplay
+	tmp_event.ErrorInReplay = errorInReplay
+	tmp_event.GeneratedEvents = generatedEvents
 	tmp_event.BatchSize = batchSize
 	tmp_event.ApplicationUUID = secConfig.GlobalInfo.ApplicationInfo.GetAppUUID()
 	tmp_event.JSONName = "iast-data-request"

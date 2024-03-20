@@ -4,6 +4,7 @@
 package security_handlers
 
 import (
+	"fmt"
 	"sync"
 	"time"
 
@@ -20,8 +21,11 @@ type RestRequestThreadPool struct {
 	grpsFuzzRestClient SecureFuzz
 	threadPool         *threadpool.ThreadPool
 
-	completedRequestIds *sync.Map
-	pendingRequestIds   *sync.Map
+	pendingRequestIds *sync.Map
+
+	completedReplay *sync.Map
+	errorInReplay   *sync.Map
+	generatedEvents *sync.Map
 
 	coolDownSleepTime          time.Time
 	lastFuzzRequestTime        time.Time
@@ -55,7 +59,7 @@ func (r *RestRequestThreadPool) SetCoolDownSleepTime(coolDownSleepTimeInSecond i
 
 func (r *RestRequestThreadPool) IASTCleanUp() {
 	if r.threadPool != nil {
-		r.completedRequestIds = &sync.Map{}
+		r.completedReplay = &sync.Map{}
 		r.pendingRequestIds = &sync.Map{}
 		if !r.threadPool.IsTaskPoolEmpty() {
 			r.threadPool.Clean()
@@ -64,65 +68,100 @@ func (r *RestRequestThreadPool) IASTCleanUp() {
 	}
 }
 
-func (r *RestRequestThreadPool) CompletedRequestIds() interface{} {
-	mapRequestIds := map[string]interface{}{}
-
-	if r.completedRequestIds != nil {
-		r.completedRequestIds.Range(func(key, value interface{}) bool {
-			mapRequestIds[key.(string)] = value
-			return true
-		})
-	}
-
-	return mapRequestIds
-}
-
-func (r *RestRequestThreadPool) SetCompletedRequestIds(completedRequestIds *sync.Map) {
-	r.completedRequestIds = completedRequestIds
-}
-
-func (r *RestRequestThreadPool) AppendCompletedRequestIds(requestId, apiId string) {
-	if apiId != "" {
-		result, ok := r.completedRequestIds.Load(requestId)
-		if ok {
-			results := result.([]string)
-			results = append(results, apiId)
-			r.completedRequestIds.Store(requestId, results)
-		} else {
-			r.completedRequestIds.Store(requestId, []string{apiId})
-		}
-	} else {
-		r.completedRequestIds.Store(requestId, []string{})
-	}
-}
-
-func (r *RestRequestThreadPool) RemoveCompletedRequestIds(requestId string) {
-	r.completedRequestIds.Delete(requestId)
-}
-
-func (r *RestRequestThreadPool) SetPendingRequestIds(pendingRequestIds *sync.Map) {
-	r.pendingRequestIds = pendingRequestIds
-}
-
-func (r *RestRequestThreadPool) AppendPendingRequestIds(requestId string) {
-	r.pendingRequestIds.Store(requestId, 1)
-}
-
-func (r *RestRequestThreadPool) RemovePendingRequestIds(requestId string) {
-	r.pendingRequestIds.Delete(requestId)
-}
-
-func (r *RestRequestThreadPool) PendingRequestIds() []string {
+func (r *RestRequestThreadPool) CompletedReplayIds() []string {
 	keys := []string{}
-	if r.pendingRequestIds != nil {
-		r.pendingRequestIds.Range(func(key, value interface{}) bool {
+	if r.completedReplay != nil {
+		r.completedReplay.Range(func(key, value interface{}) bool {
 			keys = append(keys, key.(string))
 			return true
 		})
 
 	}
-
 	return keys
+}
+
+func (r *RestRequestThreadPool) SetCompletedReplayIds(completedReplayIds *sync.Map) {
+	r.completedReplay = completedReplayIds
+}
+
+func (r *RestRequestThreadPool) AppendCompletedReplayIds(requestId string) {
+	r.completedReplay.Store(requestId, 1)
+}
+
+func (r *RestRequestThreadPool) RemoveCompletedRequestIds(requestId string) {
+	r.completedReplay.Delete(requestId)
+}
+
+func (r *RestRequestThreadPool) SetErrorInReplayIds(errorInReplayids *sync.Map) {
+	r.errorInReplay = errorInReplayids
+}
+
+func (r *RestRequestThreadPool) AppendErrorInReplayIds(requestId string) {
+	r.errorInReplay.Store(requestId, 1)
+}
+
+func (r *RestRequestThreadPool) RemoveErrorInReplayIds(requestId string) {
+	r.errorInReplay.Delete(requestId)
+}
+
+func (r *RestRequestThreadPool) ErrorInReplayIds() []string {
+	keys := []string{}
+	if r.errorInReplay != nil {
+		r.errorInReplay.Range(func(key, value interface{}) bool {
+			keys = append(keys, key.(string))
+			return true
+		})
+
+	}
+	return keys
+}
+
+func (r *RestRequestThreadPool) SetGeneratedEventsIds(generatedEvents *sync.Map) {
+	r.generatedEvents = generatedEvents
+}
+
+func (r *RestRequestThreadPool) AppendGeneratedEventsIds(appUUID, parentId, eventID string) {
+	generatedEvent, ok := r.generatedEvents.Load(appUUID)
+	var originMap = map[string][]string{}
+
+	if !ok {
+		r.generatedEvents.Store(appUUID, originMap)
+	} else {
+		tmpOriginMap, ok1 := generatedEvent.(map[string][]string)
+		if ok1 {
+			originMap = tmpOriginMap
+		}
+
+	}
+	t := []string{}
+	t = append(t, eventID)
+	originMap[parentId] = t
+}
+
+func (r *RestRequestThreadPool) GeneratedEventsIds() interface{} {
+	generatedEventsIds := make(map[string]interface{})
+	r.generatedEvents.Range(func(k interface{}, v interface{}) bool {
+		generatedEventsIds[k.(string)] = v
+		return true
+
+	})
+	fmt.Println(r.generatedEvents)
+	return generatedEventsIds
+}
+
+func (r *RestRequestThreadPool) RemoveGeneratedEventsIds(requestId map[string]map[string][]string) {
+	for k, v := range requestId {
+		generatedEvent, ok := r.generatedEvents.Load(k)
+		mapa, ok1 := generatedEvent.(map[string][]string)
+		if ok && ok1 {
+			for k1 := range v {
+				delete(mapa, k1)
+			}
+		}
+		if len(mapa) == 0 {
+			r.generatedEvents.Delete(k)
+		}
+	}
 }
 
 func (r *RestRequestThreadPool) InitHttpFuzzRestClient(rest SecureFuzz) {

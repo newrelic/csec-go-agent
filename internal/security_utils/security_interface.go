@@ -33,6 +33,7 @@ type Secureiface interface {
 	SendEvent(category string, args interface{}) *EventTracker
 	GetFuzzHeader() string
 	GetTmpFiles() []string
+	GetParentID() (string, string)
 	NewGoroutineLinker(interface{})
 	NewGoroutine() interface{}
 }
@@ -47,7 +48,7 @@ type SecureWSiface interface {
 	ReconnectAtWill()
 	CloseWSConnection()
 	SendPriorityEvent([]byte)
-	AddCompletedRequests(string, string)
+	AddCompletedRequests(string, string, string)
 	PendingEvent() int
 	PendingFuzzTask() int
 }

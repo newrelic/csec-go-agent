@@ -188,6 +188,15 @@ func (k Secureimpl) GetFuzzHeader() string {
 	}
 }
 
+func (k Secureimpl) GetParentID() (string, string) {
+	request := getRequest(getID())
+	if request == nil {
+		return "", ""
+	} else {
+		return request.RequestIdentifier, request.ParentID
+	}
+}
+
 func (k Secureimpl) GetTmpFiles() []string {
 	request := getRequest(getID())
 	if request == nil {

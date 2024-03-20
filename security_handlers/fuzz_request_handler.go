@@ -37,19 +37,15 @@ func (fTask *FuzzTask) Run() {
 		if FuzzHandler.grpsFuzzRestClient == nil {
 			eventGeneration.SendLogMessage("gRPC rest client not initialised", "security_handlers", "SEVERE")
 			logger.Errorln("gRPC rest client not initialised")
-			FuzzHandler.AppendCompletedRequestIds(fTask.requestID, "")
 		} else {
 			FuzzHandler.grpsFuzzRestClient.ExecuteFuzzRequest(fTask.fuzzRequrestHandler, fTask.caseType, fTask.requestID)
-			FuzzHandler.RemovePendingRequestIds(fTask.requestID)
 		}
 	} else {
 		if FuzzHandler.httpFuzzRestClient == nil {
 			eventGeneration.SendLogMessage("http rest client not initialised", "security_handlers", "SEVERE")
 			logger.Errorln("http rest client not initialised")
-			FuzzHandler.AppendCompletedRequestIds(fTask.requestID, "")
 		} else {
 			FuzzHandler.httpFuzzRestClient.ExecuteFuzzRequest(fTask.fuzzRequrestHandler, fTask.caseType, fTask.requestID)
-			FuzzHandler.RemovePendingRequestIds(fTask.requestID)
 		}
 	}
 }
@@ -66,23 +62,28 @@ func registerFuzzTask(kcc11 *FuzzRequrestHandler, caseType, requestID string) {
 		logger.Infoln(printlogs)
 	}
 	secConfig.GlobalInfo.EventData.IncreaseFuzzRequestCount()
-	FuzzHandler.AppendPendingRequestIds(requestID)
 	FuzzHandler.threadPool.RegisterTask(task)
 	FuzzHandler.SetLastFuzzRequestTime()
 }
 
-func removeRequestID(requestID []string) {
+func removeRequestID(generatedEvent map[string]map[string][]string, errorInReplay, completedReplay []string) {
 	if FuzzHandler.threadPool == nil {
 		initRestRequestThreadPool()
 	}
-	for _, req := range requestID {
+	for _, req := range errorInReplay {
+		FuzzHandler.RemoveErrorInReplayIds(req)
+	}
+	for _, req := range completedReplay {
 		FuzzHandler.RemoveCompletedRequestIds(req)
 	}
+	FuzzHandler.RemoveGeneratedEventsIds(generatedEvent)
 }
 
 func initRestRequestThreadPool() {
-	FuzzHandler.SetCompletedRequestIds(&sync.Map{})
-	FuzzHandler.SetPendingRequestIds(&sync.Map{})
+	FuzzHandler.SetCompletedReplayIds(&sync.Map{})
+	FuzzHandler.SetErrorInReplayIds(&sync.Map{})
+	FuzzHandler.SetGeneratedEventsIds(&sync.Map{})
+
 	FuzzHandler.threadPool = threadpool.NewThreadPool(queueSize, maxPoolSize, logger, "RestRequestThreadPool")
 }
 
@@ -122,7 +123,8 @@ func InitFuzzScheduler() {
 
 		if batchSize > 100 && remainingRecordCapacity > batchSize {
 			logger.Debugln("InitFuzzScheduler", batchSize*2)
-			eventGeneration.IASTDataRequest(batchSize*2, FuzzHandler.CompletedRequestIds(), FuzzHandler.PendingRequestIds())
+			logger.Debugln("GeneratedEventsIds", FuzzHandler.GeneratedEventsIds())
+			eventGeneration.IASTDataRequest(batchSize*2, FuzzHandler.CompletedReplayIds(), FuzzHandler.ErrorInReplayIds(), FuzzHandler.GeneratedEventsIds())
 		}
 	}
 }

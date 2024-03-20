@@ -305,8 +305,8 @@ func (ws *websocket) ReconnectAtAgentRefresh() {
 	ws.reconnectWill.Unlock()
 }
 
-func (ws *websocket) AddCompletedRequests(parentId, apiID string) {
-	FuzzHandler.AppendCompletedRequestIds(parentId, apiID)
+func (ws *websocket) AddCompletedRequests(appUUID, parentId, apiID string) {
+	FuzzHandler.AppendGeneratedEventsIds(appUUID, parentId, apiID)
 }
 
 func (ws *websocket) PendingEvent() int {

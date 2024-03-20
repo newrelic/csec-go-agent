@@ -167,11 +167,12 @@ type FuzzFailBean struct {
 }
 
 type IASTDataRequestBeen struct {
-	JSONName          string      `json:"jsonName"`
-	ApplicationUUID   string      `json:"applicationUUID"`
-	BatchSize         int         `json:"batchSize"`
-	CompletedRequests interface{} `json:"completedRequests"`
-	PendingRequestIds []string    `json:"pendingRequestIds"`
+	JSONName        string      `json:"jsonName"`
+	ApplicationUUID string      `json:"applicationUUID"`
+	BatchSize       int         `json:"batchSize"`
+	CompletedReplay []string    `json:"completedReplay"`
+	ErrorInReplay   []string    `json:"errorInReplay"`
+	GeneratedEvents interface{} `json:"generatedEvent"`
 }
 
 type UrlMappingBeen struct {
@@ -325,4 +326,18 @@ func isAgentActiveState() string {
 
 func iastRestClientStatus() string {
 	return "OK"
+}
+
+func getOriginAppUUID(requestIdentifier string) string {
+	uuid := secConfig.GlobalInfo.ApplicationInfo.GetAppUUID()
+	if requestIdentifier != "" {
+		requestIdentifiers := strings.Split(requestIdentifier, ";")
+		if len(requestIdentifiers) > 0 {
+			identifier := strings.Split(requestIdentifiers[0], "/")
+			if len(identifier) > 0 {
+				uuid = identifier[0]
+			}
+		}
+	}
+	return uuid
 }
