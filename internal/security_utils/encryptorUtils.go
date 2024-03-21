@@ -4,6 +4,7 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/sha1"
+	"crypto/sha256"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -22,6 +23,7 @@ const (
 	ERROR_WHILE_DECRYPTION                        = "Error while decryption %s: %s"
 	ENCRYPTED_DATA_DECRYPTED_DATA                 = "Encrypted Data: %s, Decrypted data: %s"
 	ERROR_WHILE_GENERATING_REQUIRED_SALT_FROM_S_S = "Error while generating required salt from %s: %s"
+	ERROR_WHILE_VERIFY_HASH_DATA                  = "Hash Data not macth %s: %s"
 )
 
 func Decrypt(password, encryptedData, hashVerifier string) (string, error) {
@@ -57,7 +59,13 @@ func Decrypt(password, encryptedData, hashVerifier string) (string, error) {
 
 	cipher.NewCBCDecrypter(block, make([]byte, block.BlockSize())).CryptBlocks(decrypted, encryptedBytes)
 	decryptedData := string(decrypted[OFFSET:])
-	return decryptedData, nil
+
+	if verifyHashData(hashVerifier, decryptedData) {
+		return decryptedData, nil
+	} else {
+		return "", errors.New(fmt.Sprintf(ERROR_WHILE_VERIFY_HASH_DATA, hashVerifier, decryptedData))
+	}
+
 }
 
 func generateSalt(salt string) ([]byte, error) {
@@ -87,4 +95,13 @@ func deriveKey(password string, salt []byte) []byte {
 func pbkdf2KeyDerivation(password, salt []byte, iterations, keyLen int) ([]byte, error) {
 	key := pbkdf2.Key(password, salt, iterations, keyLen, sha1.New)
 	return key, nil
+}
+
+func verifyHashData(knownDecryptedDataHash, decryptedData string) bool {
+	return knownDecryptedDataHash == generateSHA256HexDigest(decryptedData)
+}
+
+func generateSHA256HexDigest(data string) string {
+	digest := sha256.Sum256([]byte(data))
+	return hex.EncodeToString(digest[:])
 }
