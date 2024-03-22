@@ -58,6 +58,7 @@ func Decrypt(password, encryptedData, hashVerifier string) (string, error) {
 	decrypted := make([]byte, len(encryptedBytes))
 
 	cipher.NewCBCDecrypter(block, make([]byte, block.BlockSize())).CryptBlocks(decrypted, encryptedBytes)
+	decrypted = removePadding(decrypted)
 	decryptedData := string(decrypted[OFFSET:])
 
 	if verifyHashData(hashVerifier, decryptedData) {
@@ -104,4 +105,14 @@ func verifyHashData(knownDecryptedDataHash, decryptedData string) bool {
 func generateSHA256HexDigest(data string) string {
 	digest := sha256.Sum256([]byte(data))
 	return hex.EncodeToString(digest[:])
+}
+
+func removePadding(data []byte) []byte {
+	if i := len(data) - 1; i > 0 {
+		paddingLength := int(data[i])
+		if j := len(data) - paddingLength; j > 0 {
+			return data[:j]
+		}
+	}
+	return data
 }
