@@ -38,21 +38,22 @@ func (config *RotateFileConfig) createLogDir() (io.Writer, error) {
 		return nil, err
 	}
 
-	err = os.Chmod(config.Filepath, 0777)
+	err = os.Chmod(config.Filepath, 0770)
 	if err != nil {
 		return nil, err
 	}
 
-	err = os.Chmod(filepath.Dir(config.Filepath), 0777)
+	err = os.Chmod(filepath.Dir(config.Filepath), 0770)
 	if err != nil {
 		return nil, err
 	}
 
-	logfile, err := os.OpenFile(config.Filename, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0777)
+	logfile, err := os.OpenFile(config.Filename, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0660)
 
 	if err != nil {
 		return nil, err
 	}
+	logfile.Chmod(0660)
 	return logfile, nil
 
 }
@@ -112,7 +113,7 @@ func (hook *RotateFileHook) logrollover() error {
 	pid := secUtils.IntToString(os.Getpid())
 
 	if !secUtils.IsFileExist(lockFile) {
-		err := os.WriteFile(lockFile, []byte(pid), 777)
+		err := os.WriteFile(lockFile, []byte(pid), 0660)
 		if err != nil {
 			return err
 		}
@@ -143,7 +144,8 @@ func (hook *RotateFileHook) filerollover() error {
 	}
 
 	timeStamp := time.Now().Unix()
-	rolloverLogFile, err := os.OpenFile(hook.Config.Filename+"."+strconv.FormatInt(timeStamp, 10), os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0777)
+	rolloverLogFile, err := os.OpenFile(hook.Config.Filename+"."+strconv.FormatInt(timeStamp, 10), os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0660)
+	rolloverLogFile.Chmod(0660)
 	if err != nil {
 		return err
 	}

@@ -575,7 +575,7 @@ func createFuzzFile(fuzzheaders string) (tmpFiles []string) {
 				tmpFiles = append(tmpFiles, fileName)
 				dir := filepath.Dir(fileName)
 				if dir != "" {
-					err := os.MkdirAll(dir, os.ModePerm)
+					err := os.MkdirAll(dir, 0770)
 					if err != nil {
 						logger.Debugln("Error while creating file : ", err.Error())
 					}
@@ -726,6 +726,8 @@ func SendEvent(caseType string, data ...interface{}) interface{} {
 		httpresponseHandler(data...)
 	case "OUTBOUND":
 		return outboundcallHandler(data[0])
+	case "API_END_POINTS":
+		apiEndPointsHandler(data...)
 	case "GRPC":
 		grpcRequestHandler(data...)
 	case "GRPC_INFO":
@@ -853,7 +855,22 @@ func grpcRequestHandler(data ...interface{}) {
 	} else {
 		secConfig.Secure.AssociateGrpcQueryParam(data[0], "", "v2")
 	}
+}
 
+func apiEndPointsHandler(data ...interface{}) {
+	if data == nil || !isAgentInitialized() {
+		return
+	}
+	if len(data) >= 3 {
+		path, _ := data[0].(string)
+		method, _ := data[1].(string)
+		handler, _ := data[2].(string)
+		secConfig.GlobalInfo.SetApiData(secConfig.Urlmappings{
+			Path:    path,
+			Method:  method,
+			Handler: handler,
+		})
+	}
 }
 
 func grpcInfoHandler(data ...interface{}) {
