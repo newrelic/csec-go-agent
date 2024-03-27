@@ -69,7 +69,7 @@ func (httpFuzz SecHttpFuzz) ExecuteFuzzRequest(fuzzRequest *sechandler.FuzzRequr
 		fuzzRequestURL = HTTP + fuzzRequestURL
 		fuzzRequestClient = getHttpClient()
 	}
-	sechandler.FuzzHandler.AppendErrorInReplayIds(fuzzId)
+	sechandler.FuzzHandler.AppendCompletedReplayIds(fuzzId)
 	var req *http.Request = nil
 	var err error = nil
 
