@@ -591,7 +591,7 @@ func createFuzzFile(fuzzheaders string) (tmpFiles []string) {
 				tmpFiles = append(tmpFiles, fileName)
 				dir := filepath.Dir(fileName)
 				if dir != "" {
-					err := os.MkdirAll(dir, os.ModePerm)
+					err := os.MkdirAll(dir, 0770)
 					if err != nil {
 						logger.Debugln("Error while creating file : ", err.Error())
 					}
@@ -878,8 +878,8 @@ func apiEndPointsHandler(data ...interface{}) {
 		return
 	}
 	if len(data) >= 3 {
-		method, _ := data[0].(string)
-		path, _ := data[1].(string)
+		path, _ := data[0].(string)
+		method, _ := data[1].(string)
 		handler, _ := data[2].(string)
 		secConfig.GlobalInfo.SetApiData(secConfig.Urlmappings{
 			Path:    path,

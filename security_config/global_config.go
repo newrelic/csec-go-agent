@@ -133,7 +133,7 @@ func (info *Info_struct) SetBodyLimit(bodyLimit int) {
 	return
 }
 
-func (info *Info_struct) GetApiData() interface{} {
+func (info *Info_struct) GetApiData() []Urlmappings {
 	info.ApiDataMutex.Lock()
 	defer info.ApiDataMutex.Unlock()
 	return info.ApiData
