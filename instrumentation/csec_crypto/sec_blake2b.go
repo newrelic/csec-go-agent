@@ -6,6 +6,7 @@ import (
 	secIntercept "github.com/newrelic/csec-go-agent/security_intercept"
 )
 
+//go:noinline
 func secBlake2sSum256(data []byte) [blake2s.Size]byte {
 	if secIntercept.IsDisable() {
 		return secBlake2sSum256_s(data)
@@ -13,6 +14,8 @@ func secBlake2sSum256(data []byte) [blake2s.Size]byte {
 	secIntercept.TraceHashOperation("SHA-256")
 	return secBlake2sSum256_s(data)
 }
+
+//go:noinline
 func secBlake2sSum256_s(data []byte) [blake2s.Size]byte {
 	if secIntercept.IsDisable() {
 		return secBlake2sSum256_s(data)

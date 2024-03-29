@@ -17,6 +17,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 
@@ -115,12 +116,22 @@ func TraceFileOperation(fname string, flag int, isFileOpen bool) *secUtils.Event
  */
 
 func TraceHashOperation(fname string) {
+	if !isAgentInitialized() {
+		return
+	}
+	_, fileName, _, ok := runtime.Caller(2)
+	if ok && strings.Contains(fileName, "csec-go-agent/internal") {
+		return
+	}
 	var arg []string
 	arg = append(arg, fname)
 	secConfig.Secure.SendEvent("HASH", arg)
 }
 
 func TraceCryptoOperation(fname string) {
+	if !isAgentInitialized() {
+		return
+	}
 	var arg []string
 	arg = append(arg, fname)
 	secConfig.Secure.SendEvent("CRYPTO", arg)

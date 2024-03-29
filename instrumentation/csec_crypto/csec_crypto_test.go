@@ -1,7 +1,10 @@
 package csec_crypto
 
 import (
+	"crypto/aes"
 	"crypto/md5"
+	"crypto/rand"
+	"crypto/rsa"
 	"crypto/sha1"
 	"crypto/sha256"
 	"crypto/sha512"
@@ -20,7 +23,7 @@ func TestSum512_256Hook(t *testing.T) {
 	sha512.Sum512_256([]byte(CSEC_GO_AGENT))
 
 	var expectedData = []secConfig.TestArgs{
-		{Parameters: "[SHA-512]", CaseType: secConfig.HASH},
+		{Parameters: "[SHA-256]", CaseType: secConfig.HASH},
 	}
 	secConfig.ValidateResult(expectedData, t)
 }
@@ -157,4 +160,42 @@ func TestSha256_Sum256Hook(t *testing.T) {
 		{Parameters: "[SHA-256]", CaseType: secConfig.HASH},
 	}
 	secConfig.ValidateResult(expectedData, t)
+}
+
+func Test_Aes_NewCipherHook(t *testing.T) {
+	secConfig.RegisterListener()
+
+	aes.NewCipher([]byte(CSEC_GO_AGENT))
+
+	var expectedData = []secConfig.TestArgs{
+		{Parameters: "[AES]", CaseType: secConfig.CRYPTO},
+	}
+	secConfig.ValidateResult(expectedData, t)
+}
+
+func Test_RSA_EncryptOAEP(t *testing.T) {
+	secConfig.RegisterListener()
+
+	label := []byte(CSEC_GO_AGENT)
+	privateKey, _ := rsa.GenerateKey(rand.Reader, 2048)
+	publicKey := &privateKey.PublicKey
+	rsa.EncryptOAEP(sha256.New(), rand.Reader, publicKey, []byte(CSEC_GO_AGENT), label)
+	var expectedData = []secConfig.TestArgs{
+		{Parameters: "[RSA/OAEP]", CaseType: secConfig.CRYPTO},
+	}
+	secConfig.ValidateResult(expectedData, t)
+
+}
+
+func Test_RSA_EncryptPKCS1v15(t *testing.T) {
+	secConfig.RegisterListener()
+	privateKey, _ := rsa.GenerateKey(rand.Reader, 2048)
+	publicKey := &privateKey.PublicKey
+	rsa.EncryptPKCS1v15(rand.Reader, publicKey, []byte(CSEC_GO_AGENT))
+
+	var expectedData = []secConfig.TestArgs{
+		{Parameters: "[RSA/PKC]", CaseType: secConfig.CRYPTO},
+	}
+	secConfig.ValidateResult(expectedData, t)
+
 }
