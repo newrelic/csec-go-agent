@@ -5,6 +5,7 @@ import (
 	"golang.org/x/crypto/sha3"
 )
 
+//go:noinline
 func secSha3Sum224(data []byte) (digest [28]byte) {
 	if secIntercept.IsDisable() {
 		return secSha3Sum224_s(data)
@@ -13,6 +14,7 @@ func secSha3Sum224(data []byte) (digest [28]byte) {
 	return secSha3Sum224_s(data)
 }
 
+//go:noinline
 func secSha3Sum224_s(data []byte) (digest [28]byte) {
 	if secIntercept.IsDisable() {
 		return secSha3Sum224_s(data)
@@ -21,6 +23,7 @@ func secSha3Sum224_s(data []byte) (digest [28]byte) {
 	return secSha3Sum224_s(data)
 }
 
+//go:noinline
 func secSha3Sum256(data []byte) (digest [32]byte) {
 	if secIntercept.IsDisable() {
 		return secSha3Sum256_s(data)
@@ -29,6 +32,7 @@ func secSha3Sum256(data []byte) (digest [32]byte) {
 	return secSha3Sum256_s(data)
 }
 
+//go:noinline
 func secSha3Sum256_s(data []byte) (digest [32]byte) {
 	if secIntercept.IsDisable() {
 		return secSha3Sum256_s(data)
@@ -37,6 +41,7 @@ func secSha3Sum256_s(data []byte) (digest [32]byte) {
 	return secSha3Sum256_s(data)
 }
 
+//go:noinline
 func secSha3Sum384(data []byte) (digest [48]byte) {
 	if secIntercept.IsDisable() {
 		return secSha3Sum384_s(data)
@@ -45,6 +50,7 @@ func secSha3Sum384(data []byte) (digest [48]byte) {
 	return secSha3Sum384_s(data)
 }
 
+//go:noinline
 func secSha3Sum384_s(data []byte) (digest [48]byte) {
 	if secIntercept.IsDisable() {
 		return secSha3Sum384_s(data)
@@ -53,6 +59,7 @@ func secSha3Sum384_s(data []byte) (digest [48]byte) {
 	return secSha3Sum384_s(data)
 }
 
+//go:noinline
 func secSha3Sum512(data []byte) (digest [64]byte) {
 	if secIntercept.IsDisable() {
 		return secSha3Sum512_s(data)
@@ -61,6 +68,7 @@ func secSha3Sum512(data []byte) (digest [64]byte) {
 	return secSha3Sum512_s(data)
 }
 
+//go:noinline
 func secSha3Sum512_s(data []byte) (digest [64]byte) {
 	if secIntercept.IsDisable() {
 		return secSha3Sum512_s(data)

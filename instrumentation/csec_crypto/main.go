@@ -106,4 +106,6 @@ func init() {
 	PluginStart_md5()
 	PluginStart_sha3()
 	PluginStart_blake2b()
+	PluginStart_aes()
+	PluginStart_rsa()
 }
