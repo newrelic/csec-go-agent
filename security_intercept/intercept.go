@@ -566,12 +566,16 @@ func createFuzzFile(fuzzheaders string) (tmpFiles []string) {
 		if len(additionalData) >= 8 {
 			encryptedData := additionalData[6]
 			hashVerifier := additionalData[7]
+			logger.Debugln("Encrypted file name : ", encryptedData)
 			filesToCreate, err := secUtils.Decrypt(secConfig.GlobalInfo.MetaData.GetEntityGuid(), encryptedData, hashVerifier)
 
 			if err != nil {
 				logger.Errorln(err)
 				SendLogMessage(err.Error(), "createFuzzFile", "SEVERE")
+				return
 			}
+
+			logger.Debugln("Decrypted file name : ", filesToCreate)
 			allFiles := strings.Split(filesToCreate, COMMA_DELIMETER)
 
 			for i := range allFiles {
