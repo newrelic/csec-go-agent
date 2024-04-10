@@ -28,7 +28,7 @@ func InitLogger() *logFile {
 }
 
 func EndStage(stageId, logs interface{}) {
-	print := fmt.Sprintf("[STEP-%s] %s", stageId, logs)
+	print := fmt.Sprintf("[STEP-%s] => %s", stageId, logs)
 	PrintInitlog(print)
 }
 func PrintInitlog(logs interface{}) {

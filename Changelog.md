@@ -1,5 +1,14 @@
 # Changelog
 
+## [v1.1.0] - 2024-03-26
+### Features
+* Functionality to report API endpoints of the application
+### Bug fixes
+* Updated permissions for file/directory created by security agent
+### Miscellaneous chores
+* Bumped google.golang.org/protobuf from v1.32.0 to v1.33.0
+* Improved logging.
+
 ## [v1.0.0] - 2024-02-07
 ### Changes
 * Added env variable to print logs on stdout.

@@ -176,8 +176,8 @@ type IASTDataRequestBeen struct {
 
 type UrlMappingBeen struct {
 	ApplicationIdentifiers
-	EventType string        `json:"eventType"`
-	Mappings  []Urlmappings `json:"mappings"`
+	EventType string      `json:"eventType"`
+	Mappings  interface{} `json:"mappings"`
 }
 
 type Urlmappings struct {
@@ -250,14 +250,15 @@ func populateStatusLogs(service, process map[string]interface{}) {
 		logger.Errorln(err)
 		return
 	}
-	err = os.Chmod(statusFilePath, 0777)
+	err = os.Chmod(statusFilePath, 0770)
 	if err != nil {
 		SendLogMessage(err.Error(), "populateStatusLogs", "SEVERE")
 		logger.Errorln(err)
 		return
 	}
 	statusFilePath1 := filepath.Join(statusFilePath, fmt.Sprintf("go-security-collector-status-%s.log", secConfig.GlobalInfo.ApplicationInfo.GetAppUUID()))
-	f, err := os.OpenFile(statusFilePath1, os.O_RDWR|os.O_CREATE, 0777)
+	f, err := os.OpenFile(statusFilePath1, os.O_RDWR|os.O_CREATE, 0660)
+	f.Chmod(0660)
 	if err != nil {
 		SendLogMessage(err.Error(), "populateStatusLogs", "SEVERE")
 		logger.Errorln(err)
@@ -306,7 +307,7 @@ func wsStatus() string {
 }
 
 func isLogAccessible(fileName string) string {
-	file, err := os.OpenFile(fileName, os.O_WRONLY, 0777)
+	file, err := os.OpenFile(fileName, os.O_WRONLY, 0660)
 	if err == nil {
 		defer file.Close()
 		return "OK"
