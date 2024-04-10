@@ -96,7 +96,7 @@ func (k Secureimpl) AssociateOutboundRequest(dest, dport, urlx string) {
 func (k Secureimpl) CalculateOutboundApiId() {
 	request := getRequest(getID())
 	if request.VulnerabilityDetails.APIID == "" {
-		vulnerabilityDetails := presentStack(request.Request.Method)
+		vulnerabilityDetails := presentStack(request.Request.Method, "REFLECTED_XSS")
 		request.VulnerabilityDetails = vulnerabilityDetails
 	}
 }
@@ -264,7 +264,7 @@ func sendEvent(eventId, category string, args interface{}) *secUtils.EventTracke
 	if category == "REFLECTED_XSS" && (*req).VulnerabilityDetails.APIID != "" {
 		vulnerabilityDetails = (*req).VulnerabilityDetails
 	} else {
-		vulnerabilityDetails = presentStack((*req).Request.Method)
+		vulnerabilityDetails = presentStack((*req).Request.Method, category)
 	}
 
 	return eventGeneration.SendVulnerableEvent(req, category, args, vulnerabilityDetails, getEventID(eventId, id))
@@ -347,7 +347,7 @@ func isAgentReady() bool {
 	return secConfig.SecureWS != nil
 }
 
-func presentStack(method string) (vulnerabilityDetails secUtils.VulnerabilityDetails) {
+func presentStack(method, caseType string) (vulnerabilityDetails secUtils.VulnerabilityDetails) {
 	pc := make([]uintptr, 20)
 	n := runtime.Callers(4, pc)
 	frames := runtime.CallersFrames(pc[:n])
@@ -410,7 +410,7 @@ func presentStack(method string) (vulnerabilityDetails secUtils.VulnerabilityDet
 		stackTrace = stackTrace[:120]
 	}
 
-	vulnerabilityDetails.APIID = apiId
+	vulnerabilityDetails.APIID = caseType + "-" + apiId
 	vulnerabilityDetails.Stacktrace = stackTrace
 
 	return vulnerabilityDetails
