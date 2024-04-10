@@ -36,6 +36,7 @@ const (
 	NR_CSEC_TRACING_DATA    = "NR-CSEC-TRACING-DATA"
 	NR_CSEC_FUZZ_REQUEST_ID = "nr-csec-fuzz-request-id"
 	NR_CSEC_PARENT_ID       = "NR-CSEC-PARENT-ID"
+	COMMA_DELIMETER         = ","
 )
 
 /**
@@ -562,9 +563,23 @@ func createFuzzFile(fuzzheaders string) (tmpFiles []string) {
 	if DSON && fuzzheaders != "" {
 		additionalData := strings.Split(fuzzheaders, IAST_SEP)
 		logger.Debugln("additionalData:", additionalData)
-		if len(additionalData) >= 7 {
-			for i := 6; i < len(additionalData); i++ {
-				fileName := additionalData[i]
+		if len(additionalData) >= 8 {
+			encryptedData := additionalData[6]
+			hashVerifier := additionalData[7]
+			logger.Debugln("Encrypted file name : ", encryptedData)
+			filesToCreate, err := secUtils.Decrypt(secConfig.GlobalInfo.MetaData.GetEntityGuid(), encryptedData, hashVerifier)
+
+			if err != nil {
+				logger.Errorln(err)
+				SendLogMessage(err.Error(), "createFuzzFile", "SEVERE")
+				return
+			}
+
+			logger.Debugln("Decrypted file name : ", filesToCreate)
+			allFiles := strings.Split(filesToCreate, COMMA_DELIMETER)
+
+			for i := range allFiles {
+				fileName := allFiles[i]
 				dsFilePath := filepath.Join(secConfig.GlobalInfo.SecurityHomePath(), "nr-security-home", "tmp")
 				fileName = strings.Replace(fileName, "{{NR_CSEC_VALIDATOR_HOME_TMP}}", dsFilePath, -1)
 				fileName = strings.Replace(fileName, "%7B%7BNR_CSEC_VALIDATOR_HOME_TMP%7D%7D", dsFilePath, -1)
