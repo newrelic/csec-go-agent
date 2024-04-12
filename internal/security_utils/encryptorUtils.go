@@ -16,8 +16,8 @@ const (
 	ITERATION                                     = 1024
 	KEY_LEN                                       = 32 // 256 bits
 	OFFSET                                        = 16
-	EMPTY_PASSWORD                                = "Empty Password provided %s"
-	DATA_TO_BE_DECRYPTED                          = "Data to be decrypted is Empty %s"
+	EMPTY_PASSWORD                                = "Empty Password provided"
+	DATA_TO_BE_DECRYPTED                          = "Data to be decrypted is Empty"
 	INCORRECT_SECRET                              = "Incorrect Password / salt provided: %s"
 	EMPTY_SECRET                                  = "secretKey is empty"
 	ERROR_WHILE_DECRYPTION                        = "Error while decryption %s: %s"
@@ -29,15 +29,15 @@ const (
 func Decrypt(password, encryptedData, hashVerifier string) (string, error) {
 	if password == "" {
 
-		return "", errors.New(fmt.Sprintf(EMPTY_PASSWORD, password))
+		return "", fmt.Errorf(EMPTY_PASSWORD)
 	}
 	if encryptedData == "" {
-		return "", errors.New(fmt.Sprintf(DATA_TO_BE_DECRYPTED, encryptedData))
+		return "", fmt.Errorf(DATA_TO_BE_DECRYPTED)
 	}
 
 	salt, err := generateSalt(password)
 	if err != nil {
-		return "", errors.New(fmt.Sprintf(ERROR_WHILE_GENERATING_REQUIRED_SALT_FROM_S_S, password, err))
+		return "", fmt.Errorf(ERROR_WHILE_GENERATING_REQUIRED_SALT_FROM_S_S, password, err)
 	}
 
 	secretKey := deriveKey(password, salt)
@@ -47,12 +47,12 @@ func Decrypt(password, encryptedData, hashVerifier string) (string, error) {
 
 	encryptedBytes, err := hex.DecodeString(encryptedData)
 	if err != nil {
-		return "", errors.New(fmt.Sprintf(INCORRECT_SECRET, err))
+		return "", fmt.Errorf(INCORRECT_SECRET, err)
 	}
 
 	block, err := aes.NewCipher(secretKey)
 	if err != nil {
-		return "", errors.New(fmt.Sprintf(INCORRECT_SECRET, err))
+		return "", fmt.Errorf(INCORRECT_SECRET, err)
 	}
 
 	decrypted := make([]byte, len(encryptedBytes))
@@ -64,7 +64,7 @@ func Decrypt(password, encryptedData, hashVerifier string) (string, error) {
 	if verifyHashData(hashVerifier, decryptedData) {
 		return decryptedData, nil
 	} else {
-		return "", errors.New(fmt.Sprintf(ERROR_WHILE_VERIFY_HASH_DATA, hashVerifier, decryptedData))
+		return "", fmt.Errorf(ERROR_WHILE_VERIFY_HASH_DATA, hashVerifier, decryptedData)
 	}
 
 }
