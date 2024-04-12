@@ -22,7 +22,7 @@ const (
 	EMPTY_SECRET                                  = "secretKey is empty"
 	ERROR_WHILE_DECRYPTION                        = "Error while decryption %s: %s"
 	ENCRYPTED_DATA_DECRYPTED_DATA                 = "Encrypted Data: %s, Decrypted data: %s"
-	ERROR_WHILE_GENERATING_REQUIRED_SALT_FROM_S_S = "Error while generating required salt from %s: %s"
+	ERROR_WHILE_GENERATING_REQUIRED_SALT_FROM_S_S = "Error while generating required salt from %s"
 	ERROR_WHILE_VERIFY_HASH_DATA                  = "Hash Data not macth %s: %s"
 )
 
@@ -37,7 +37,7 @@ func Decrypt(password, encryptedData, hashVerifier string) (string, error) {
 
 	salt, err := generateSalt(password)
 	if err != nil {
-		return "", fmt.Errorf(ERROR_WHILE_GENERATING_REQUIRED_SALT_FROM_S_S, password, err)
+		return "", fmt.Errorf(ERROR_WHILE_GENERATING_REQUIRED_SALT_FROM_S_S, err)
 	}
 
 	secretKey := deriveKey(password, salt)
