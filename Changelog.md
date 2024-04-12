@@ -1,5 +1,14 @@
 # Changelog
 
+## [v1.2.0] - 2024-04-12
+### Features
+* IAST replay header decryption due to Security Findings.
+* Json Version bump to 1.2.0
+### Miscellaneous chores
+* Prepended the vulnerability case type with apiId.
+* Updated time interval for IAST pull request.
+* Bumped golang.org/x/net from v0.17.0 to v0.23.0
+
 ## [v1.1.0] - 2024-03-26
 ### Features
 * Functionality to report API endpoints of the application

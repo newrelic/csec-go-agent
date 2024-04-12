@@ -146,6 +146,16 @@ func (info *Info_struct) SetApiData(data Urlmappings) {
 	return
 }
 
+func (info *Info_struct) IastProbingInterval() int {
+	info.ploicyMutex.Lock()
+	defer info.ploicyMutex.Unlock()
+	if GlobalInfo.currentPolicy.VulnerabilityScan.IastScan.Probing.Interval <= 0 {
+		return 5
+	} else {
+		return GlobalInfo.currentPolicy.VulnerabilityScan.IastScan.Probing.Interval
+	}
+}
+
 type metaData struct {
 	linkingMetadata interface{}
 	accountID       string

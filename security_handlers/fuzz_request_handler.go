@@ -95,7 +95,9 @@ func InitFuzzScheduler() {
 	}
 	eventGeneration.SendLogMessage("initializing fuzz request scheduler", "InitFuzzScheduler", "INFO")
 	for {
-		time.Sleep(1 * time.Second)
+		iastProbingInterval := secConfig.GlobalInfo.IastProbingInterval()
+		logger.Debugln("iastProbingInterval SleepTime", iastProbingInterval)
+		time.Sleep(time.Duration(iastProbingInterval) * time.Second)
 		if !secConfig.SecureWS.GetStatus() {
 			logger.Debugln("WS not connected sleep FuzzScheduler for 5 sec")
 			time.Sleep(5 * time.Second)
