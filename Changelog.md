@@ -7,6 +7,7 @@
 ### Miscellaneous chores
 * Prepended the vulnerability case type with apiId.
 * Updated time interval for IAST pull request.
+* Bumped golang.org/x/net from v0.17.0 to v0.23.0
 
 ## [v1.1.0] - 2024-03-26
 ### Features
