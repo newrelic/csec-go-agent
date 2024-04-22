@@ -90,7 +90,9 @@ func (httpFuzz SecHttpFuzz) ExecuteFuzzRequest(fuzzRequest *sechandler.FuzzRequr
 		value := fmt.Sprintf("%v", headerValue)
 		req.Header.Set(headerKey, value)
 	}
-	req.Header.Set("Content-Type", fuzzRequest.ContentType)
+	if fuzzRequest.ContentType != "" {
+		req.Header.Set("Content-Type", fuzzRequest.ContentType)
+	}
 	req.Header.Set("nr-csec-parent-id", fuzzId)
 
 	if fuzzRequestClient == nil {
@@ -111,8 +113,7 @@ func getTransport(serverName string) *http.Transport {
 	httpTransport := &http.Transport{
 		Dial:                (&net.Dialer{Timeout: 5 * time.Second}).Dial,
 		TLSHandshakeTimeout: 6 * time.Second,
-		MaxIdleConns:        10,
-		DisableCompression:  true}
+		MaxIdleConns:        10}
 	if serverName == "" {
 		httpTransport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	} else {
