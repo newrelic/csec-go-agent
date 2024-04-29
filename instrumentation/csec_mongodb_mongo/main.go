@@ -12,7 +12,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"go.mongodb.org/mongo-driver/mongo/version"
 	"go.mongodb.org/mongo-driver/version"
 )
 
@@ -427,7 +426,7 @@ func traceMongoHookError(name string, e error) {
 func getMinorVersion() int {
 	version := version.Driver
 	versions := strings.Split(version, ".")
-	if len(versions) > 3 {
+	if len(versions) > 2 {
 		minorVersion, err := strconv.Atoi(versions[1])
 		if err == nil {
 			return minorVersion
