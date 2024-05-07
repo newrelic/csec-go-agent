@@ -66,7 +66,7 @@ func registerFuzzTask(kcc11 *FuzzRequrestHandler, caseType, requestID string) {
 	FuzzHandler.SetLastFuzzRequestTime()
 }
 
-func removeRequestID(generatedEvent map[string]map[string][]string, errorInReplay, completedReplay []string) {
+func removeRequestID(generatedEvent map[string]map[string][]string, errorInReplay, completedReplay, clearFromPending []string) {
 	if FuzzHandler.threadPool == nil {
 		initRestRequestThreadPool()
 	}
@@ -75,6 +75,9 @@ func removeRequestID(generatedEvent map[string]map[string][]string, errorInRepla
 	}
 	for _, req := range completedReplay {
 		FuzzHandler.RemoveCompletedRequestIds(req)
+	}
+	for _, req := range clearFromPending {
+		FuzzHandler.RemoveClearFromPendingIds(req)
 	}
 	FuzzHandler.RemoveGeneratedEventsIds(generatedEvent)
 }
@@ -96,7 +99,7 @@ func InitFuzzScheduler() {
 	}
 	eventGeneration.SendLogMessage("initializing fuzz request scheduler", "InitFuzzScheduler", "INFO")
 	for {
-		time.Sleep(1 * time.Second)
+		time.Sleep(5 * time.Second)
 		if !secConfig.SecureWS.GetStatus() {
 			logger.Debugln("WS not connected sleep FuzzScheduler for 5 sec")
 			time.Sleep(5 * time.Second)
@@ -124,7 +127,7 @@ func InitFuzzScheduler() {
 		if batchSize > 100 && remainingRecordCapacity > batchSize {
 			logger.Debugln("InitFuzzScheduler", batchSize*2)
 			logger.Debugln("GeneratedEventsIds", FuzzHandler.GeneratedEventsIds())
-			eventGeneration.IASTDataRequest(batchSize*2, FuzzHandler.CompletedReplayIds(), FuzzHandler.ErrorInReplayIds(), FuzzHandler.GeneratedEventsIds())
+			eventGeneration.IASTDataRequest(batchSize*2, FuzzHandler.CompletedReplayIds(), FuzzHandler.ErrorInReplayIds(), FuzzHandler.ClearFromPendingIds(), FuzzHandler.GeneratedEventsIds())
 		}
 	}
 }

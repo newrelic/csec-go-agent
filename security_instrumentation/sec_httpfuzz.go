@@ -100,7 +100,7 @@ func (httpFuzz SecHttpFuzz) ExecuteFuzzRequest(fuzzRequest *sechandler.FuzzRequr
 		eventGeneration.SendFuzzFailEvent(fuzzRequestID)
 	} else {
 		defer response.Body.Close()
-		logger.Debugln("fuzz request successful : ", fuzzRequestID)
+		logger.Debugln("fuzz request successful : ", fuzzRequestID, response.StatusCode)
 	}
 }
 

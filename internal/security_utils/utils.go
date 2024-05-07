@@ -12,6 +12,7 @@ import (
 	"go/build"
 	"math"
 	"net/url"
+	"strings"
 
 	"io/ioutil"
 	"net"
@@ -184,4 +185,12 @@ func Contains(ports []int, port int) bool {
 		}
 	}
 	return false
+}
+
+func GetApiId(identifier string) (string, string) {
+	data := strings.Split(identifier, ":")
+	if len(data) >= 2 {
+		return data[0], data[1]
+	}
+	return "", ""
 }

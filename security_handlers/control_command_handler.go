@@ -44,9 +44,10 @@ type ControlComandHandler struct {
 type CC14Data struct {
 	ControlComand
 	Data struct {
-		GeneratedEvent  map[string]map[string][]string `json:"generatedEvent"`
-		CompletedReplay []string                       `json:"completedReplay"`
-		ErrorInReplay   []string                       `json:"errorInReplay"`
+		GeneratedEvent   map[string]map[string][]string `json:"generatedEvent"`
+		CompletedReplay  []string                       `json:"completedReplay"`
+		ErrorInReplay    []string                       `json:"errorInReplay"`
+		ClearFromPending []string                       `json:"clearFromPending"`
 	} `json:"data"`
 }
 
@@ -124,7 +125,7 @@ func parseControlCommand(arg []byte) (error, bool) {
 			return errors.New("unable to unmarshall cc " + err.Error()), false
 		}
 		logger.Debugln("cc14", string(arg))
-		removeRequestID(cc.Data.GeneratedEvent, cc.Data.ErrorInReplay, cc.Data.CompletedReplay)
+		removeRequestID(cc.Data.GeneratedEvent, cc.Data.ErrorInReplay, cc.Data.CompletedReplay, cc.Data.ClearFromPending)
 	}
 	return nil, false
 }

@@ -347,6 +347,7 @@ func TraceIncommingRequest(url, host string, hdrMap map[string][]string, method 
 	if type1 == "gRPC" {
 		(*infoReq).Request.IsGRPC = true
 	}
+	addCompletedRequests(RequestIdentifier, traceData, parentID)
 	secConfig.Secure.AssociateInboundRequest(infoReq)
 }
 
@@ -605,6 +606,15 @@ func GetFuzzHeader() string {
 }
 func GetParentID() (string, string) {
 	return secConfig.Secure.GetParentID()
+}
+
+func addCompletedRequests(fuzzheaders, reqTraceData, parentID string) {
+	if fuzzheaders != "" && parentID != "" {
+		guid, _ := secUtils.GetApiId(strings.Split(fuzzheaders, IAST_SEP)[0])
+		if guid == secConfig.GlobalInfo.MetaData.GetEntityGuidHash() {
+			secConfig.SecureWS.AddCompletedRequests(getOriginAppUUID(reqTraceData), parentID, "")
+		}
+	}
 }
 
 /**

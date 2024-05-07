@@ -4,6 +4,8 @@
 package security_config
 
 import (
+	"crypto/sha256"
+	"fmt"
 	"math"
 	"os"
 	"strconv"
@@ -136,6 +138,7 @@ type metaData struct {
 	accountID       string
 	agentRunId      string
 	entityGuid      string
+	entityGuidHash  string
 	entityName      string
 	sync.Mutex
 }
@@ -162,6 +165,13 @@ func (m *metaData) SetEntityGuid(value string) {
 	m.Lock()
 	defer m.Unlock()
 	m.entityGuid = value
+	m.entityGuidHash = fmt.Sprintf("%x", sha256.Sum256([]byte(value)))
+}
+
+func (m *metaData) GetEntityGuidHash() string {
+	m.Lock()
+	defer m.Unlock()
+	return m.entityGuidHash
 }
 
 func (m *metaData) GetAccountID() string {

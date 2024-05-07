@@ -23,9 +23,10 @@ type RestRequestThreadPool struct {
 
 	pendingRequestIds *sync.Map
 
-	completedReplay *sync.Map
-	errorInReplay   *sync.Map
-	generatedEvents *sync.Map
+	completedReplay  *sync.Map
+	errorInReplay    *sync.Map
+	clearFromPending *sync.Map
+	generatedEvents  *sync.Map
 
 	coolDownSleepTime          time.Time
 	lastFuzzRequestTime        time.Time
@@ -116,6 +117,30 @@ func (r *RestRequestThreadPool) ErrorInReplayIds() []string {
 	return keys
 }
 
+func (r *RestRequestThreadPool) SetClearFromPendingIds(clearFromPending *sync.Map) {
+	r.clearFromPending = clearFromPending
+}
+
+func (r *RestRequestThreadPool) AppendClearFromPendingIds(requestId string) {
+	r.clearFromPending.Store(requestId, 1)
+}
+
+func (r *RestRequestThreadPool) RemoveClearFromPendingIds(requestId string) {
+	r.clearFromPending.Delete(requestId)
+}
+
+func (r *RestRequestThreadPool) ClearFromPendingIds() []string {
+	keys := []string{}
+	if r.clearFromPending != nil {
+		r.clearFromPending.Range(func(key, value interface{}) bool {
+			keys = append(keys, key.(string))
+			return true
+		})
+
+	}
+	return keys
+}
+
 func (r *RestRequestThreadPool) SetGeneratedEventsIds(generatedEvents *sync.Map) {
 	r.generatedEvents = generatedEvents
 }
@@ -136,6 +161,7 @@ func (r *RestRequestThreadPool) AppendGeneratedEventsIds(appUUID, parentId, even
 	t := []string{}
 	t = append(t, eventID)
 	originMap[parentId] = t
+
 }
 
 func (r *RestRequestThreadPool) GeneratedEventsIds() interface{} {

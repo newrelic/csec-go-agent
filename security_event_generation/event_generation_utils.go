@@ -167,12 +167,13 @@ type FuzzFailBean struct {
 }
 
 type IASTDataRequestBeen struct {
-	JSONName        string      `json:"jsonName"`
-	ApplicationUUID string      `json:"applicationUUID"`
-	BatchSize       int         `json:"batchSize"`
-	CompletedReplay []string    `json:"completedReplay"`
-	ErrorInReplay   []string    `json:"errorInReplay"`
-	GeneratedEvents interface{} `json:"generatedEvent"`
+	JSONName         string      `json:"jsonName"`
+	ApplicationUUID  string      `json:"applicationUUID"`
+	BatchSize        int         `json:"batchSize"`
+	CompletedReplay  []string    `json:"completedReplay"`
+	ErrorInReplay    []string    `json:"errorInReplay"`
+	ClearFromPending []string    `json:"clearFromPending"`
+	GeneratedEvents  interface{} `json:"generatedEvent"`
 }
 
 type UrlMappingBeen struct {
