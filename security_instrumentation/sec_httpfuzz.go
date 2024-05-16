@@ -16,7 +16,6 @@ import (
 
 	secUtils "github.com/newrelic/csec-go-agent/internal/security_utils"
 	secConfig "github.com/newrelic/csec-go-agent/security_config"
-	eventGeneration "github.com/newrelic/csec-go-agent/security_event_generation"
 	sechandler "github.com/newrelic/csec-go-agent/security_handlers"
 	secIntercept "github.com/newrelic/csec-go-agent/security_intercept"
 )
@@ -75,7 +74,6 @@ func (httpFuzz SecHttpFuzz) ExecuteFuzzRequest(fuzzRequest *sechandler.FuzzRequr
 
 	req, err = http.NewRequest(fuzzRequest.Method, fuzzRequestURL, strings.NewReader(fuzzRequest.Body))
 	if req == nil || err != nil {
-		eventGeneration.SendFuzzFailEvent(fuzzRequestID)
 		logger.Infoln("ERROR: request type", fuzzRequest.Method, err)
 		secIntercept.SendLogMessage(err.Error(), "security_instrumentation", "SEVERE")
 		return
@@ -100,7 +98,6 @@ func (httpFuzz SecHttpFuzz) ExecuteFuzzRequest(fuzzRequest *sechandler.FuzzRequr
 	if err != nil {
 		logger.Debugln("ERROR: fuzz request fail : ", fuzzRequestID, err.Error())
 		//secIntercept.SendLogMessage("fuzz request fail :"+err.Error(), "security_instrumentation", "SEVERE")
-		eventGeneration.SendFuzzFailEvent(fuzzRequestID)
 	} else {
 		defer response.Body.Close()
 		logger.Debugln("fuzz request successful : ", fuzzRequestID)
