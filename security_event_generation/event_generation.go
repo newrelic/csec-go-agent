@@ -443,6 +443,21 @@ func SendLogMessage(log, caller, logLevel string) {
 	}
 }
 
+func SendIastScanFailureEvent(err, controlCommandId, failureMessage string, fuzzRequestHeader map[string]interface{}) {
+
+	var tmp_event IastScanFailure
+	tmp_event.JSONName = "iast-scan-failure"
+	tmp_event.JSONVersion = secUtils.JsonVersion
+	tmp_event.Timestamp = time.Now().Unix() * 1000
+	tmp_event.LinkingMetadata = secConfig.GlobalInfo.MetaData.GetLinkingMetadata()
+	tmp_event.SecurityAgentMetaData = ""
+	tmp_event.ReplayFailure.ApiId, tmp_event.ReplayFailure.NrCsecFuzzRequestId = getApiID(fuzzRequestHeader)
+	tmp_event.ReplayFailure.Error = err
+	tmp_event.ReplayFailure.ControlCommandId = controlCommandId
+	tmp_event.ReplayFailure.FailureMessage = failureMessage
+
+}
+
 func sendEvent(event interface{}, eventID, eventType string) ([]byte, error) {
 	event_json, err := json.Marshal(event)
 	if err != nil {

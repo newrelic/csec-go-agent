@@ -198,6 +198,21 @@ type LogMessage struct {
 	LinkingMetadata interface{} `json:"linkingMetadata"`
 }
 
+type IastScanFailure struct {
+	JSONName              string      `json:"jsonName"`
+	JSONVersion           string      `json:"jsonVersion"`
+	Timestamp             int64       `json:"timestamp"`
+	LinkingMetadata       interface{} `json:"linkingMetadata"`
+	SecurityAgentMetaData interface{} `json:"securityAgentMetaData"`
+	ReplayFailure         struct {
+		ApiId               string      `json:"apiId"`
+		Error               string      `json:"error"`
+		NrCsecFuzzRequestId interface{} `json:"nrCsecFuzzRequestId"`
+		ControlCommandId    string      `json:"controlCommandId"`
+		FailureMessage      string      `json:"failureMessage"`
+	} `json:"replayFailure"`
+}
+
 type Exception struct {
 	Message    string      `json:"message"`
 	Cause      interface{} `json:"cause"`
@@ -326,4 +341,18 @@ func isAgentActiveState() string {
 
 func iastRestClientStatus() string {
 	return "OK"
+}
+
+func getApiID(fuzzRequestHeader map[string]interface{}) (string, string) {
+	if fuzzRequestHeader == nil {
+		return "", ""
+	}
+	for k, v := range fuzzRequestHeader {
+		if secUtils.CaseInsensitiveEquals(k, "nr-csec-fuzz-request-id") {
+			requestIdentifier := fmt.Sprintf("%v", v)
+			apiId := strings.Split(requestIdentifier, ":IAST:")[0]
+			return apiId, requestIdentifier
+		}
+	}
+	return "", ""
 }
