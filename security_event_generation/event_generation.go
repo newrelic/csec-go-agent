@@ -242,6 +242,7 @@ func SendApplicationInfo() {
 
 }
 
+// deprecated
 func SendFuzzFailEvent(fuzzHeader string) {
 	var fuzzFailEvent FuzzFailBean
 	fuzzFailEvent.FuzzHeader = fuzzHeader

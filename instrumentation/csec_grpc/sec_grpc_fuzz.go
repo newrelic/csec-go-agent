@@ -12,7 +12,6 @@ import (
 
 	secUtils "github.com/newrelic/csec-go-agent/internal/security_utils"
 	secConfig "github.com/newrelic/csec-go-agent/security_config"
-	secevent "github.com/newrelic/csec-go-agent/security_event_generation"
 	sechandler "github.com/newrelic/csec-go-agent/security_handlers"
 	secIntercept "github.com/newrelic/csec-go-agent/security_intercept"
 
@@ -24,14 +23,11 @@ type SecGrpcFuzz struct {
 }
 
 func (grpcFuzz SecGrpcFuzz) ExecuteFuzzRequest(fuzzRequest *sechandler.FuzzRequrestHandler, caseType string, fuzzId string) {
-	fuzzRequestID := fmt.Sprintf("%v", fuzzRequest.Headers[secIntercept.NR_CSEC_FUZZ_REQUEST_ID])
 	sechandler.FuzzHandler.AppendCompletedRequestIds(fuzzId, "")
 	var grpcBody []interface{}
 	err := json.Unmarshal([]byte(fuzzRequest.Body), &grpcBody)
 	if err != nil {
 		logger.Debugln("ERROR: error in unmarshal gRPC body : ", err.Error(), fuzzRequest.Body)
-		//secIntercept.SendLogMessage("ERROR: error in unmarshal gRPC body : "+err.Error(), "csec_grpc", "SEVERE")
-		secevent.SendFuzzFailEvent(fuzzRequestID)
 		return
 	}
 
@@ -58,7 +54,6 @@ func (grpcFuzz SecGrpcFuzz) ExecuteFuzzRequest(fuzzRequest *sechandler.FuzzRequr
 	if err != nil {
 		logger.Errorln("ERROR: Failed to create fuzz client : ", secConfig.GlobalInfo.ApplicationInfo.ServerIp, gPort, err.Error())
 		secIntercept.SendLogMessage("ERROR: Failed to create fuzz client : "+secConfig.GlobalInfo.ApplicationInfo.ServerIp+gPort+err.Error(), "csec_grpc", "SEVERE")
-		secevent.SendFuzzFailEvent(fuzzRequestID)
 	}
 
 	url := fuzzRequest.Method
@@ -83,7 +78,6 @@ func (grpcFuzz SecGrpcFuzz) ExecuteFuzzRequest(fuzzRequest *sechandler.FuzzRequr
 
 	if error != nil {
 		logger.Debugln("ERROR: Failed fuzz req while doing : ", fuzzRequest.Url, fuzzRequest.Method, error.Error())
-		secevent.SendFuzzFailEvent(fuzzRequestID)
 	} else {
 		logger.Infoln("Successfull fuzz req : ", fuzzRequest.Method, fuzzRequest.Url)
 	}
