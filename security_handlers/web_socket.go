@@ -327,6 +327,7 @@ func InitializeWsConnecton() {
 	secConfig.SecureWS = ws
 	if ws.connect() {
 		go eventGeneration.InitHcScheduler()
+		go eventGeneration.InitPanicReportScheduler()
 	}
 }
 

@@ -35,6 +35,7 @@ type Secureiface interface {
 	GetTmpFiles() []string
 	NewGoroutineLinker(interface{})
 	NewGoroutine() interface{}
+	SendPanicEvent(string)
 }
 
 // ---------------------------------------------------

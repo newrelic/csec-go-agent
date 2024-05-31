@@ -741,6 +741,8 @@ func SendEvent(caseType string, data ...interface{}) interface{} {
 		httpresponseHandler(data...)
 	case "OUTBOUND":
 		return outboundcallHandler(data[0])
+	case "RECORD_PANICS":
+		panicHandler(data)
 	case "API_END_POINTS":
 		apiEndPointsHandler(data...)
 	case "GRPC":
@@ -767,6 +769,7 @@ func SendEvent(caseType string, data ...interface{}) interface{} {
 		dynamodbHandler(data...)
 	case "REDIS":
 		redisHandler(data...)
+
 	}
 	return nil
 }
@@ -1018,9 +1021,23 @@ func redisHandler(data ...interface{}) {
 	secConfig.Secure.SendEvent("REDIS_DB_COMMAND", data)
 }
 
+func panicHandler(data ...interface{}) {
+
+	if nil == data || len(data) == 0 || !isAgentInitialized() {
+		return
+	}
+	panic := data[0]
+	if nil != panic {
+		tmp := fmt.Sprintf("%s", panic)
+		secConfig.Secure.SendPanicEvent(tmp)
+	}
+
+}
+
 func DeactivateSecurity() {
 	SendLogMessage("deactivating security agent", "DeactivateSecurity", "INFO")
 	eventGeneration.RemoveHcScheduler()
+	eventGeneration.RemovePanicReportScheduler()
 	secConfig.GlobalInfo.SetSecurityEnabled(false)
 	secConfig.GlobalInfo.SetSecurityAgentEnabled(false)
 	if secConfig.SecureWS != nil {

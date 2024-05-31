@@ -228,6 +228,25 @@ func (k Secureimpl) NewGoroutineLinker(req interface{}) {
  * Implementation for goroutines (created and deleted)
  */
 
+func (k Secureimpl) SendPanicEvent(message string) {
+	id := getID()
+	req := getRequest(id)
+	if !isAgentReady() || (req == nil) {
+		logger.Debugln("panic report", "no incoming skipping Event")
+		return
+	}
+
+	stack := getStackTrace()
+	panic := eventGeneration.Panic{
+		Message:    message,
+		Type:       "Panic",
+		Stacktrace: stack,
+	}
+	key := message + stack[0]
+
+	eventGeneration.StoreApplicationRuntimeError(req, panic, key)
+}
+
 func (k Secureimpl) SendEvent(category string, args interface{}) *secUtils.EventTracker {
 	secConfig.AddEventDataToListener(secConfig.TestArgs{Parameters: fmt.Sprintf("%v", args), CaseType: category})
 	if !isAgentReady() {
@@ -448,4 +467,30 @@ func increaseCount() string {
 	eventCount := atomic.LoadUint64(&secConfig.GlobalInfo.InstrumentationData.HookCalledCount)
 	atomic.AddUint64(&secConfig.GlobalInfo.InstrumentationData.HookCalledCount, 1)
 	return strconv.FormatUint(eventCount, 10)
+}
+
+func getStackTrace() []string {
+	pc := make([]uintptr, secConfig.MaxStackTraceFrames)
+	n := runtime.Callers(7, pc)
+	frames := runtime.CallersFrames(pc[:n])
+	id := identity
+	var stackTrace []string
+
+	generateStackTrace := func(funcName, fName, line string) {
+		if !strings.HasPrefix(funcName, id) {
+			tmp := funcName + "(" + fName + ":" + line + ")"
+			stackTrace = append(stackTrace, tmp)
+		}
+	}
+	for {
+		frame, more := frames.Next()
+		functionName := frame.Function
+		fileName := frame.File
+		lineNumber := strconv.Itoa(frame.Line)
+		generateStackTrace(fileName, functionName, lineNumber)
+		if !more {
+			break
+		}
+	}
+	return stackTrace
 }
