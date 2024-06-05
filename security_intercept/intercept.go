@@ -717,6 +717,9 @@ func UpdateLinkData(linkingMetadata map[string]string) {
 func SendLogMessage(message, caller, logLevel string) {
 	eventGeneration.SendLogMessage(message, caller, logLevel)
 }
+func SendIastScanFailureEvent(err, controlCommandId, failureMessage string, fuzzRequestHeader map[string]interface{}) {
+	eventGeneration.SendIastScanFailureEvent(err, controlCommandId, failureMessage, fuzzRequestHeader)
+}
 
 // security_api handlers
 
