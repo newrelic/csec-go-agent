@@ -514,11 +514,17 @@ func checkSecureCookies(responseHeader http.Header) {
 	if responseHeader != nil {
 		tmpRes := http.Response{Header: responseHeader}
 		cookies := tmpRes.Cookies()
+		var arg []map[string]interface{}
 		for _, cookie := range cookies {
-			var arg []bool
-			arg = append(arg, cookie.Secure)
-			secConfig.Secure.SendEvent("SECURE_COOKIE", arg)
+
+			arg = append(arg, map[string]interface{}{
+				"name":       cookie.Name,
+				"isHttpOnly": cookie.HttpOnly,
+				"isSecure":   cookie.Secure,
+				"value":      cookie.Value,
+			})
 		}
+		secConfig.Secure.SendEvent("SECURE_COOKIE", arg)
 	}
 }
 
