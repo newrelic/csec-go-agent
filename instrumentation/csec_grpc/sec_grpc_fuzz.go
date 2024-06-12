@@ -53,7 +53,7 @@ func (grpcFuzz SecGrpcFuzz) ExecuteFuzzRequest(fuzzRequest *sechandler.FuzzRequr
 
 	if err != nil {
 		logger.Errorln("ERROR: Failed to create fuzz client : ", secConfig.GlobalInfo.ApplicationInfo.ServerIp, gPort, err.Error())
-		secIntercept.SendIastScanFailureEvent(err.Error(), fuzzId, "Error occurred during initialization fuzz client", fuzzRequest.Headers)
+		secIntercept.SendLogMessage("ERROR: Failed to create fuzz client : "+secConfig.GlobalInfo.ApplicationInfo.ServerIp+gPort+err.Error(), "csec_grpc", "SEVERE")
 	}
 
 	url := fuzzRequest.Method
