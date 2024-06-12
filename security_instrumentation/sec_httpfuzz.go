@@ -16,7 +16,6 @@ import (
 
 	secUtils "github.com/newrelic/csec-go-agent/internal/security_utils"
 	secConfig "github.com/newrelic/csec-go-agent/security_config"
-	secEvent "github.com/newrelic/csec-go-agent/security_event_generation"
 	sechandler "github.com/newrelic/csec-go-agent/security_handlers"
 	secIntercept "github.com/newrelic/csec-go-agent/security_intercept"
 )
@@ -76,7 +75,7 @@ func (httpFuzz SecHttpFuzz) ExecuteFuzzRequest(fuzzRequest *sechandler.FuzzRequr
 	req, err = http.NewRequest(fuzzRequest.Method, fuzzRequestURL, strings.NewReader(fuzzRequest.Body))
 	if req == nil || err != nil {
 		logger.Infoln("ERROR: request type", fuzzRequest.Method, err)
-		secEvent.SendIastScanFailureEvent(err.Error(), fuzzId, "Error occurred during initialization of request object.", fuzzRequest.Headers)
+		secIntercept.SendLogMessage(err.Error(), "security_instrumentation", "SEVERE")
 		return
 	}
 
@@ -98,6 +97,7 @@ func (httpFuzz SecHttpFuzz) ExecuteFuzzRequest(fuzzRequest *sechandler.FuzzRequr
 	response, err := fuzzRequestClient.Do(req)
 	if err != nil {
 		logger.Debugln("ERROR: fuzz request fail : ", fuzzRequestID, err.Error())
+		//secIntercept.SendLogMessage("fuzz request fail :"+err.Error(), "security_instrumentation", "SEVERE")
 	} else {
 		defer response.Body.Close()
 		logger.Debugln("fuzz request successful : ", fuzzRequestID)
