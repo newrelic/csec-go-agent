@@ -247,6 +247,18 @@ func (k Secureimpl) SendPanicEvent(message string) {
 	eventGeneration.StoreApplicationRuntimeError(req, panic, key)
 }
 
+func (k Secureimpl) Send5xxEvent(code int) {
+	id := getID()
+	req := getRequest(id)
+	if !isAgentReady() || (req == nil) {
+		logger.Debugln("5xx report", "no incoming skipping Event")
+		return
+	}
+
+	key := req.Request.URL + strconv.Itoa(code)
+	eventGeneration.Store5xxError(req, key, code)
+}
+
 func (k Secureimpl) SendEvent(category string, args interface{}) *secUtils.EventTracker {
 	secConfig.AddEventDataToListener(secConfig.TestArgs{Parameters: fmt.Sprintf("%v", args), CaseType: category})
 	if !isAgentReady() {

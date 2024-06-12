@@ -739,6 +739,8 @@ func SendEvent(caseType string, data ...interface{}) interface{} {
 		DissociateInboundRequest()
 	case "INBOUND_WRITE":
 		httpresponseHandler(data...)
+	case "INBOUND_RESPONSE_CODE":
+		httpresponseCodeHandler(data...)
 	case "OUTBOUND":
 		return outboundcallHandler(data[0])
 	case "RECORD_PANICS":
@@ -826,6 +828,16 @@ func outboundcallHandler(req interface{}) *secUtils.EventTracker {
 	args = append(args, r.URL.String())
 	event := secConfig.Secure.SendEvent("HTTP_REQUEST", args)
 	return event
+}
+
+func httpresponseCodeHandler(data ...interface{}) {
+	if len(data) < 1 {
+		return
+	}
+	rescode, _ := data[0].(int)
+	if rescode >= 500 {
+		secConfig.Secure.Send5xxEvent(rescode)
+	}
 }
 
 func httpresponseHandler(data ...interface{}) {
@@ -1027,10 +1039,9 @@ func panicHandler(data ...interface{}) {
 		return
 	}
 	panic := data[0]
-	if nil != panic {
-		tmp := fmt.Sprintf("%s", panic)
-		secConfig.Secure.SendPanicEvent(tmp)
-	}
+
+	tmp := fmt.Sprintf("%s", panic)
+	secConfig.Secure.SendPanicEvent(tmp)
 
 }
 

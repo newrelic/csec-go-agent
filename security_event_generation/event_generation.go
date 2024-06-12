@@ -6,6 +6,7 @@ package security_event_generation
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -441,6 +442,24 @@ func StoreApplicationRuntimeError(req *secUtils.Info_req, panic Panic, id string
 			ApplicationIdentifiers: getApplicationIdentifiers("application-runtime-error"),
 			HTTPRequest:            req.Request,
 			Exception:              panic,
+			Category:               "Panic",
+			Counter:                1,
+		}
+	}
+}
+
+func Store5xxError(req *secUtils.Info_req, id string, responseCode int) {
+	applicationPanicMutex.Lock()
+	defer applicationPanicMutex.Unlock()
+	if p, ok := applicationPanic[id]; ok {
+		p.Counter++
+	} else {
+		applicationPanic[id] = &PanicReport{
+			ApplicationIdentifiers: getApplicationIdentifiers("application-runtime-error"),
+			HTTPRequest:            req.Request,
+			Exception:              nil,
+			ResponseCode:           responseCode,
+			Category:               http.StatusText(responseCode),
 			Counter:                1,
 		}
 	}
