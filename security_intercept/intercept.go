@@ -37,6 +37,7 @@ const (
 	NR_CSEC_FUZZ_REQUEST_ID = "nr-csec-fuzz-request-id"
 	NR_CSEC_PARENT_ID       = "NR-CSEC-PARENT-ID"
 	COMMA_DELIMETER         = ","
+	AttributeCsecRouter     = "ROUTER"
 )
 
 /**
@@ -288,7 +289,7 @@ func AssociateApplicationPort(data string) {
 
 // TraceIncommingRequest - interception of incoming request
 
-func TraceIncommingRequest(url, host string, hdrMap map[string][]string, method string, body string, queryparam map[string][]string, protocol, serverName, type1 string, bodyReader secUtils.SecWriter) {
+func TraceIncommingRequest(url, host string, hdrMap map[string][]string, method string, body string, queryparam map[string][]string, protocol, serverName, type1 string, bodyReader secUtils.SecWriter, csecAttributes map[string]any) {
 	if !isAgentInitialized() {
 		return
 	}
@@ -348,6 +349,14 @@ func TraceIncommingRequest(url, host string, hdrMap map[string][]string, method 
 	if type1 == "gRPC" {
 		(*infoReq).Request.IsGRPC = true
 	}
+
+	for k, v := range csecAttributes {
+		if secUtils.CaseInsensitiveEquals(k, AttributeCsecRouter) {
+			(*infoReq).Request.Route, _ = v.(string)
+		}
+
+	}
+
 	secConfig.Secure.AssociateInboundRequest(infoReq)
 }
 
@@ -736,7 +745,7 @@ func SendEvent(caseType string, data ...interface{}) interface{} {
 
 	switch caseType {
 	case "INBOUND":
-		inboundcallHandler(data[0])
+		inboundcallHandler(data...)
 	case "INBOUND_END":
 		XssCheck()
 		DissociateInboundRequest()
@@ -774,10 +783,20 @@ func SendEvent(caseType string, data ...interface{}) interface{} {
 	return nil
 }
 
-func inboundcallHandler(request interface{}) {
+func inboundcallHandler(data ...interface{}) {
+
+	csecAttributes := map[string]any{}
+	if len(data) >= 2 {
+		csecAttributes, _ = data[1].(map[string]any)
+	}
+	if len(data) < 1 {
+		return
+	}
+	request := data[0]
+
 	r, ok := request.(webRequestv2)
 	if !ok || r == nil {
-		inboundcallHandlerv1(request)
+		inboundcallHandlerv1(request, csecAttributes)
 		return
 	}
 	queryparam := map[string][]string{}
@@ -790,11 +809,11 @@ func inboundcallHandler(request interface{}) {
 	}
 
 	reqBodyWriter := secUtils.SecWriter{GetBody: r.GetBody, IsDataTruncated: r.IsDataTruncated}
-	TraceIncommingRequest(r.GetURL().String(), clientHost, r.GetHeader(), r.GetMethod(), "", queryparam, r.GetTransport(), r.GetServerName(), r.Type1(), reqBodyWriter)
+	TraceIncommingRequest(r.GetURL().String(), clientHost, r.GetHeader(), r.GetMethod(), "", queryparam, r.GetTransport(), r.GetServerName(), r.Type1(), reqBodyWriter, csecAttributes)
 }
 
 // merge inboundcallHandler and inboundcallHandlerv1 in the next major release(v1.0.0)
-func inboundcallHandlerv1(request interface{}) {
+func inboundcallHandlerv1(request interface{}, csecAttributes map[string]any) {
 	r, ok := request.(webRequest)
 	if !ok || r == nil {
 		SendLogMessage("ERROR: Request is not a type of webRequest and webRequestv2 ", "security_intercept", "SEVERE")
@@ -811,7 +830,7 @@ func inboundcallHandlerv1(request interface{}) {
 	}
 
 	reqBodyWriter := secUtils.SecWriter{GetBody: r.GetBody, IsDataTruncated: IsDataTruncated}
-	TraceIncommingRequest(r.GetURL().String(), clientHost, r.GetHeader(), r.GetMethod(), "", queryparam, r.GetTransport(), r.GetServerName(), r.Type1(), reqBodyWriter)
+	TraceIncommingRequest(r.GetURL().String(), clientHost, r.GetHeader(), r.GetMethod(), "", queryparam, r.GetTransport(), r.GetServerName(), r.Type1(), reqBodyWriter, csecAttributes)
 }
 
 func outboundcallHandler(req interface{}) *secUtils.EventTracker {

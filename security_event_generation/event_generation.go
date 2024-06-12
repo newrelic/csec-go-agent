@@ -343,6 +343,7 @@ func SendVulnerableEvent(req *secUtils.Info_req, category string, args interface
 		if apiId == vulnerabilityDetails.APIID {
 			(secConfig.SecureWS).AddCompletedRequests(req.ParentID, eventId)
 		}
+		tmp_event.HTTPRequest.Route = ""
 	}
 
 	event_json, err1 := sendEvent(tmp_event, req.ParentID, requestType)
