@@ -37,7 +37,7 @@ const (
 	NR_CSEC_FUZZ_REQUEST_ID = "nr-csec-fuzz-request-id"
 	NR_CSEC_PARENT_ID       = "NR-CSEC-PARENT-ID"
 	COMMA_DELIMETER         = ","
-	AttributeCsecRouter     = "ROUTER"
+	AttributeCsecRoute      = "ROUTE"
 )
 
 /**
@@ -351,7 +351,7 @@ func TraceIncommingRequest(url, host string, hdrMap map[string][]string, method 
 	}
 
 	for k, v := range csecAttributes {
-		if secUtils.CaseInsensitiveEquals(k, AttributeCsecRouter) {
+		if secUtils.CaseInsensitiveEquals(k, AttributeCsecRoute) {
 			(*infoReq).Request.Route, _ = v.(string)
 		}
 
