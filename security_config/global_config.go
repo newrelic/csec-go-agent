@@ -20,8 +20,7 @@ var SecureWS secUtils.SecureWSiface
 
 type Info_struct struct {
 	EventData           eventData
-	ApiData             []Urlmappings
-	ApiDataMutex        sync.Mutex
+	ApiData             *sync.Map
 	EnvironmentInfo     EnvironmentInfo
 	ApplicationInfo     runningApplicationInfo
 	InstrumentationData Instrumentation
@@ -133,17 +132,29 @@ func (info *Info_struct) SetBodyLimit(bodyLimit int) {
 	return
 }
 
-func (info *Info_struct) GetApiData() []Urlmappings {
-	info.ApiDataMutex.Lock()
-	defer info.ApiDataMutex.Unlock()
-	return info.ApiData
+func (info *Info_struct) GetApiData() []any {
+	urlmappings := []any{}
+
+	if info.ApiData != nil {
+		info.ApiData.Range(func(key, value interface{}) bool {
+			urlmappings = append(urlmappings, value)
+			return true
+		})
+	}
+
+	return urlmappings
 }
 
 func (info *Info_struct) SetApiData(data Urlmappings) {
-	info.ApiDataMutex.Lock()
-	defer info.ApiDataMutex.Unlock()
-	info.ApiData = append(info.ApiData, data)
-	return
+	key := data.Path + data.Method
+
+	if info.ApiData == nil {
+		info.ApiData = &sync.Map{}
+	}
+	if _, ok := info.ApiData.Load(key); !ok {
+		info.ApiData.Store(key, data)
+		return
+	}
 }
 
 func (info *Info_struct) IastProbingInterval() int {
