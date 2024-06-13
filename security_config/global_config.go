@@ -334,7 +334,7 @@ func (e *eventData) ResetEventStats() {
 	e.iastEventStats = EventStats{}
 	e.raspEventStats = EventStats{}
 	e.exitEventStats = EventStats{}
-	return
+
 }
 
 type EventStats struct {

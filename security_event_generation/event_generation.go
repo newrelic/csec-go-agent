@@ -313,6 +313,9 @@ func SendVulnerableEvent(req *secUtils.Info_req, category string, args interface
 		}
 	}
 
+	tmp_event.MetaData.AppServerInfo.ApplicationDirectory = secConfig.GlobalInfo.EnvironmentInfo.Wd
+	tmp_event.MetaData.AppServerInfo.ServerBaseDirectory = secConfig.GlobalInfo.EnvironmentInfo.Wd
+
 	requestType := "raspEvent"
 	if secConfig.GlobalInfo.GetCurrentPolicy().VulnerabilityScan.Enabled && secConfig.GlobalInfo.GetCurrentPolicy().VulnerabilityScan.IastScan.Enabled {
 		if fuzzHeader != "" {

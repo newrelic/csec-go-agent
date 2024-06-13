@@ -66,6 +66,10 @@ type metaData struct {
 	IsClientDetectedFromXFF   bool        `json:"isClientDetectedFromXFF"`
 	APIBlocked                bool        `json:"apiBlocked"`
 	ReflectedMetaData         interface{} `json:"reflectedMetaData"`
+	AppServerInfo             struct {
+		ApplicationDirectory string `json:"applicationDirectory"`
+		ServerBaseDirectory  string `json:"serverBaseDirectory"`
+	} `json:"appServerInfo"`
 }
 
 // ---------------------------------------------------
