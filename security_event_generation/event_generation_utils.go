@@ -212,7 +212,7 @@ type Panic struct {
 	Message    any         `json:"message"`
 	Cause      interface{} `json:"cause"`
 	Type       string      `json:"type"`
-	Stacktrace interface{} `json:"stacktrace"`
+	Stacktrace []string    `json:"stacktrace"`
 }
 
 type PanicReport struct {
@@ -222,6 +222,7 @@ type PanicReport struct {
 	ResponseCode int                  `json:"responseCode"`
 	Category     string               `json:"category"`
 	Exception    any                  `json:"exception"`
+	TraceId      string               `json:"traceId"`
 }
 
 //status utils function
