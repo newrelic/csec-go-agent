@@ -6,10 +6,12 @@ package security_event_generation
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"errors"
@@ -31,12 +33,15 @@ const (
 )
 
 var (
-	initlogs      = true
-	firstEvent    = true
-	HcBuffer      *secUtils.Cring
-	logger        = logging.GetLogger("hook")
-	removeChannel = make(chan string)
-	errorBuffer   = secUtils.NewCring(15)
+	initlogs              = true
+	firstEvent            = true
+	HcBuffer              *secUtils.Cring
+	logger                = logging.GetLogger("hook")
+	removeChannel         = make(chan string)
+	panicChannel          = make(chan string)
+	errorBuffer           = secUtils.NewCring(15)
+	applicationPanic      = make(map[string]*PanicReport)
+	applicationPanicMutex = sync.Mutex{}
 )
 
 func InitHcScheduler() {
@@ -57,6 +62,22 @@ func InitHcScheduler() {
 
 func RemoveHcScheduler() {
 	removeChannel <- "end"
+}
+
+func InitPanicReportScheduler() {
+	t := time.NewTicker(30 * time.Second)
+	for {
+		select {
+		case <-t.C:
+			sendApplicationRuntimeError()
+		case <-panicChannel:
+			return
+		}
+	}
+}
+
+func RemovePanicReportScheduler() {
+	panicChannel <- "end"
 }
 
 func initHcBuffer() {
@@ -402,6 +423,49 @@ func IASTDataRequest(batchSize int, completedRequestIds interface{}, pendingRequ
 	_, err := sendEvent(tmp_event, "", "")
 	if err != nil {
 		logger.Errorln(err)
+	}
+}
+
+func sendApplicationRuntimeError() {
+	applicationPanicMutex.Lock()
+	defer applicationPanicMutex.Unlock()
+	for _, event := range applicationPanic {
+		sendEvent(event, "", "LogMessage")
+	}
+	applicationPanic = make(map[string]*PanicReport)
+
+}
+
+func StoreApplicationRuntimeError(req *secUtils.Info_req, panic Panic, id string) {
+	applicationPanicMutex.Lock()
+	defer applicationPanicMutex.Unlock()
+	if p, ok := applicationPanic[id]; ok {
+		p.Counter++
+	} else {
+		applicationPanic[id] = &PanicReport{
+			ApplicationIdentifiers: getApplicationIdentifiers("application-runtime-error"),
+			HTTPRequest:            req.Request,
+			Exception:              panic,
+			Category:               "Panic",
+			Counter:                1,
+		}
+	}
+}
+
+func Store5xxError(req *secUtils.Info_req, id string, responseCode int) {
+	applicationPanicMutex.Lock()
+	defer applicationPanicMutex.Unlock()
+	if p, ok := applicationPanic[id]; ok {
+		p.Counter++
+	} else {
+		applicationPanic[id] = &PanicReport{
+			ApplicationIdentifiers: getApplicationIdentifiers("application-runtime-error"),
+			HTTPRequest:            req.Request,
+			Exception:              nil,
+			ResponseCode:           responseCode,
+			Category:               http.StatusText(responseCode),
+			Counter:                1,
+		}
 	}
 }
 

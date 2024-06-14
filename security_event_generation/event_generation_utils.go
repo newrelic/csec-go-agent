@@ -208,6 +208,22 @@ type Exception struct {
 	StackTrace []string    `json:"stackTrace"`
 }
 
+type Panic struct {
+	Message    any         `json:"message"`
+	Cause      interface{} `json:"cause"`
+	Type       string      `json:"type"`
+	Stacktrace interface{} `json:"stacktrace"`
+}
+
+type PanicReport struct {
+	ApplicationIdentifiers
+	HTTPRequest  secUtils.RequestInfo `json:"httpRequest"`
+	Counter      int                  `json:"counter"`
+	ResponseCode int                  `json:"responseCode"`
+	Category     string               `json:"category"`
+	Exception    any                  `json:"exception"`
+}
+
 //status utils function
 /////
 
