@@ -254,8 +254,11 @@ func (k Secureimpl) Send5xxEvent(code int) {
 		logger.Debugln("5xx report", "no incoming skipping Event")
 		return
 	}
-
-	key := req.Request.URL + strconv.Itoa(code)
+	r := req.Request.Route
+	if r == "" {
+		r = req.Request.URL
+	}
+	key := r + strconv.Itoa(code)
 	eventGeneration.Store5xxError(req, key, code)
 }
 
