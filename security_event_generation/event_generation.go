@@ -442,13 +442,17 @@ func StoreApplicationRuntimeError(req *secUtils.Info_req, panic Panic, id string
 	if p, ok := applicationPanic[id]; ok {
 		p.Counter++
 	} else {
+		r := req.Request.Route
+		if r == "" {
+			r = req.Request.URL
+		}
 		applicationPanic[id] = &PanicReport{
 			ApplicationIdentifiers: getApplicationIdentifiers("application-runtime-error"),
 			HTTPRequest:            req.Request,
 			Exception:              panic,
 			Category:               "Panic",
 			Counter:                1,
-			TraceId:                secUtils.StringSHA256("Panic" + req.Request.URL + req.Request.Method + strings.Join(panic.Stacktrace, " ")),
+			TraceId:                secUtils.StringSHA256("Panic" + r + req.Request.Method + strings.Join(panic.Stacktrace, " ")),
 		}
 	}
 }
@@ -459,6 +463,10 @@ func Store5xxError(req *secUtils.Info_req, id string, responseCode int) {
 	if p, ok := applicationPanic[id]; ok {
 		p.Counter++
 	} else {
+		r := req.Request.Route
+		if r == "" {
+			r = req.Request.URL
+		}
 		category := http.StatusText(responseCode)
 		applicationPanic[id] = &PanicReport{
 			ApplicationIdentifiers: getApplicationIdentifiers("application-runtime-error"),
@@ -467,7 +475,7 @@ func Store5xxError(req *secUtils.Info_req, id string, responseCode int) {
 			ResponseCode:           responseCode,
 			Category:               category,
 			Counter:                1,
-			TraceId:                secUtils.StringSHA256(category + req.Request.URL + req.Request.Method),
+			TraceId:                secUtils.StringSHA256(category + r + req.Request.Method),
 		}
 	}
 }
