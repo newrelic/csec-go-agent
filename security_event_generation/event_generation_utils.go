@@ -212,7 +212,7 @@ type Panic struct {
 	Message    any         `json:"message"`
 	Cause      interface{} `json:"cause"`
 	Type       string      `json:"type"`
-	Stacktrace []string    `json:"stacktrace"`
+	Stacktrace []string    `json:"stackTrace"`
 }
 
 type PanicReport struct {
