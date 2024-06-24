@@ -4,12 +4,12 @@
 package security_sysinfo
 
 import (
+	"errors"
+	"os/exec"
+	"regexp"
+	"strconv"
 	"syscall"
 	"unsafe"
-	"regexp"
-	"os/exec"
-	"strconv"
-	"errors"
 )
 
 var rePageSize = regexp.MustCompile("page size of ([0-9]*) bytes")
@@ -44,10 +44,10 @@ func FreePhysicalMemoryBytes() (uint64, error) {
 	if err != nil {
 		return 0, err
 	}
-	pageSize, err := parseProcMeminfo(outBytes, reFreePages)
+	pageSize, err := parseProcMeminfo(outBytes, rePageSize)
 	numberOfPage, err1 := parseProcMeminfo(outBytes, reFreePages)
 	if err == nil && err1 == nil {
-		return pageSize * numberOfPage * 1024, nil
+		return pageSize * numberOfPage, nil
 	}
 	return 0, err
 }

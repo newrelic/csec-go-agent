@@ -66,6 +66,10 @@ type metaData struct {
 	IsClientDetectedFromXFF   bool        `json:"isClientDetectedFromXFF"`
 	APIBlocked                bool        `json:"apiBlocked"`
 	ReflectedMetaData         interface{} `json:"reflectedMetaData"`
+	AppServerInfo             struct {
+		ApplicationDirectory string `json:"applicationDirectory"`
+		ServerBaseDirectory  string `json:"serverBaseDirectory"`
+	} `json:"appServerInfo"`
 }
 
 // ---------------------------------------------------
@@ -202,6 +206,23 @@ type Exception struct {
 	Message    string      `json:"message"`
 	Cause      interface{} `json:"cause"`
 	StackTrace []string    `json:"stackTrace"`
+}
+
+type Panic struct {
+	Message    any         `json:"message"`
+	Cause      interface{} `json:"cause"`
+	Type       string      `json:"type"`
+	Stacktrace []string    `json:"stackTrace"`
+}
+
+type PanicReport struct {
+	ApplicationIdentifiers
+	HTTPRequest  secUtils.RequestInfo `json:"httpRequest"`
+	Counter      int                  `json:"counter"`
+	ResponseCode int                  `json:"responseCode"`
+	Category     string               `json:"category"`
+	Exception    any                  `json:"exception"`
+	TraceId      string               `json:"traceId"`
 }
 
 //status utils function

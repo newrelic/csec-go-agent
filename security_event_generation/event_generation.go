@@ -6,10 +6,12 @@ package security_event_generation
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"errors"
@@ -31,12 +33,15 @@ const (
 )
 
 var (
-	initlogs      = true
-	firstEvent    = true
-	HcBuffer      *secUtils.Cring
-	logger        = logging.GetLogger("hook")
-	removeChannel = make(chan string)
-	errorBuffer   = secUtils.NewCring(15)
+	initlogs              = true
+	firstEvent            = true
+	HcBuffer              *secUtils.Cring
+	logger                = logging.GetLogger("hook")
+	removeChannel         = make(chan string)
+	panicChannel          = make(chan string)
+	errorBuffer           = secUtils.NewCring(15)
+	applicationPanic      = make(map[string]*PanicReport)
+	applicationPanicMutex = sync.Mutex{}
 )
 
 func InitHcScheduler() {
@@ -57,6 +62,22 @@ func InitHcScheduler() {
 
 func RemoveHcScheduler() {
 	removeChannel <- "end"
+}
+
+func InitPanicReportScheduler() {
+	t := time.NewTicker(30 * time.Second)
+	for {
+		select {
+		case <-t.C:
+			sendApplicationRuntimeError()
+		case <-panicChannel:
+			return
+		}
+	}
+}
+
+func RemovePanicReportScheduler() {
+	panicChannel <- "end"
 }
 
 func initHcBuffer() {
@@ -242,6 +263,7 @@ func SendApplicationInfo() {
 
 }
 
+// deprecated
 func SendFuzzFailEvent(fuzzHeader string) {
 	var fuzzFailEvent FuzzFailBean
 	fuzzFailEvent.FuzzHeader = fuzzHeader
@@ -312,6 +334,9 @@ func SendVulnerableEvent(req *secUtils.Info_req, category string, args interface
 		}
 	}
 
+	tmp_event.MetaData.AppServerInfo.ApplicationDirectory = secConfig.GlobalInfo.EnvironmentInfo.Wd
+	tmp_event.MetaData.AppServerInfo.ServerBaseDirectory = secConfig.GlobalInfo.EnvironmentInfo.Wd
+
 	requestType := "raspEvent"
 	if secConfig.GlobalInfo.GetCurrentPolicy().VulnerabilityScan.Enabled && secConfig.GlobalInfo.GetCurrentPolicy().VulnerabilityScan.IastScan.Enabled {
 		if fuzzHeader != "" {
@@ -342,6 +367,7 @@ func SendVulnerableEvent(req *secUtils.Info_req, category string, args interface
 		if apiId == vulnerabilityDetails.APIID {
 			(secConfig.SecureWS).AddCompletedRequests(req.ParentID, eventId)
 		}
+		tmp_event.HTTPRequest.Route = ""
 	}
 
 	event_json, err1 := sendEvent(tmp_event, req.ParentID, requestType)
@@ -397,6 +423,60 @@ func IASTDataRequest(batchSize int, completedRequestIds interface{}, pendingRequ
 	_, err := sendEvent(tmp_event, "", "")
 	if err != nil {
 		logger.Errorln(err)
+	}
+}
+
+func sendApplicationRuntimeError() {
+	applicationPanicMutex.Lock()
+	defer applicationPanicMutex.Unlock()
+	for _, event := range applicationPanic {
+		sendEvent(event, "", "LogMessage")
+	}
+	applicationPanic = make(map[string]*PanicReport)
+
+}
+
+func StoreApplicationRuntimeError(req *secUtils.Info_req, panic Panic, id string) {
+	applicationPanicMutex.Lock()
+	defer applicationPanicMutex.Unlock()
+	if p, ok := applicationPanic[id]; ok {
+		p.Counter++
+	} else {
+		r := req.Request.Route
+		if r == "" {
+			r = req.Request.URL
+		}
+		applicationPanic[id] = &PanicReport{
+			ApplicationIdentifiers: getApplicationIdentifiers("application-runtime-error"),
+			HTTPRequest:            req.Request,
+			Exception:              panic,
+			Category:               "Panic",
+			Counter:                1,
+			TraceId:                secUtils.StringSHA256("Panic" + r + req.Request.Method + strings.Join(panic.Stacktrace, " ")),
+		}
+	}
+}
+
+func Store5xxError(req *secUtils.Info_req, id string, responseCode int) {
+	applicationPanicMutex.Lock()
+	defer applicationPanicMutex.Unlock()
+	if p, ok := applicationPanic[id]; ok {
+		p.Counter++
+	} else {
+		r := req.Request.Route
+		if r == "" {
+			r = req.Request.URL
+		}
+		category := http.StatusText(responseCode)
+		applicationPanic[id] = &PanicReport{
+			ApplicationIdentifiers: getApplicationIdentifiers("application-runtime-error"),
+			HTTPRequest:            req.Request,
+			Exception:              nil,
+			ResponseCode:           responseCode,
+			Category:               category,
+			Counter:                1,
+			TraceId:                secUtils.StringSHA256(category + r + req.Request.Method),
+		}
 	}
 }
 
