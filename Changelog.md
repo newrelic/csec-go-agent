@@ -1,5 +1,20 @@
 # Changelog
 
+## [v1.3.0] - 2024-06-24
+### Features
+* Added functionality to report panics in user code.
+* Added support to report 5xx status code.
+* Added support to detect gRPC API endpoint.
+* Added support for MongoDB latest version v1.15.0
+* Added feature to detect route of an incoming request for all supported frameworks.
+* Added support to detect server web directory
+* Added generic code to run agent on os like OpenBSD, FreeBSD
+### Miscellaneous chores
+* Fixed for incorrect system memory reporting on darwin
+* Fixed for duplicate URL mapping reporting issue
+* No Longer Sending Fuzz Fail Events
+* Json Version bump to 1.2.3
+
 ## [v1.2.0] - 2024-04-12
 ### Features
 * IAST replay header decryption due to Security Findings.
