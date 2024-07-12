@@ -162,6 +162,8 @@ type ApplicationIdentifiers struct {
 	JSONName         string      `json:"jsonName"`
 	Pid              string      `json:"pid"`
 	StartTime        string      `json:"startTime"`
+	AppAccountId     string      `json:"appAccountId"`
+	AppEntityGuid    string      `json:"appEntityGuid"`
 	LinkingMetadata  interface{} `json:"linkingMetadata"`
 }
 
@@ -171,8 +173,7 @@ type FuzzFailBean struct {
 }
 
 type IASTDataRequestBeen struct {
-	JSONName          string      `json:"jsonName"`
-	ApplicationUUID   string      `json:"applicationUUID"`
+	ApplicationIdentifiers
 	BatchSize         int         `json:"batchSize"`
 	CompletedRequests interface{} `json:"completedRequests"`
 	PendingRequestIds []string    `json:"pendingRequestIds"`
@@ -191,15 +192,13 @@ type Urlmappings struct {
 }
 
 type LogMessage struct {
-	JSONName        string      `json:"jsonName"`
-	ApplicationUUID string      `json:"applicationUUID"`
-	Timestamp       int64       `json:"timestamp"`
-	Level           string      `json:"level"`
-	Message         string      `json:"message"`
-	Caller          string      `json:"caller"`
-	Exception       Exception   `json:"exception"`
-	ThreadName      string      `json:"threadName"`
-	LinkingMetadata interface{} `json:"linkingMetadata"`
+	ApplicationIdentifiers
+	Timestamp  int64     `json:"timestamp"`
+	Level      string    `json:"level"`
+	Message    string    `json:"message"`
+	Caller     string    `json:"caller"`
+	Exception  Exception `json:"exception"`
+	ThreadName string    `json:"threadName"`
 }
 
 type Exception struct {
