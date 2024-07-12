@@ -6,6 +6,7 @@ package security_intercept
 import (
 	"fmt"
 	"net/http"
+	"net/textproto"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -164,14 +165,12 @@ func recoverFromPanic(functionName string) {
 	}
 }
 
-func getContentType(header map[string]string) string {
+func getContentType(header map[string][]string) string {
+	return getHeaderValue(header, "Content-type")
+}
 
-	for key, v := range header {
-		if secUtils.CaseInsensitiveEquals(key, "Content-type") {
-			return v
-		}
-	}
-	return ""
+func getHeaderValue(header map[string][]string, key string) string {
+	return textproto.MIMEHeader(header).Get(key)
 }
 
 func getIpAndPort(data string) (ip string, port string) {
@@ -226,19 +225,7 @@ type parameters struct {
 	PayloadType interface{} `json:"payloadType"`
 }
 
-type NrRequestIdentifier struct {
-	Raw         string
-	RefID       string
-	RefValue    string
-	APIRecordID string
-	NrRequest   bool
-	NextStage   string
-	RecordIndex string
-	RefKey      string
-	TempFiles   []string
-}
-
-func parseFuzzRequestIdentifierHeader(requestHeaderVal string) (nrRequestIdentifier NrRequestIdentifier) {
+func parseFuzzRequestIdentifierHeader(requestHeaderVal string) (nrRequestIdentifier secUtils.NrRequestIdentifier) {
 	nrRequestIdentifier.Raw = requestHeaderVal
 	if !secUtils.IsBlank(requestHeaderVal) {
 		return
@@ -305,4 +292,14 @@ func createFuzzFileTemp(filesToCreate string) (tmpFiles []string) {
 		emptyFile.Close()
 	}
 	return tmpFiles
+}
+
+func ToOneValueMap(header map[string][]string) (filterHeader map[string]string) {
+	if header == nil {
+		return
+	}
+	for k, v := range header {
+		filterHeader[k] = strings.Join(v, ",")
+	}
+	return
 }

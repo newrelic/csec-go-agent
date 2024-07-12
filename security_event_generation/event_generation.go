@@ -321,7 +321,7 @@ func SendVulnerableEvent(req *secUtils.Info_req, category string, args interface
 	tmp_event.VulnerabilityDetails = vulnerabilityDetails
 	tmp_event.ApplicationIdentifiers = getApplicationIdentifiers("Event")
 
-	fuzzHeader := (*req).RequestIdentifier
+	requestIdentifier := (*req).RequestIdentifier
 	// if (*req).RequestIdentifier != "" {
 	// 	tmp_event.Stacktrace = []string{}
 	// }
@@ -336,10 +336,9 @@ func SendVulnerableEvent(req *secUtils.Info_req, category string, args interface
 
 	tmp_event.MetaData.AppServerInfo.ApplicationDirectory = secConfig.GlobalInfo.EnvironmentInfo.Wd
 	tmp_event.MetaData.AppServerInfo.ServerBaseDirectory = secConfig.GlobalInfo.EnvironmentInfo.Wd
-
 	requestType := "raspEvent"
 	if secConfig.GlobalInfo.GetCurrentPolicy().VulnerabilityScan.Enabled && secConfig.GlobalInfo.GetCurrentPolicy().VulnerabilityScan.IastScan.Enabled {
-		if fuzzHeader != "" {
+		if requestIdentifier.NrRequest {
 			requestType = "iastEvent"
 			tmp_event.IsIASTRequest = true
 		}
@@ -361,9 +360,9 @@ func SendVulnerableEvent(req *secUtils.Info_req, category string, args interface
 		}
 	}
 
-	if req.ParentID != "" && req.RequestIdentifier != "" {
+	if req.ParentID != "" && requestIdentifier.NrRequest {
 		tmp_event.ParentId = req.ParentID
-		apiId := strings.Split(req.RequestIdentifier, ":")[0]
+		apiId := requestIdentifier.APIRecordID
 		if apiId == vulnerabilityDetails.APIID {
 			(secConfig.SecureWS).AddCompletedRequests(req.ParentID, eventId)
 		}
@@ -383,7 +382,7 @@ func SendVulnerableEvent(req *secUtils.Info_req, category string, args interface
 		logging.Disableinitlogs()
 	}
 	tracingHeader := tmp_event.HTTPRequest.Headers[NR_CSEC_TRACING_DATA]
-	return &secUtils.EventTracker{APIID: tmp_event.APIID, ID: tmp_event.ID, CaseType: tmp_event.CaseType, TracingHeader: tracingHeader, RequestIdentifier: fuzzHeader}
+	return &secUtils.EventTracker{APIID: tmp_event.APIID, ID: tmp_event.ID, CaseType: tmp_event.CaseType, TracingHeader: tracingHeader, RequestIdentifier: requestIdentifier.Raw}
 
 }
 

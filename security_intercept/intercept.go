@@ -289,74 +289,36 @@ func AssociateApplicationPort(data string) {
 
 // TraceIncommingRequest - interception of incoming request
 
-func TraceIncommingRequest(url, host string, hdrMap map[string][]string, method string, body string, queryparam map[string][]string, protocol, serverName, type1 string, bodyReader secUtils.SecWriter, csecAttributes map[string]any) {
+func TraceIncommingRequest(url, host string, hdrMap map[string][]string, method string, body string, queryparam map[string][]string, protocol, serverName, reqtype string, bodyReader secUtils.SecWriter, csecAttributes map[string]any) {
 	if !isAgentInitialized() {
 		return
 	}
-	clientIp := ""
-	clientPort := ""
-	if host != "" {
-		clientIp, clientPort = getIpAndPort(host)
-	}
 
-	// filter request headers
-	filterHeader := map[string]string{}
-	RequestIdentifier := ""
-	traceData := ""
-	parentID := ""
-
-	for k, v := range hdrMap {
-		if secUtils.CaseInsensitiveEquals(k, NR_CSEC_TRACING_DATA) {
-			traceData = strings.Join(v, ",")
-		} else if secUtils.CaseInsensitiveEquals(k, NR_CSEC_FUZZ_REQUEST_ID) {
-			RequestIdentifier = strings.Join(v, ",")
-		} else if secUtils.CaseInsensitiveEquals(k, NR_CSEC_PARENT_ID) {
-			parentID = strings.Join(v, ",")
-		} else {
-			filterHeader[k] = strings.Join(v, ",")
-		}
-	}
-	if traceData != "" {
-		filterHeader[NR_CSEC_TRACING_DATA] = traceData
-	}
-	if RequestIdentifier != "" {
-		filterHeader[NR_CSEC_FUZZ_REQUEST_ID] = RequestIdentifier
-	}
-	if parentID != "" {
-		filterHeader[NR_CSEC_PARENT_ID] = parentID
-	}
-	// record incoming request
 	infoReq := new(secUtils.Info_req)
-	(*infoReq).Request.URL = url
-	(*infoReq).Request.ParameterMap = queryparam
-	(*infoReq).Request.ClientIP = clientIp
-	(*infoReq).Request.ClientPort = clientPort
-	(*infoReq).Request.ServerPort = getServerPort()
-	(*infoReq).Request.IsGRPC = false
-	(*infoReq).Request.Headers = filterHeader
-	(*infoReq).GrpcByte = make([][]byte, 0)
-	(*infoReq).Request.Method = method
-	(*infoReq).Request.Body = body
-	(*infoReq).Request.BodyReader = bodyReader
-	(*infoReq).Request.Protocol = protocol
-	(*infoReq).Request.ContentType = getContentType(filterHeader)
-	(*infoReq).ReqTraceData = traceData
-	(*infoReq).RequestIdentifier = RequestIdentifier
-	(*infoReq).Request.ServerName = serverName
-	(*infoReq).BodyLimit = secConfig.GlobalInfo.BodyLimit()
+	infoReq.Request.URL = url
+	infoReq.Request.ParameterMap = queryparam
+	infoReq.Request.ClientIP, infoReq.Request.ClientPort = getIpAndPort(host)
+	infoReq.Request.ServerPort = getServerPort()
+	infoReq.Request.Headers = ToOneValueMap(hdrMap)
+	infoReq.Request.Method = method
+	infoReq.Request.Body = body
+	infoReq.Request.BodyReader = bodyReader
+	infoReq.Request.Protocol = protocol
+	infoReq.Request.ContentType = getContentType(hdrMap)
+	infoReq.ReqTraceData = getHeaderValue(hdrMap, NR_CSEC_TRACING_DATA)
+	infoReq.RequestIdentifier = parseFuzzRequestIdentifierHeader(getHeaderValue(hdrMap, NR_CSEC_FUZZ_REQUEST_ID))
+	infoReq.Request.ServerName = serverName
+	infoReq.BodyLimit = secConfig.GlobalInfo.BodyLimit()
+	infoReq.ParentID = getHeaderValue(hdrMap, NR_CSEC_PARENT_ID)
 
-	requestIdentifier := parseFuzzRequestIdentifierHeader(RequestIdentifier)
-	(*infoReq).TmpFiles = requestIdentifier.TempFiles
-	(*infoReq).ParentID = parentID
-	if type1 == "gRPC" {
-		(*infoReq).Request.IsGRPC = true
+	if reqtype == "gRPC" {
+		infoReq.Request.IsGRPC = true
 	}
 
 	for k, v := range csecAttributes {
 		if secUtils.CaseInsensitiveEquals(k, AttributeCsecRoute) {
-			(*infoReq).Request.Route, _ = v.(string)
+			infoReq.Request.Route, _ = v.(string)
 		}
-
 	}
 
 	secConfig.Secure.AssociateInboundRequest(infoReq)
@@ -448,61 +410,7 @@ func DissociateGrpcConnectionData() {
 }
 
 func tracerpcRequestWithHeader(header map[string]string, data []byte) {
-	if !isAgentInitialized() {
-		return
-	}
-	infoReq := &secUtils.Info_req{}
-
-	(*infoReq).Request.Headers = make(map[string]string)
-	(*infoReq).Request.ParameterMap = make(map[string][]string, 0)
-	(*infoReq).Request.Method = "gRPC"
-	(*infoReq).Request.ServerPort = getServerPort()
-	(*infoReq).Request.IsGRPC = true
-
-	if data != nil {
-		(*infoReq).GrpcByte = append((*infoReq).GrpcByte, data)
-	}
-
-	host := ""
-
-	for k, v := range header {
-
-		if k == ":method" {
-			(*infoReq).Request.Method = v
-		} else if k == ":path" {
-			(*infoReq).Request.URL = v
-		} else if k == ":scheme" {
-			(*infoReq).Request.Protocol = v
-		} else if k == "content-type" {
-			(*infoReq).Request.ContentType = v
-		} else if secUtils.CaseInsensitiveEquals(k, NR_CSEC_TRACING_DATA) {
-			(*infoReq).ReqTraceData = v
-			delete(header, k)
-		} else if secUtils.CaseInsensitiveEquals(k, NR_CSEC_FUZZ_REQUEST_ID) {
-			(*infoReq).RequestIdentifier = v
-			delete(header, k)
-		} else if secUtils.CaseInsensitiveEquals(k, ":authority") {
-			(*infoReq).Request.ServerName = k
-		} else if secUtils.CaseInsensitiveEquals(k, ":host") {
-			host = k
-		}
-	}
-
-	// reassign all deleted header
-	if (*infoReq).ReqTraceData != "" {
-		header[NR_CSEC_TRACING_DATA] = (*infoReq).ReqTraceData
-	}
-	if (*infoReq).RequestIdentifier != "" {
-		header[NR_CSEC_FUZZ_REQUEST_ID] = (*infoReq).RequestIdentifier
-	}
-
-	requestIdentifier := parseFuzzRequestIdentifierHeader((*infoReq).RequestIdentifier)
-	(*infoReq).TmpFiles = requestIdentifier.TempFiles
-	if (*infoReq).Request.ServerName == "" {
-		(*infoReq).Request.ServerName = host
-	}
-	(*infoReq).Request.Headers = header
-	secConfig.Secure.AssociateInboundRequest(infoReq)
+	// deprecated
 }
 
 /**
