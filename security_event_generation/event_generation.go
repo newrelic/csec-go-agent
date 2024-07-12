@@ -296,24 +296,35 @@ func SendVulnerableEvent(req *secUtils.Info_req, category, eventCategory string,
 	tmp_event.CaseType = category
 	tmp_event.EventCategory = eventCategory
 	tmp_event.Parameters = args
-	tmp_event.EventGenerationTime = strconv.FormatInt(time.Now().Unix()*1000, 10)
 	tmp_event.BlockingProcessingTime = "1"
 	tmp_event.HTTPRequest = req.Request
-	tmp_event.HTTPResponse = secUtils.ResponseInfo{ContentType: req.ResponseContentType}
-	if req.Request.BodyReader.GetBody != nil {
-		tmp_event.HTTPRequest.Body = string(req.Request.BodyReader.GetBody())
-	}
-	if req.Request.BodyReader.IsDataTruncated != nil {
-		tmp_event.HTTPRequest.DataTruncated = req.Request.BodyReader.IsDataTruncated()
-	}
 	tmp_event.VulnerabilityDetails = vulnerabilityDetails
 	tmp_event.ApplicationIdentifiers = getApplicationIdentifiers("Event")
+	tmp_event.EventGenerationTime = strconv.FormatInt(time.Now().Unix()*1000, 10)
+	tmp_event.HTTPResponse = secUtils.ResponseInfo{ContentType: req.ResponseContentType}
+	tmp_event.MetaData.AppServerInfo.ApplicationDirectory = secConfig.GlobalInfo.EnvironmentInfo.Wd
+	tmp_event.MetaData.AppServerInfo.ServerBaseDirectory = secConfig.GlobalInfo.EnvironmentInfo.Wd
 
-	fuzzHeader := (*req).RequestIdentifier
-	// if (*req).RequestIdentifier != "" {
-	// 	tmp_event.Stacktrace = []string{}
-	// }
-	if req.Request.IsGRPC {
+	if !req.Request.IsGRPC {
+
+		if req.Request.BodyReader.GetBody != nil {
+			tmp_event.HTTPRequest.Body = string(req.Request.BodyReader.GetBody())
+		}
+		if req.Request.BodyReader.IsDataTruncated != nil {
+			tmp_event.HTTPRequest.DataTruncated = req.Request.BodyReader.IsDataTruncated()
+		}
+
+	} else {
+
+		body := req.GrpcBody
+		grpc_body_json, err1 := json.Marshal(body)
+		if err1 != nil {
+			logger.Errorln("Error parsing gRPC request body: Invalid JSON format detected" + string(grpc_body_json))
+			return nil
+		} else {
+			tmp_event.HTTPRequest.Body = string(grpc_body_json)
+		}
+
 		tmp_event.MetaData.ReflectedMetaData = secUtils.ReflectedMetaData{
 			IsGrpcClientStream: req.ReflectedMetaData.IsGrpcClientStream,
 			IsServerStream:     req.ReflectedMetaData.IsServerStream,
@@ -322,40 +333,26 @@ func SendVulnerableEvent(req *secUtils.Info_req, category, eventCategory string,
 		}
 	}
 
-	tmp_event.MetaData.AppServerInfo.ApplicationDirectory = secConfig.GlobalInfo.EnvironmentInfo.Wd
-	tmp_event.MetaData.AppServerInfo.ServerBaseDirectory = secConfig.GlobalInfo.EnvironmentInfo.Wd
-
 	requestType := "raspEvent"
-	if secConfig.GlobalInfo.GetCurrentPolicy().VulnerabilityScan.Enabled && secConfig.GlobalInfo.GetCurrentPolicy().VulnerabilityScan.IastScan.Enabled {
+
+	fuzzHeader := req.RequestIdentifier
+
+	if secConfig.GlobalInfo.IsIASTEnable() {
+		tmp_event.IsIASTEnable = true
+
 		if fuzzHeader != "" {
 			requestType = "iastEvent"
 			tmp_event.IsIASTRequest = true
 		}
-		tmp_event.IsIASTEnable = true
-	}
 
-	if tmp_event.HTTPRequest.ServerPort == "" {
-		tmp_event.HTTPRequest.ServerPort = "-1"
-	}
-
-	if tmp_event.HTTPRequest.IsGRPC {
-		body := (*req).GrpcBody
-		grpc_bodyJson, err1 := json.Marshal(body)
-		if err1 != nil {
-			logger.Errorln("grpc_body JSON invalid" + string(grpc_bodyJson))
-			return nil
-		} else {
-			tmp_event.HTTPRequest.Body = string(grpc_bodyJson)
+		if req.ParentID != "" && req.RequestIdentifier != "" {
+			tmp_event.ParentId = req.ParentID
+			apiId := strings.Split(req.RequestIdentifier, ":")[0]
+			if apiId == vulnerabilityDetails.APIID {
+				(secConfig.SecureWS).AddCompletedRequests(req.ParentID, eventId)
+			}
+			tmp_event.HTTPRequest.Route = ""
 		}
-	}
-
-	if req.ParentID != "" && req.RequestIdentifier != "" {
-		tmp_event.ParentId = req.ParentID
-		apiId := strings.Split(req.RequestIdentifier, ":")[0]
-		if apiId == vulnerabilityDetails.APIID {
-			(secConfig.SecureWS).AddCompletedRequests(req.ParentID, eventId)
-		}
-		tmp_event.HTTPRequest.Route = ""
 	}
 
 	event_json, err1 := sendEvent(tmp_event, req.ParentID, requestType)
