@@ -56,7 +56,7 @@ func (k Secureimpl) SecureExecPrepareStatement(q_address string, qargs interface
 		"parameters": qargs,
 	}
 	arg11 = append(arg11, tmp_map)
-	return k.SendEvent("SQL_DB_COMMAND", arg11)
+	return k.SendEvent("SQL_DB_COMMAND", "SQLITE", arg11)
 }
 
 /**
@@ -262,13 +262,13 @@ func (k Secureimpl) Send5xxEvent(code int) {
 	eventGeneration.Store5xxError(req, key, code)
 }
 
-func (k Secureimpl) SendEvent(category string, args interface{}) *secUtils.EventTracker {
-	secConfig.AddEventDataToListener(secConfig.TestArgs{Parameters: fmt.Sprintf("%v", args), CaseType: category})
+func (k Secureimpl) SendEvent(caseType, eventCategory string, args interface{}) *secUtils.EventTracker {
+	secConfig.AddEventDataToListener(secConfig.TestArgs{Parameters: fmt.Sprintf("%v", args), CaseType: caseType})
 	if !isAgentReady() {
 		return nil
 	}
 	eventId := increaseCount()
-	return sendEvent(eventId, category, args)
+	return sendEvent(eventId, caseType, eventCategory, args)
 }
 
 func (k Secureimpl) SendExitEvent(event *secUtils.EventTracker) {
@@ -287,21 +287,21 @@ func (k Secureimpl) SendExitEvent(event *secUtils.EventTracker) {
 	eventGeneration.SendExitEvent(event, requestIdentifier)
 }
 
-func sendEvent(eventId, category string, args interface{}) *secUtils.EventTracker {
+func sendEvent(eventId, caseType, eventCategory string, args interface{}) *secUtils.EventTracker {
 	id := getID()
 	req := getRequest(id)
 	if !isAgentReady() || (req == nil) {
-		logger.Debugln(category, "no incoming skipping Event")
+		logger.Debugln(caseType, "no incoming skipping Event")
 		return nil
 	}
 	var vulnerabilityDetails secUtils.VulnerabilityDetails
-	if category == "REFLECTED_XSS" && (*req).VulnerabilityDetails.APIID != "" {
+	if caseType == "REFLECTED_XSS" && (*req).VulnerabilityDetails.APIID != "" {
 		vulnerabilityDetails = (*req).VulnerabilityDetails
 	} else {
-		vulnerabilityDetails = presentStack((*req).Request.Method, category)
+		vulnerabilityDetails = presentStack((*req).Request.Method, caseType)
 	}
 
-	return eventGeneration.SendVulnerableEvent(req, category, args, vulnerabilityDetails, getEventID(eventId, id))
+	return eventGeneration.SendVulnerableEvent(req, caseType, eventCategory, args, vulnerabilityDetails, getEventID(eventId, id))
 
 }
 
