@@ -289,20 +289,8 @@ func sendUrlMappingEvent() {
 	}
 }
 
-func SendVulnerableEvent(req *secUtils.Info_req, category string, args interface{}, vulnerabilityDetails secUtils.VulnerabilityDetails, eventId string) *secUtils.EventTracker {
+func SendVulnerableEvent(req *secUtils.Info_req, category, eventCategory string, args interface{}, vulnerabilityDetails secUtils.VulnerabilityDetails, eventId string) *secUtils.EventTracker {
 	var tmp_event eventJson
-
-	eventCategory := category
-	if eventCategory == "SQL_DB_COMMAND" {
-		eventCategory = "SQLITE"
-	} else if category == "NOSQL_DB_COMMAND" {
-		eventCategory = "MONGO"
-	} else if category == "REDIS_DB_COMMAND" {
-		eventCategory = "REDIS"
-		category = "SQL_DB_COMMAND"
-	} else if category == "DYNAMO_DB_COMMAND" {
-		eventCategory = "DQL"
-	}
 
 	tmp_event.ID = eventId
 	tmp_event.CaseType = category
