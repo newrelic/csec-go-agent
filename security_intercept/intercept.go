@@ -895,7 +895,7 @@ func DistributedTraceHeaders(hdrs *http.Request, secureAgentevent interface{}) {
 		}
 		value = GetFuzzHeader()
 		if value != "" {
-			hdrs.Header.Add("NR_CSEC_FUZZ_REQUEST_ID", value)
+			hdrs.Header.Add(NR_CSEC_FUZZ_REQUEST_ID, value)
 		}
 	}
 
