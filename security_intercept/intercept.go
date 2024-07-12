@@ -344,7 +344,9 @@ func TraceIncommingRequest(url, host string, hdrMap map[string][]string, method 
 	(*infoReq).RequestIdentifier = RequestIdentifier
 	(*infoReq).Request.ServerName = serverName
 	(*infoReq).BodyLimit = secConfig.GlobalInfo.BodyLimit()
-	(*infoReq).TmpFiles = createFuzzFile(RequestIdentifier)
+
+	requestIdentifier := parseFuzzRequestIdentifierHeader(RequestIdentifier)
+	(*infoReq).TmpFiles = requestIdentifier.TempFiles
 	(*infoReq).ParentID = parentID
 	if type1 == "gRPC" {
 		(*infoReq).Request.IsGRPC = true
@@ -493,7 +495,9 @@ func tracerpcRequestWithHeader(header map[string]string, data []byte) {
 	if (*infoReq).RequestIdentifier != "" {
 		header[NR_CSEC_FUZZ_REQUEST_ID] = (*infoReq).RequestIdentifier
 	}
-	(*infoReq).TmpFiles = createFuzzFile((*infoReq).RequestIdentifier)
+
+	requestIdentifier := parseFuzzRequestIdentifierHeader((*infoReq).RequestIdentifier)
+	(*infoReq).TmpFiles = requestIdentifier.TempFiles
 	if (*infoReq).Request.ServerName == "" {
 		(*infoReq).Request.ServerName = host
 	}
@@ -565,55 +569,6 @@ func XssCheck() {
 /**
  * Handling for IAST mode
  */
-
-// create a remove fuzz file for verfy file acesss attack
-func createFuzzFile(fuzzheaders string) (tmpFiles []string) {
-	DSON := true
-	if DSON && fuzzheaders != "" {
-		additionalData := strings.Split(fuzzheaders, IAST_SEP)
-		logger.Debugln("additionalData:", additionalData)
-		if len(additionalData) >= 8 {
-			encryptedData := additionalData[6]
-			hashVerifier := additionalData[7]
-			logger.Debugln("Encrypted file name : ", encryptedData)
-			filesToCreate, err := secUtils.Decrypt(secConfig.GlobalInfo.MetaData.GetEntityGuid(), encryptedData, hashVerifier)
-
-			if err != nil {
-				logger.Errorln(err)
-				SendLogMessage(err.Error(), "createFuzzFile", "SEVERE")
-				return
-			}
-
-			logger.Debugln("Decrypted file name : ", filesToCreate)
-			allFiles := strings.Split(filesToCreate, COMMA_DELIMETER)
-
-			for i := range allFiles {
-				fileName := allFiles[i]
-				dsFilePath := filepath.Join(secConfig.GlobalInfo.SecurityHomePath(), "nr-security-home", "tmp")
-				fileName = strings.Replace(fileName, "{{NR_CSEC_VALIDATOR_HOME_TMP}}", dsFilePath, -1)
-				fileName = strings.Replace(fileName, "%7B%7BNR_CSEC_VALIDATOR_HOME_TMP%7D%7D", dsFilePath, -1)
-				absfileName, _ := filepath.Abs(fileName)
-				if absfileName != "" {
-					fileName = absfileName
-				}
-				tmpFiles = append(tmpFiles, fileName)
-				dir := filepath.Dir(fileName)
-				if dir != "" {
-					err := os.MkdirAll(dir, 0770)
-					if err != nil {
-						logger.Debugln("Error while creating file : ", err.Error())
-					}
-				}
-				emptyFile, err := os.Create(fileName)
-				if err != nil {
-					logger.Debugln("Error while creating file : ", err.Error(), fileName)
-				}
-				emptyFile.Close()
-			}
-		}
-	}
-	return tmpFiles
-}
 
 func removeFuzzFile(tmpFiles []string) {
 	for _, path := range tmpFiles {

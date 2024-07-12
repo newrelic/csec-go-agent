@@ -101,3 +101,16 @@ func StringSHA256(f string) string {
 	hex.Encode(dst, sum[:])
 	return string(dst)
 }
+
+func IsBlank(in string) bool {
+	return in == ""
+}
+
+func IsAnyBlank(stringSequence ...string) bool {
+	for in := range stringSequence {
+		if IsBlank(stringSequence[in]) {
+			return true
+		}
+	}
+	return false
+}

@@ -174,9 +174,7 @@ func getContentType(header map[string]string) string {
 	return ""
 }
 
-func getIpAndPort(data string) (string, string) {
-	var port = ""
-	var ip = ""
+func getIpAndPort(data string) (ip string, port string) {
 	if data == "" {
 		return ip, port
 	}
@@ -226,4 +224,85 @@ func IsDataTruncated() bool {
 type parameters struct {
 	Payload     interface{} `json:"payload"`
 	PayloadType interface{} `json:"payloadType"`
+}
+
+type NrRequestIdentifier struct {
+	Raw         string
+	RefID       string
+	RefValue    string
+	APIRecordID string
+	NrRequest   bool
+	NextStage   string
+	RecordIndex string
+	RefKey      string
+	TempFiles   []string
+}
+
+func parseFuzzRequestIdentifierHeader(requestHeaderVal string) (nrRequestIdentifier NrRequestIdentifier) {
+	nrRequestIdentifier.Raw = requestHeaderVal
+	if !secUtils.IsBlank(requestHeaderVal) {
+		return
+	}
+	data := strings.Split(requestHeaderVal, IAST_SEP)
+
+	if len(data) >= 8 {
+		nrRequestIdentifier.APIRecordID = data[0]
+		nrRequestIdentifier.RefID = data[1]
+		nrRequestIdentifier.RefValue = data[2]
+		nrRequestIdentifier.NextStage = data[3]
+		nrRequestIdentifier.RecordIndex = data[4]
+		nrRequestIdentifier.RefKey = data[5]
+		nrRequestIdentifier.NrRequest = true
+
+	}
+	if !secUtils.IsAnyBlank(data[6], data[7]) {
+
+		encryptedData := data[6]
+		hashVerifier := data[7]
+		logger.Debugln("Request Identifier, Encrypted Files = ", encryptedData)
+
+		filesToCreate, err := secUtils.Decrypt(secConfig.GlobalInfo.MetaData.GetEntityGuid(), encryptedData, hashVerifier)
+
+		if err != nil {
+			logger.Errorln("Request Identifier, decryption of files failed ", err)
+			SendLogMessage("Request Identifier, decryption of files failed "+err.Error(), "parseFuzzRequestIdentifierHeader", "SEVERE")
+			return
+		}
+		logger.Debugln("Request Identifier, Decrypted Files = ", filesToCreate)
+		nrRequestIdentifier.TempFiles = createFuzzFileTemp(filesToCreate)
+	}
+
+	return
+}
+
+func createFuzzFileTemp(filesToCreate string) (tmpFiles []string) {
+
+	allFiles := strings.Split(filesToCreate, COMMA_DELIMETER)
+
+	for i := range allFiles {
+		fileName := allFiles[i]
+		dsFilePath := filepath.Join(secConfig.GlobalInfo.SecurityHomePath(), "nr-security-home", "tmp")
+		fileName = strings.Replace(fileName, "{{NR_CSEC_VALIDATOR_HOME_TMP}}", dsFilePath, -1)
+		fileName = strings.Replace(fileName, "%7B%7BNR_CSEC_VALIDATOR_HOME_TMP%7D%7D", dsFilePath, -1)
+
+		absfileName, _ := filepath.Abs(fileName)
+		if absfileName != "" {
+			fileName = absfileName
+		}
+
+		tmpFiles = append(tmpFiles, fileName)
+		dir := filepath.Dir(fileName)
+		if dir != "" {
+			err := os.MkdirAll(dir, 0770)
+			if err != nil {
+				logger.Debugln("Failed to create directory : ", err.Error())
+			}
+		}
+		emptyFile, err := os.Create(fileName)
+		if err != nil {
+			logger.Debugln("Failed to create file : ", err.Error(), fileName)
+		}
+		emptyFile.Close()
+	}
+	return tmpFiles
 }
