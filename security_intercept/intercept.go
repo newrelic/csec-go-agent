@@ -106,9 +106,9 @@ func TraceFileOperation(fname string, flag int, isFileOpen bool) *secUtils.Event
 		args = append(args, absolutePath)
 	}
 	if isFileOpen && isFileModified(flag) && fileInApplicationPath(fname) && fileExecByExtension(fname) {
-		return secConfig.Secure.SendEvent("FILE_INTEGRITY", args)
+		return secConfig.Secure.SendEvent("FILE_INTEGRITY", "FILE_INTEGRITY", args)
 	} else {
-		return secConfig.Secure.SendEvent("FILE_OPERATION", args)
+		return secConfig.Secure.SendEvent("FILE_OPERATION", "FILE_INTEGRITY", args)
 	}
 }
 
@@ -122,7 +122,7 @@ func TraceSystemCommand(command string) *secUtils.EventTracker {
 	}
 	var arg []string
 	arg = append(arg, command)
-	return secConfig.Secure.SendEvent("SYSTEM_COMMAND", arg)
+	return secConfig.Secure.SendEvent("SYSTEM_COMMAND", "SYSTEM_COMMAND", arg)
 
 }
 
@@ -158,7 +158,7 @@ func TraceMongoOperation(arguments []byte, queryType string) *secUtils.EventTrac
 	}
 
 	arg12 = append(arg12, tmp_map1)
-	return secConfig.Secure.SendEvent("NOSQL_DB_COMMAND", arg12)
+	return secConfig.Secure.SendEvent("NOSQL_DB_COMMAND", "MONGO", arg12)
 
 }
 
@@ -191,7 +191,7 @@ func TraceSqlOperation(query string, args ...interface{}) *secUtils.EventTracker
 	}
 	arg11 = append(arg11, tmp_map)
 
-	return secConfig.Secure.SendEvent("SQL_DB_COMMAND", arg11)
+	return secConfig.Secure.SendEvent("SQL_DB_COMMAND", "SQLITE", arg11)
 }
 
 func TracePrepareStatement(q, p string) {
@@ -227,7 +227,7 @@ func TraceXpathOperation(a string) *secUtils.EventTracker {
 	}
 	var arg []string
 	arg = append(arg, a)
-	return secConfig.Secure.SendEvent("XPATH", arg)
+	return secConfig.Secure.SendEvent("XPATH", "XPATH", arg)
 }
 
 /**
@@ -240,7 +240,7 @@ func TraceLdapOperation(a map[string]string) *secUtils.EventTracker {
 	}
 	var arg []interface{}
 	arg = append(arg, a)
-	return secConfig.Secure.SendEvent("LDAP", arg)
+	return secConfig.Secure.SendEvent("LDAP", "LDAP", arg)
 }
 
 /**
@@ -254,7 +254,7 @@ func TraceJsOperation(a string) *secUtils.EventTracker {
 	var arg []string
 	arg = append(arg, a)
 
-	return secConfig.Secure.SendEvent("JAVASCRIPT_INJECTION", arg)
+	return secConfig.Secure.SendEvent("JAVASCRIPT_INJECTION", "JAVASCRIPT_INJECTION", arg)
 }
 
 /**
@@ -555,7 +555,7 @@ func XssCheck() {
 				var arg []string
 				arg = append(arg, out)
 				arg = append(arg, r.ResponseBody)
-				secConfig.Secure.SendEvent("REFLECTED_XSS", arg)
+				secConfig.Secure.SendEvent("REFLECTED_XSS", "REFLECTED_XSS", arg)
 			}
 			logger.Debugln("Called check for reflected XSS" + out)
 		}
@@ -845,7 +845,7 @@ func outboundcallHandler(req interface{}) *secUtils.EventTracker {
 	}
 	var args []interface{}
 	args = append(args, r.URL.String())
-	event := secConfig.Secure.SendEvent("HTTP_REQUEST", args)
+	event := secConfig.Secure.SendEvent("HTTP_REQUEST", "HTTP_REQUEST", args)
 	return event
 }
 
@@ -1016,7 +1016,7 @@ func mongoHandler(data ...interface{}) *secUtils.EventTracker {
 			"payload":     arg11,
 		}
 		arg12 = append(arg12, tmp_map1)
-		return secConfig.Secure.SendEvent("NOSQL_DB_COMMAND", arg12)
+		return secConfig.Secure.SendEvent("NOSQL_DB_COMMAND", "MONGO", arg12)
 	}
 	return nil
 }
@@ -1041,7 +1041,7 @@ func dynamodbHandler(data ...interface{}) {
 	if data == nil || !isAgentInitialized() {
 		return
 	}
-	secConfig.Secure.SendEvent("DYNAMO_DB_COMMAND", data[0])
+	secConfig.Secure.SendEvent("DYNAMO_DB_COMMAND", "DQL", data[0])
 }
 
 func redisHandler(data ...interface{}) {
@@ -1049,7 +1049,7 @@ func redisHandler(data ...interface{}) {
 		return
 	}
 
-	secConfig.Secure.SendEvent("REDIS_DB_COMMAND", data)
+	secConfig.Secure.SendEvent("REDIS_DB_COMMAND", "REDIS", data)
 }
 
 func panicHandler(data ...interface{}) {

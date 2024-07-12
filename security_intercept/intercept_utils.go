@@ -71,7 +71,7 @@ func getServerPort() string {
 	if serverPort != nil && len(serverPort) > 0 {
 		return strconv.Itoa(serverPort[0])
 	}
-	return ""
+	return "-1"
 }
 
 func IsFileExist(name string) bool {
