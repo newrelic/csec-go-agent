@@ -519,12 +519,31 @@ func DissociateInboundRequest() {
 	removeFuzzFile(tmpFiles)
 }
 
+func checkSecureCookies(responseHeader http.Header) {
+	logger.Debugln("Response Header", responseHeader)
+	if responseHeader != nil {
+		tmpRes := http.Response{Header: responseHeader}
+		cookies := tmpRes.Cookies()
+		var arg []map[string]interface{}
+		for _, cookie := range cookies {
+
+			arg = append(arg, map[string]interface{}{
+				"name":       cookie.Name,
+				"isHttpOnly": cookie.HttpOnly,
+				"isSecure":   cookie.Secure,
+				"value":      cookie.Value,
+			})
+		}
+		secConfig.Secure.SendEvent("SECURE_COOKIE", "SECURE_COOKIE", arg)
+	}
+}
+
 func XssCheck() {
 	if !isAgentInitialized() {
 		return
 	}
 	r := secConfig.Secure.GetRequest()
-
+	checkSecureCookies(r.ResponseHeader)
 	if r != nil {
 		if r.ResponseBody != "" && !IsRXSSDisable() {
 
@@ -750,6 +769,8 @@ func SendEvent(caseType string, data ...interface{}) interface{} {
 		httpresponseHandler(data...)
 	case "INBOUND_RESPONSE_CODE":
 		httpresponseCodeHandler(data...)
+	case "RESPONSE_HEADER":
+		httpresponseHeader(data...)
 	case "OUTBOUND":
 		return outboundcallHandler(data[0])
 	case "RECORD_PANICS":
@@ -876,6 +897,7 @@ func httpresponseHandler(data ...interface{}) {
 		responseHeader = hdr
 	}
 
+	fmt.Println("responseHeader", data[1])
 	if contentType != "" && !secUtils.IsContentTypeSupported(contentType) {
 		logger.Debugln("No need to send RXSS event ContentType not supported for rxss event validation", contentType)
 		return
@@ -891,6 +913,22 @@ func httpresponseHandler(data ...interface{}) {
 
 		AssociateResponseBody(responseBody, contentType, responseHeader)
 	}
+}
+
+func httpresponseHeader(data ...interface{}) {
+	if len(data) < 1 {
+		return
+	}
+	header := data[0]
+
+	contentType := ""
+	responseHeader := http.Header{}
+	if hdr, ok := header.(http.Header); ok && hdr != nil {
+		contentType = hdr.Get("content-type")
+		responseHeader = hdr
+	}
+	logger.Debugln("HTTP response header api called ", responseHeader)
+	AssociateResponseBody("", contentType, responseHeader)
 }
 
 func grpcRequestHandler(data ...interface{}) {
