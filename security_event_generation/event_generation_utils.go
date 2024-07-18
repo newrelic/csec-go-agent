@@ -110,18 +110,20 @@ type userProvidedApplicationInfo struct {
 
 type healthcheck struct {
 	ApplicationIdentifiers
-	EventType        string               `json:"eventType"`
-	ProtectedServer  string               `json:"protectedServer"`
-	EventDropCount   uint64               `json:"eventDropCount"`
-	EventProcessed   uint64               `json:"eventProcessed"`
-	EventSentCount   uint64               `json:"eventSentCount"`
-	HTTPRequestCount uint64               `json:"httpRequestCount"`
-	Stats            interface{}          `json:"stats"`
-	ServiceStatus    interface{}          `json:"serviceStatus"`
-	IastEventStats   secConfig.EventStats `json:"iastEventStats"`
-	RaspEventStats   secConfig.EventStats `json:"raspEventStats"`
-	ExitEventStats   secConfig.EventStats `json:"exitEventStats"`
-	ThreadPoolStats  ThreadPoolStats      `json:"threadPoolStats"`
+	EventType                string                             `json:"eventType"`
+	ProtectedServer          string                             `json:"protectedServer"`
+	EventDropCount           uint64                             `json:"eventDropCount"`
+	EventProcessed           uint64                             `json:"eventProcessed"`
+	EventSentCount           uint64                             `json:"eventSentCount"`
+	HTTPRequestCount         uint64                             `json:"httpRequestCount"`
+	Stats                    interface{}                        `json:"stats"`
+	ServiceStatus            interface{}                        `json:"serviceStatus"`
+	IastEventStats           secConfig.EventStats               `json:"iastEventStats"`
+	RaspEventStats           secConfig.EventStats               `json:"raspEventStats"`
+	ExitEventStats           secConfig.EventStats               `json:"exitEventStats"`
+	ThreadPoolStats          ThreadPoolStats                    `json:"threadPoolStats"`
+	WebSocketConnectionStats secConfig.WebSocketConnectionStats `json:"webSocketConnectionStats"`
+	IastReplayRequest        secConfig.IastReplayRequest        `json:"iastReplayRequest"`
 }
 
 type ThreadPoolStats struct {

@@ -38,7 +38,9 @@ func (fTask *FuzzTask) Run() {
 			eventGeneration.SendLogMessage("gRPC rest client not initialised", "security_handlers", "SEVERE")
 			logger.Errorln("gRPC rest client not initialised")
 			FuzzHandler.AppendCompletedRequestIds(fTask.requestID, "")
+			secConfig.GlobalInfo.IastReplayRequest.IncreaseReplayRequestRejected()
 		} else {
+			secConfig.GlobalInfo.IastReplayRequest.IncreaseReplayRequestGenerated()
 			FuzzHandler.grpsFuzzRestClient.ExecuteFuzzRequest(fTask.fuzzRequrestHandler, fTask.caseType, fTask.requestID)
 			FuzzHandler.RemovePendingRequestIds(fTask.requestID)
 		}
@@ -47,7 +49,9 @@ func (fTask *FuzzTask) Run() {
 			eventGeneration.SendLogMessage("http rest client not initialised", "security_handlers", "SEVERE")
 			logger.Errorln("http rest client not initialised")
 			FuzzHandler.AppendCompletedRequestIds(fTask.requestID, "")
+			secConfig.GlobalInfo.IastReplayRequest.IncreaseReplayRequestRejected()
 		} else {
+			secConfig.GlobalInfo.IastReplayRequest.IncreaseReplayRequestGenerated()
 			FuzzHandler.httpFuzzRestClient.ExecuteFuzzRequest(fTask.fuzzRequrestHandler, fTask.caseType, fTask.requestID)
 			FuzzHandler.RemovePendingRequestIds(fTask.requestID)
 		}
@@ -55,6 +59,7 @@ func (fTask *FuzzTask) Run() {
 }
 
 func registerFuzzTask(kcc11 *FuzzRequrestHandler, caseType, requestID string) {
+	secConfig.GlobalInfo.IastReplayRequest.IncreaseReceivedControlCommands()
 	task := &FuzzTask{kcc11, caseType, requestID}
 	if FuzzHandler.threadPool == nil {
 		initRestRequestThreadPool()
@@ -67,7 +72,10 @@ func registerFuzzTask(kcc11 *FuzzRequrestHandler, caseType, requestID string) {
 	}
 	secConfig.GlobalInfo.EventData.IncreaseFuzzRequestCount()
 	FuzzHandler.AppendPendingRequestIds(requestID)
-	FuzzHandler.threadPool.RegisterTask(task)
+	err := FuzzHandler.threadPool.RegisterTask(task)
+	if err != nil {
+		secConfig.GlobalInfo.IastReplayRequest.IncreaseReplayRequestRejected()
+	}
 	FuzzHandler.SetLastFuzzRequestTime()
 }
 

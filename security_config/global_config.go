@@ -34,6 +34,9 @@ type Info_struct struct {
 	isForceDisable bool
 
 	MetaData metaData
+
+	WebSocketConnectionStats WebSocketConnectionStats
+	IastReplayRequest        IastReplayRequest
 }
 
 func (info *Info_struct) GetCurrentPolicy() Policy {
@@ -113,7 +116,10 @@ func (info *Info_struct) SetSecurityHomePath(path string) {
 }
 
 func (info *Info_struct) ValidatorServiceUrl() string {
-	return info.security.Validator_service_url
+	if info.security.Validator_service_url != "" {
+		return info.security.Validator_service_url
+	}
+	return ValidatorDefaultEndpoint
 }
 func (info *Info_struct) SetValidatorServiceUrl(path string) {
 	info.security.Validator_service_url = path
@@ -593,6 +599,7 @@ func InitDefaultConfig() {
 	GlobalInfo.ApplicationInfo = runningApplicationInfo{}
 	GlobalInfo.MetaData = metaData{}
 	GlobalInfo.MetaData.linkingMetadata = map[string]string{}
+	GlobalInfo.WebSocketConnectionStats = WebSocketConnectionStats{}
 
 }
 

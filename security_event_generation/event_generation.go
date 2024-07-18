@@ -117,7 +117,8 @@ func SendSecHealthCheck() {
 	hc.IastEventStats = *secConfig.GlobalInfo.EventData.GetIastEventStats()
 	hc.RaspEventStats = *secConfig.GlobalInfo.EventData.GetRaspEventStats()
 	hc.ExitEventStats = *secConfig.GlobalInfo.EventData.GetExitEventStats()
-
+	hc.WebSocketConnectionStats = secConfig.GlobalInfo.WebSocketConnectionStats
+	hc.IastReplayRequest = secConfig.GlobalInfo.IastReplayRequest //set pending
 	var threadPoolStats ThreadPoolStats
 	if secConfig.SecureWS != nil {
 		threadPoolStats.FuzzRequestQueueSize = secConfig.SecureWS.PendingFuzzTask()
@@ -143,6 +144,8 @@ func SendSecHealthCheck() {
 	secConfig.GlobalInfo.EventData.SetHttpRequestCount(0)
 	secConfig.GlobalInfo.EventData.SetFuzzRequestCount(0)
 	secConfig.GlobalInfo.EventData.ResetEventStats()
+	secConfig.GlobalInfo.WebSocketConnectionStats.Reset()
+	secConfig.GlobalInfo.IastReplayRequest.Reset()
 }
 
 func SendApplicationInfo() {
