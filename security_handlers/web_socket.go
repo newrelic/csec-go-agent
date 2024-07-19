@@ -182,12 +182,14 @@ func (ws *websocket) closeWs() {
 }
 
 func (ws *websocket) RegisterEvent(s []byte, eventID string, eventType string) {
-	increaseEventProcessed(eventType)
+
+	secConfig.GlobalInfo.EventStats.IncreaseEventSubmittedCount(eventType)
 	if !ws.isWsConnected() && eventType != "LogMessage" {
-		increaseEventDropCount(eventType)
+		secConfig.GlobalInfo.EventStats.IncreaseEventRejectedCount(eventType)
 		logger.Debugln("Drop event WS not connected or Reconnecting", len(ws.eventBuffer), cap(ws.eventBuffer))
 		return
 	}
+
 	select {
 	case ws.eventBuffer <- eventStruct{event: s, eventType: eventType}:
 		logger.Debugln("Added EVENT", len(ws.eventBuffer), " ", cap(ws.eventBuffer))
@@ -195,20 +197,26 @@ func (ws *websocket) RegisterEvent(s []byte, eventID string, eventType string) {
 		if eventID != "" {
 			FuzzHandler.RemoveCompletedRequestIds(eventID)
 		}
-		increaseEventDropCount(eventType)
+		secConfig.GlobalInfo.EventStats.IncreaseEventRejectedCount(eventType)
 		logger.Errorln("cring.Full : Unable to add event to cring ", len(ws.eventBuffer), cap(ws.eventBuffer))
 	}
 }
 
 func (ws *websocket) SendPriorityEvent(s []byte) {
+	secConfig.GlobalInfo.EventStats.IncreaseEventSubmittedCount("PriorityEvent")
 	if !ws.isWsConnected() {
+		secConfig.GlobalInfo.EventStats.IncreaseEventRejectedCount("PriorityEvent")
 		logger.Debugln("Drop priority event WS not connected or Reconnecting", len(ws.eventBuffer), cap(ws.eventBuffer))
 		return
 	}
 	if logger.IsDebug() {
 		logger.Debugln("priority event send", string(s))
 	}
-	ws.write(eventStruct{event: s, eventType: "PriorityEvent"})
+	err := ws.write(eventStruct{event: s, eventType: "PriorityEvent"})
+	if err != nil {
+		secConfig.GlobalInfo.EventStats.IncreaseEventErrorCount("PriorityEvent")
+		logger.Errorln("Failed to send event over websocket : ", err.Error())
+	}
 }
 
 func (ws *websocket) GetStatus() bool {
@@ -307,6 +315,7 @@ func writeThread(ws *websocket) {
 			err := ws.write(event)
 			if err != nil {
 				logger.Errorln("Failed to send event over websocket : ", err.Error())
+				secConfig.GlobalInfo.EventStats.IncreaseEventErrorCount(event.eventType)
 				secConfig.GlobalInfo.WebSocketConnectionStats.IncreaseConnectionFailure()
 			} else {
 				logger.Debugln("Event sent event over websocket done")
@@ -374,46 +383,6 @@ func printConnectionHeader(header http.Header) {
 		} else {
 			logger.Infoln("Adding WS connection header:", i, "->", strings.Join(j, ""))
 		}
-	}
-}
-
-func increaseEventProcessed(eventType string) {
-	if eventType == "iastEvent" {
-		secConfig.GlobalInfo.EventData.GetIastEventStats().IncreaseEventProcessedCount()
-	} else if eventType == "raspEvent" {
-		secConfig.GlobalInfo.EventData.GetRaspEventStats().IncreaseEventProcessedCount()
-	} else if eventType == "exitEvent" {
-		secConfig.GlobalInfo.EventData.GetExitEventStats().IncreaseEventProcessedCount()
-	}
-}
-
-func increaseEventDropCount(eventType string) {
-	if eventType == "iastEvent" {
-		secConfig.GlobalInfo.EventData.GetIastEventStats().IncreaseEventRejectedCount()
-	} else if eventType == "raspEvent" {
-		secConfig.GlobalInfo.EventData.GetRaspEventStats().IncreaseEventRejectedCount()
-	} else if eventType == "exitEvent" {
-		secConfig.GlobalInfo.EventData.GetExitEventStats().IncreaseEventRejectedCount()
-	}
-}
-
-func increaseEventEventSentCount(eventType string) {
-	if eventType == "iastEvent" {
-		secConfig.GlobalInfo.EventData.GetIastEventStats().IncreaseEventSentCount()
-	} else if eventType == "raspEvent" {
-		secConfig.GlobalInfo.EventData.GetRaspEventStats().IncreaseEventSentCount()
-	} else if eventType == "exitEvent" {
-		secConfig.GlobalInfo.EventData.GetExitEventStats().IncreaseEventSentCount()
-	}
-}
-
-func increaseEventErrorCount(eventType string) {
-	if eventType == "iastEvent" {
-		secConfig.GlobalInfo.EventData.GetIastEventStats().IncreaseEventErrorCount()
-	} else if eventType == "raspEvent" {
-		secConfig.GlobalInfo.EventData.GetRaspEventStats().IncreaseEventErrorCount()
-	} else if eventType == "exitEvent" {
-		secConfig.GlobalInfo.EventData.GetExitEventStats().IncreaseEventErrorCount()
 	}
 }
 

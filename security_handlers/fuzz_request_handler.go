@@ -70,7 +70,6 @@ func registerFuzzTask(kcc11 *FuzzRequrestHandler, caseType, requestID string) {
 		printlogs := fmt.Sprintf("IAST Scan for API %s with ID : %s started.", kcc11.RequestURI, ids[0])
 		logger.Infoln(printlogs)
 	}
-	secConfig.GlobalInfo.EventData.IncreaseFuzzRequestCount()
 	FuzzHandler.AppendPendingRequestIds(requestID)
 	err := FuzzHandler.threadPool.RegisterTask(task)
 	if err != nil {

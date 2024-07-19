@@ -121,3 +121,94 @@ func (iast *IastReplayRequest) Reset() {
 	iast.ReplayRequestFailed = 0
 	iast.ReplayRequestRejected = 0
 }
+
+type stats struct {
+	Submitted  uint64 `json:"submitted"`
+	Completed  uint64 `json:"completed"`
+	Rejected   uint64 `json:"rejected"`
+	ErrorCount uint64 `json:"error"`
+	sync.Mutex
+}
+
+func (e *stats) IncreaseEventSubmittedCount() {
+	e.Lock()
+	defer e.Unlock()
+	e.Submitted++
+}
+
+func (e *stats) IncreaseCompletedCount() {
+	e.Lock()
+	defer e.Unlock()
+	e.Completed++
+}
+
+func (e *stats) IncreaseEventRejectedCount() {
+	e.Lock()
+	defer e.Unlock()
+	e.Rejected++
+}
+
+func (e *stats) IncreaseEventErrorCount() {
+	e.Lock()
+	defer e.Unlock()
+	e.ErrorCount++
+}
+
+func (e *stats) Reset() {
+	e.Lock()
+	defer e.Unlock()
+	e.ErrorCount = 0
+	e.Rejected = 0
+	e.Completed = 0
+	e.Submitted = 0
+
+}
+
+type EventStats struct {
+	EventSender       stats `json:"eventSender"`       // all events, urlMappings, ExitEvent, fuzzfail, app-info etc
+	IastEvents        stats `json:"iastEvents"`        // only iast event
+	Dispatcher        stats `json:"dispatcher"`        // RASP+IAST
+	LowSeverityEvents stats `json:"lowSeverityEvents"` //LowSeverityEvents only N/A
+	ExitEvents        stats `json:"exitEvents"`        // event event
+
+}
+
+func (e *EventStats) Reset() {
+	e.EventSender.Reset()
+	e.IastEvents.Reset()
+	e.Dispatcher.Reset()
+	e.LowSeverityEvents.Reset()
+	e.ExitEvents.Reset()
+}
+
+func (e *EventStats) IncreaseEventSubmittedCount(eventType string) {
+	incrementStat(eventType, e.EventSender.IncreaseEventSubmittedCount, e.IastEvents.IncreaseEventSubmittedCount, e.Dispatcher.IncreaseEventSubmittedCount, e.LowSeverityEvents.IncreaseEventSubmittedCount)
+}
+
+func (e *EventStats) IncreaseCompletedCount(eventType string) {
+	incrementStat(eventType, e.EventSender.IncreaseCompletedCount, e.IastEvents.IncreaseCompletedCount, e.Dispatcher.IncreaseCompletedCount, e.LowSeverityEvents.IncreaseCompletedCount)
+
+}
+
+func (e *EventStats) IncreaseEventRejectedCount(eventType string) {
+	incrementStat(eventType, e.EventSender.IncreaseEventRejectedCount, e.IastEvents.IncreaseEventRejectedCount, e.Dispatcher.IncreaseEventRejectedCount, e.LowSeverityEvents.IncreaseEventRejectedCount)
+
+}
+
+func (e *EventStats) IncreaseEventErrorCount(eventType string) {
+	incrementStat(eventType, e.EventSender.IncreaseEventErrorCount, e.IastEvents.IncreaseEventErrorCount, e.Dispatcher.IncreaseEventErrorCount, e.LowSeverityEvents.IncreaseEventErrorCount)
+
+}
+
+func incrementStat(eventType string, f1, f2, f3, f4 func()) {
+	switch eventType {
+	case "iastEvent":
+		f1()
+	case "raspEvent":
+		f2()
+	case "exitEvent":
+		f3()
+	case "LowSeverityEvents":
+		f4()
+	}
+}
