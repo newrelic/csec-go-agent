@@ -21,6 +21,7 @@ type Secureiface interface {
 	AssociateGoRoutine(caller, callee int64)
 	AssociateGrpcDataBytes([]byte) bool
 	AssociateGrpcInfo(bool, bool)
+	AssociategraphqlInfo(bool, bool)
 	InitSyms() error
 	CalculateOutboundApiId()
 	AssociateGrpcData(string, string)

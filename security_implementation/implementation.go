@@ -224,6 +224,24 @@ func (k Secureimpl) NewGoroutineLinker(req interface{}) {
 	}
 }
 
+func (k Secureimpl) AssociategraphqlInfo(isQuery, isVariable bool) {
+	request := getRequest(getID())
+	if request == nil {
+		logger.Debugln("(AssociategraphqlInfo) Request Not Found")
+		return
+	}
+	if request.Request.CustomDataType == nil {
+		request.Request.CustomDataType = map[string]string{}
+	}
+	if isQuery {
+		request.Request.CustomDataType["*.query"] = "GRAPHQL_QUERY"
+	}
+	if isVariable {
+		request.Request.CustomDataType["*.variables"] = "GRAPHQL_VARIABLE"
+	}
+
+}
+
 /**
  * Implementation for goroutines (created and deleted)
  */
