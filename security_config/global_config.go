@@ -36,6 +36,7 @@ type Info_struct struct {
 	WebSocketConnectionStats WebSocketConnectionStats
 	IastReplayRequest        IastReplayRequest
 	EventStats               EventStats
+	DroppedEvent             DroppedEvent
 }
 
 func (info *Info_struct) GetCurrentPolicy() Policy {

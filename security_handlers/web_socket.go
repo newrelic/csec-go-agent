@@ -216,6 +216,8 @@ func (ws *websocket) SendPriorityEvent(s []byte) {
 	if err != nil {
 		secConfig.GlobalInfo.EventStats.IncreaseEventErrorCount("PriorityEvent")
 		logger.Errorln("Failed to send event over websocket : ", err.Error())
+	} else {
+		secConfig.GlobalInfo.EventStats.IncreaseEventCompletedCount("PriorityEvent")
 	}
 }
 
@@ -280,11 +282,11 @@ func (ws *websocket) AddCompletedRequests(parentId, apiID string) {
 func (ws *websocket) PendingEvent() int {
 	return ws.pendingEvent()
 }
-func (ws *websocket) PendingFuzzTask() int {
+func (ws *websocket) PendingFuzzTask() uint64 {
 	if FuzzHandler.threadPool == nil {
 		return 0
 	}
-	return FuzzHandler.threadPool.PendingTask()
+	return uint64(FuzzHandler.threadPool.PendingTask())
 }
 
 func InitializeWsConnecton() {
@@ -320,6 +322,7 @@ func writeThread(ws *websocket) {
 			} else {
 				logger.Debugln("Event sent event over websocket done")
 				secConfig.GlobalInfo.WebSocketConnectionStats.IncreaseMessagesSent()
+				secConfig.GlobalInfo.EventStats.IncreaseEventCompletedCount(event.eventType)
 			}
 		}
 	}

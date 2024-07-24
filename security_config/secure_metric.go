@@ -182,33 +182,60 @@ func (e *EventStats) Reset() {
 }
 
 func (e *EventStats) IncreaseEventSubmittedCount(eventType string) {
-	incrementStat(eventType, e.EventSender.IncreaseEventSubmittedCount, e.IastEvents.IncreaseEventSubmittedCount, e.Dispatcher.IncreaseEventSubmittedCount, e.LowSeverityEvents.IncreaseEventSubmittedCount)
+	incrementStat(eventType, e.EventSender.IncreaseEventSubmittedCount, e.IastEvents.IncreaseEventSubmittedCount, e.Dispatcher.IncreaseEventSubmittedCount, e.LowSeverityEvents.IncreaseEventSubmittedCount, e.ExitEvents.IncreaseEventSubmittedCount)
 }
 
-func (e *EventStats) IncreaseCompletedCount(eventType string) {
-	incrementStat(eventType, e.EventSender.IncreaseCompletedCount, e.IastEvents.IncreaseCompletedCount, e.Dispatcher.IncreaseCompletedCount, e.LowSeverityEvents.IncreaseCompletedCount)
+func (e *EventStats) IncreaseEventCompletedCount(eventType string) {
+	incrementStat(eventType, e.EventSender.IncreaseCompletedCount, e.IastEvents.IncreaseCompletedCount, e.Dispatcher.IncreaseCompletedCount, e.LowSeverityEvents.IncreaseCompletedCount, e.ExitEvents.IncreaseCompletedCount)
 
 }
 
 func (e *EventStats) IncreaseEventRejectedCount(eventType string) {
-	incrementStat(eventType, e.EventSender.IncreaseEventRejectedCount, e.IastEvents.IncreaseEventRejectedCount, e.Dispatcher.IncreaseEventRejectedCount, e.LowSeverityEvents.IncreaseEventRejectedCount)
+	incrementStat(eventType, e.EventSender.IncreaseEventRejectedCount, e.IastEvents.IncreaseEventRejectedCount, e.Dispatcher.IncreaseEventRejectedCount, e.LowSeverityEvents.IncreaseEventRejectedCount, e.ExitEvents.IncreaseEventRejectedCount)
 
 }
 
 func (e *EventStats) IncreaseEventErrorCount(eventType string) {
-	incrementStat(eventType, e.EventSender.IncreaseEventErrorCount, e.IastEvents.IncreaseEventErrorCount, e.Dispatcher.IncreaseEventErrorCount, e.LowSeverityEvents.IncreaseEventErrorCount)
+	incrementStat(eventType, e.EventSender.IncreaseEventErrorCount, e.IastEvents.IncreaseEventErrorCount, e.Dispatcher.IncreaseEventErrorCount, e.LowSeverityEvents.IncreaseEventErrorCount, e.ExitEvents.IncreaseEventErrorCount)
 
 }
 
-func incrementStat(eventType string, f1, f2, f3, f4 func()) {
+func incrementStat(eventType string, f1, f2, f3, f4, f5 func()) {
+	f1()
 	switch eventType {
 	case "iastEvent":
-		f1()
-	case "raspEvent":
 		f2()
-	case "exitEvent":
+		f3()
+	case "raspEvent":
 		f3()
 	case "LowSeverityEvents":
 		f4()
+	case "exitEvent":
+		f5()
 	}
+}
+
+type DroppedEvent struct {
+	UnsupportedContentType   uint64 `json:"unsupportedContentType"`
+	RxssDetectionDeactivated uint64 `json:"rxssDetectionDeactivated"`
+	sync.Mutex
+}
+
+func (d *DroppedEvent) IncreaseUnsupportedContentTypeCount() {
+	d.Lock()
+	defer d.Unlock()
+	d.UnsupportedContentType++
+}
+
+func (d *DroppedEvent) IncreaseRxssDetectionDeactivatedCount() {
+	d.Lock()
+	defer d.Unlock()
+	d.RxssDetectionDeactivated++
+}
+
+func (d *DroppedEvent) Reset() {
+	d.Lock()
+	defer d.Unlock()
+	d.UnsupportedContentType = 0
+	d.RxssDetectionDeactivated = 0
 }

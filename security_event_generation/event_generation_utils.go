@@ -116,6 +116,7 @@ type healthcheck struct {
 	ServiceStatus            interface{}                        `json:"serviceStatus"`
 	WebSocketConnectionStats secConfig.WebSocketConnectionStats `json:"webSocketConnectionStats"`
 	IastReplayRequest        secConfig.IastReplayRequest        `json:"iastReplayRequest"`
+	EventStats               secConfig.EventStats               `json:"eventStats"`
 }
 
 type ThreadPoolStats struct {

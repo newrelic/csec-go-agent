@@ -115,7 +115,12 @@ func SendSecHealthCheck() {
 	hc.ApplicationIdentifiers = getApplicationIdentifiers("LAhealthcheck")
 	hc.ProtectedServer = secConfig.GlobalInfo.ApplicationInfo.GetProtectedServer()
 	hc.WebSocketConnectionStats = secConfig.GlobalInfo.WebSocketConnectionStats
-	hc.IastReplayRequest = secConfig.GlobalInfo.IastReplayRequest //set pending
+	hc.IastReplayRequest = secConfig.GlobalInfo.IastReplayRequest
+	hc.EventStats = secConfig.GlobalInfo.EventStats
+
+	if secConfig.SecureWS != nil {
+		hc.IastReplayRequest.PendingControlCommands = secConfig.SecureWS.PendingFuzzTask()
+	}
 
 	stats := sysInfo.GetStats(secConfig.GlobalInfo.ApplicationInfo.GetPid(), secConfig.GlobalInfo.ApplicationInfo.GetBinaryPath())
 	hc.Stats = stats
@@ -128,6 +133,7 @@ func SendSecHealthCheck() {
 
 	secConfig.GlobalInfo.WebSocketConnectionStats.Reset()
 	secConfig.GlobalInfo.IastReplayRequest.Reset()
+	secConfig.GlobalInfo.EventStats.Reset()
 }
 
 func SendApplicationInfo() {
