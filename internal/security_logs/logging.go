@@ -22,7 +22,7 @@ func Init(logFileName, initlogFileName, logFilepath string, pid int) error {
 		Filename:        filepath.Join(logFilepath, logFileName),
 		Filepath:        logFilepath,
 		MaxSize:         50, // megabytes
-		MaxBackups:      2,
+		MaxBackups:      maxBackups(),
 		BaseLogFilename: logFileName,
 	})
 

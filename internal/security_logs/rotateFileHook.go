@@ -195,3 +195,12 @@ func readBoolEnv(name string) bool {
 	}
 	return false
 }
+
+func maxBackups() int {
+	if env := os.Getenv("NR_CSEC_DEBUG_LOGFILE_MAX_COUNT"); env != "" {
+		if i, err := strconv.Atoi(env); nil == err {
+			return i
+		}
+	}
+	return 2
+}

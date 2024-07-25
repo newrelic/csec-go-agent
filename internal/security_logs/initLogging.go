@@ -16,7 +16,7 @@ func init_initLogger(initlogFileName, logFilepath string, pid int) {
 		Filename:        filepath.Join(logFilepath, initlogFileName),
 		Filepath:        logFilepath,
 		MaxSize:         50, // megabytes
-		MaxBackups:      2,
+		MaxBackups:      maxBackups(),
 		BaseLogFilename: initlogFileName,
 	})
 
