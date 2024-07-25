@@ -200,7 +200,12 @@ func maxBackups() int {
 	if env := os.Getenv("NR_CSEC_DEBUG_LOGFILE_MAX_COUNT"); env != "" {
 		if i, err := strconv.Atoi(env); nil == err {
 			return i
+		} else {
+			fmt.Println("env not there ", err)
 		}
+	} else {
+		fmt.Println("env is empty ")
 	}
+	fmt.Println("return default ")
 	return 2
 }
