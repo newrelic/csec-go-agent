@@ -352,68 +352,6 @@ func GetFastHttpData() net.Conn {
 }
 
 /**
- * Handling for gRPC framework
- */
-
-// deprecated
-func AssociateGrpcHeaders(hdrMap map[string]string) {
-	if !isAgentInitialized() {
-		return
-	}
-	tracerpcRequestWithHeader(hdrMap, nil)
-}
-
-// func AssociateGrpcQueryParam(body interface{}, data []byte) {
-// 	if !isAgentInitialized() {
-// 		return
-// 	}
-// 	//secConfig.Secure.AssociateGrpcQueryParam(body, data)
-// }
-
-func AssociateGrpcDataBytes(data []byte) {
-	if !isAgentInitialized() {
-		return
-	}
-	length := len(data)
-	slc2 := make([]byte, length)
-	copy(slc2, data)
-	if !secConfig.Secure.AssociateGrpcDataBytes(slc2) {
-		tracerpcRequestWithHeader(make(map[string]string), slc2)
-	}
-
-}
-
-func ProcessGrpcResponse(service, method, reply string) {
-	if !isAgentInitialized() {
-		return
-	}
-	logger.Infoln("intercept grpc.Response: service", service, ",method:", method, ",args:", reply)
-	//Don't need to process this data for XSS
-	secConfig.Secure.DissociateInboundRequest()
-}
-
-func AssociateGrpcConnectionData(remoteAddr string) {
-	if !isAgentInitialized() {
-		return
-	}
-
-	clientIp := ""
-	clientPort := ""
-	if remoteAddr != "" {
-		clientIp, clientPort = getIpAndPort(remoteAddr)
-	}
-	secConfig.Secure.AssociateGrpcData(clientIp, clientPort)
-}
-
-func DissociateGrpcConnectionData() {
-	secConfig.Secure.DisassociateGrpcData()
-}
-
-func tracerpcRequestWithHeader(header map[string]string, data []byte) {
-	// deprecated
-}
-
-/**
  * Handling for goroutines (created and deleted)
  */
 
