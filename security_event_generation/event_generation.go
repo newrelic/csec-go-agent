@@ -298,6 +298,7 @@ func SendVulnerableEvent(req *secUtils.Info_req, category, eventCategory string,
 	tmp_event.Parameters = args
 	tmp_event.BlockingProcessingTime = "1"
 	tmp_event.HTTPRequest = req.Request
+	tmp_event.ParentId = req.ParentID
 	tmp_event.VulnerabilityDetails = vulnerabilityDetails
 	tmp_event.ApplicationIdentifiers = getApplicationIdentifiers("Event")
 	tmp_event.EventGenerationTime = strconv.FormatInt(time.Now().Unix()*1000, 10)
@@ -335,23 +336,18 @@ func SendVulnerableEvent(req *secUtils.Info_req, category, eventCategory string,
 
 	requestType := "raspEvent"
 
-	fuzzHeader := req.RequestIdentifier
+	requestIdentifier := req.RequestIdentifier
 
-	if secConfig.GlobalInfo.IsIASTEnable() {
+	if secConfig.GlobalInfo.IsIASTEnable() && requestIdentifier.NrRequest {
 		tmp_event.IsIASTEnable = true
+		tmp_event.HTTPRequest.Route = ""
+		requestType = "iastEvent"
 
-		if fuzzHeader != "" {
-			requestType = "iastEvent"
-			tmp_event.IsIASTRequest = true
-		}
-
-		if req.ParentID != "" && req.RequestIdentifier != "" {
-			tmp_event.ParentId = req.ParentID
-			apiId := strings.Split(req.RequestIdentifier, ":")[0]
+		if !secUtils.IsBlank(req.ParentID) {
+			apiId := requestIdentifier.APIRecordID
 			if apiId == vulnerabilityDetails.APIID {
 				(secConfig.SecureWS).AddCompletedRequests(req.ParentID, eventId)
 			}
-			tmp_event.HTTPRequest.Route = ""
 		}
 	}
 
@@ -368,7 +364,7 @@ func SendVulnerableEvent(req *secUtils.Info_req, category, eventCategory string,
 		logging.Disableinitlogs()
 	}
 	tracingHeader := tmp_event.HTTPRequest.Headers[NR_CSEC_TRACING_DATA]
-	return &secUtils.EventTracker{APIID: tmp_event.APIID, ID: tmp_event.ID, CaseType: tmp_event.CaseType, TracingHeader: tracingHeader, RequestIdentifier: fuzzHeader}
+	return &secUtils.EventTracker{APIID: tmp_event.APIID, ID: tmp_event.ID, CaseType: tmp_event.CaseType, TracingHeader: tracingHeader, RequestIdentifier: requestIdentifier.Raw}
 
 }
 

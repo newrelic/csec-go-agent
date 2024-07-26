@@ -144,7 +144,7 @@ func (k Secureimpl) AssociateGrpcDataBytes(data []byte) bool {
 		logger.Errorln("(AssociateGrpcDataBytes) GRPC Request Not Found creating new request without headers")
 		return false
 	}
-	request.GrpcByte = append(request.GrpcByte, data)
+	// request.GrpcByte = append(request.GrpcByte, data) // deprecated
 	return true
 }
 
@@ -184,7 +184,7 @@ func (k Secureimpl) GetFuzzHeader() string {
 	if request == nil {
 		return ""
 	} else {
-		return request.RequestIdentifier
+		return request.RequestIdentifier.Raw
 	}
 }
 
@@ -193,7 +193,7 @@ func (k Secureimpl) GetTmpFiles() []string {
 	if request == nil {
 		return make([]string, 0)
 	} else {
-		return request.TmpFiles
+		return request.RequestIdentifier.TempFiles
 	}
 }
 
