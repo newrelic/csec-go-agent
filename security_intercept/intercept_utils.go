@@ -227,7 +227,7 @@ type parameters struct {
 
 func parseFuzzRequestIdentifierHeader(requestHeaderVal string) (nrRequestIdentifier secUtils.NrRequestIdentifier) {
 	nrRequestIdentifier.Raw = requestHeaderVal
-	if !secUtils.IsBlank(requestHeaderVal) {
+	if secUtils.IsBlank(requestHeaderVal) {
 		return
 	}
 	data := strings.Split(requestHeaderVal, IAST_SEP)
@@ -298,6 +298,7 @@ func ToOneValueMap(header map[string][]string) (filterHeader map[string]string) 
 	if header == nil {
 		return
 	}
+	filterHeader = map[string]string{}
 	for k, v := range header {
 		filterHeader[k] = strings.Join(v, ",")
 	}
