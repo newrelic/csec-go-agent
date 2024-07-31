@@ -338,15 +338,17 @@ func SendVulnerableEvent(req *secUtils.Info_req, category, eventCategory string,
 
 	requestIdentifier := req.RequestIdentifier
 
-	if secConfig.GlobalInfo.IsIASTEnable() && requestIdentifier.NrRequest {
+	if secConfig.GlobalInfo.IsIASTEnable() {
 		tmp_event.IsIASTEnable = true
-		tmp_event.HTTPRequest.Route = ""
-		requestType = "iastEvent"
+		if requestIdentifier.NrRequest {
+			tmp_event.HTTPRequest.Route = ""
+			requestType = "iastEvent"
 
-		if !secUtils.IsBlank(req.ParentID) {
-			apiId := requestIdentifier.APIRecordID
-			if apiId == vulnerabilityDetails.APIID {
-				(secConfig.SecureWS).AddCompletedRequests(req.ParentID, eventId)
+			if !secUtils.IsBlank(req.ParentID) {
+				apiId := requestIdentifier.APIRecordID
+				if apiId == vulnerabilityDetails.APIID {
+					(secConfig.SecureWS).AddCompletedRequests(req.ParentID, eventId)
+				}
 			}
 		}
 	}
