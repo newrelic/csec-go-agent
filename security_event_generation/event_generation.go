@@ -343,6 +343,7 @@ func SendVulnerableEvent(req *secUtils.Info_req, category, eventCategory string,
 		if requestIdentifier.NrRequest {
 			tmp_event.HTTPRequest.Route = ""
 			requestType = "iastEvent"
+			tmp_event.IsIASTRequest = true
 
 			if !secUtils.IsBlank(req.ParentID) {
 				apiId := requestIdentifier.APIRecordID
