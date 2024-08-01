@@ -232,7 +232,7 @@ func parseFuzzRequestIdentifierHeader(requestHeaderVal string) (nrRequestIdentif
 	}
 	data := strings.Split(requestHeaderVal, IAST_SEP)
 
-	if len(data) >= 8 {
+	if len(data) >= 6 {
 		nrRequestIdentifier.APIRecordID = data[0]
 		nrRequestIdentifier.RefID = data[1]
 		nrRequestIdentifier.RefValue = data[2]
@@ -242,7 +242,7 @@ func parseFuzzRequestIdentifierHeader(requestHeaderVal string) (nrRequestIdentif
 		nrRequestIdentifier.NrRequest = true
 
 	}
-	if !secUtils.IsAnyBlank(data[6], data[7]) {
+	if len(data) >= 8 && !secUtils.IsAnyBlank(data[6], data[7]) {
 
 		encryptedData := data[6]
 		hashVerifier := data[7]
