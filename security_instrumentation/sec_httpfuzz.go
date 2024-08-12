@@ -88,7 +88,10 @@ func (httpFuzz SecHttpFuzz) ExecuteFuzzRequest(fuzzRequest *sechandler.FuzzRequr
 		value := fmt.Sprintf("%v", headerValue)
 		req.Header.Set(headerKey, value)
 	}
-	req.Header.Set("Content-Type", fuzzRequest.ContentType)
+
+	if !secUtils.IsBlank(fuzzRequest.ContentType) {
+		req.Header.Set("Content-Type", fuzzRequest.ContentType)
+	}
 	req.Header.Set("nr-csec-parent-id", fuzzId)
 
 	if fuzzRequestClient == nil {

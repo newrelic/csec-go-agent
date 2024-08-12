@@ -101,6 +101,8 @@ func getApplicationIdentifiers(jsonName string) ApplicationIdentifiers {
 	applicationIdentifier.Pid = secConfig.GlobalInfo.ApplicationInfo.GetPid()
 	agentStartTime := secConfig.GlobalInfo.ApplicationInfo.GetStarttimestr().Unix() * 1000
 	applicationIdentifier.StartTime = secUtils.Int64ToString(agentStartTime)
+	applicationIdentifier.AppAccountId = secConfig.GlobalInfo.MetaData.GetAccountID()
+	applicationIdentifier.AppEntityGuid = secConfig.GlobalInfo.MetaData.GetEntityGuid()
 	applicationIdentifier.LinkingMetadata = secConfig.GlobalInfo.MetaData.GetLinkingMetadata()
 	return applicationIdentifier
 
@@ -298,6 +300,7 @@ func SendVulnerableEvent(req *secUtils.Info_req, category, eventCategory string,
 	tmp_event.Parameters = args
 	tmp_event.BlockingProcessingTime = "1"
 	tmp_event.HTTPRequest = req.Request
+	tmp_event.ParentId = req.ParentID
 	tmp_event.VulnerabilityDetails = vulnerabilityDetails
 	tmp_event.ApplicationIdentifiers = getApplicationIdentifiers("Event")
 	tmp_event.EventGenerationTime = strconv.FormatInt(time.Now().Unix()*1000, 10)
@@ -335,23 +338,21 @@ func SendVulnerableEvent(req *secUtils.Info_req, category, eventCategory string,
 
 	requestType := "raspEvent"
 
-	fuzzHeader := req.RequestIdentifier
+	requestIdentifier := req.RequestIdentifier
 
 	if secConfig.GlobalInfo.IsIASTEnable() {
 		tmp_event.IsIASTEnable = true
-
-		if fuzzHeader != "" {
+		if requestIdentifier.NrRequest {
+			tmp_event.HTTPRequest.Route = ""
 			requestType = "iastEvent"
 			tmp_event.IsIASTRequest = true
-		}
 
-		if req.ParentID != "" && req.RequestIdentifier != "" {
-			tmp_event.ParentId = req.ParentID
-			apiId := strings.Split(req.RequestIdentifier, ":")[0]
-			if apiId == vulnerabilityDetails.APIID {
-				(secConfig.SecureWS).AddCompletedRequests(req.ParentID, eventId)
+			if !secUtils.IsBlank(req.ParentID) {
+				apiId := requestIdentifier.APIRecordID
+				if apiId == vulnerabilityDetails.APIID {
+					(secConfig.SecureWS).AddCompletedRequests(req.ParentID, eventId)
+				}
 			}
-			tmp_event.HTTPRequest.Route = ""
 		}
 	}
 
@@ -368,7 +369,7 @@ func SendVulnerableEvent(req *secUtils.Info_req, category, eventCategory string,
 		logging.Disableinitlogs()
 	}
 	tracingHeader := tmp_event.HTTPRequest.Headers[NR_CSEC_TRACING_DATA]
-	return &secUtils.EventTracker{APIID: tmp_event.APIID, ID: tmp_event.ID, CaseType: tmp_event.CaseType, TracingHeader: tracingHeader, RequestIdentifier: fuzzHeader}
+	return &secUtils.EventTracker{APIID: tmp_event.APIID, ID: tmp_event.ID, CaseType: tmp_event.CaseType, TracingHeader: tracingHeader, RequestIdentifier: requestIdentifier.Raw}
 
 }
 
@@ -385,26 +386,12 @@ func SendExitEvent(eventTracker *secUtils.EventTracker, requestIdentifier string
 	}
 }
 
-func SendUpdatedPolicy(policy secConfig.Policy) {
-	logger.Infoln("Sending Updated policy ", policy.Version)
-	type policy1 struct {
-		JSONName string `json:"jsonName"`
-		secConfig.Policy
-	}
-
-	_, err := sendEvent(policy1{"lc-policy", policy}, "", "")
-	if err != nil {
-		logger.Errorln(err)
-	}
-}
-
 func IASTDataRequest(batchSize int, completedRequestIds interface{}, pendingRequestIds []string) {
 	var tmp_event IASTDataRequestBeen
 	tmp_event.CompletedRequests = completedRequestIds
 	tmp_event.PendingRequestIds = pendingRequestIds
 	tmp_event.BatchSize = batchSize
-	tmp_event.ApplicationUUID = secConfig.GlobalInfo.ApplicationInfo.GetAppUUID()
-	tmp_event.JSONName = "iast-data-request"
+	tmp_event.ApplicationIdentifiers = getApplicationIdentifiers("iast-data-request")
 	_, err := sendEvent(tmp_event, "", "")
 	if err != nil {
 		logger.Errorln(err)
@@ -472,7 +459,7 @@ func sendBufferLogMessage() {
 		if secConfig.SecureWS != nil {
 			tmp_event, ok := i.(LogMessage)
 			if ok {
-				tmp_event.ApplicationUUID = secConfig.GlobalInfo.ApplicationInfo.GetAppUUID()
+				tmp_event.ApplicationIdentifiers = getApplicationIdentifiers("critical-messages")
 				tmp_event.LinkingMetadata = secConfig.GlobalInfo.MetaData.GetLinkingMetadata()
 				sendEvent(tmp_event, "", "LogMessage")
 			}
@@ -485,8 +472,7 @@ func SendLogMessage(log, caller, logLevel string) {
 
 	var tmp_event LogMessage
 
-	tmp_event.ApplicationUUID = secConfig.GlobalInfo.ApplicationInfo.GetAppUUID()
-	tmp_event.JSONName = "critical-messages"
+	tmp_event.ApplicationIdentifiers = getApplicationIdentifiers("critical-messages")
 	tmp_event.Timestamp = time.Now().Unix() * 1000
 	tmp_event.Level = logLevel
 	tmp_event.Message = log
