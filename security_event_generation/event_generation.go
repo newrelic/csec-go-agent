@@ -101,6 +101,8 @@ func getApplicationIdentifiers(jsonName string) ApplicationIdentifiers {
 	applicationIdentifier.Pid = secConfig.GlobalInfo.ApplicationInfo.GetPid()
 	agentStartTime := secConfig.GlobalInfo.ApplicationInfo.GetStarttimestr().Unix() * 1000
 	applicationIdentifier.StartTime = secUtils.Int64ToString(agentStartTime)
+	applicationIdentifier.AppAccountId = secConfig.GlobalInfo.MetaData.GetAccountID()
+	applicationIdentifier.AppEntityGuid = secConfig.GlobalInfo.MetaData.GetEntityGuid()
 	applicationIdentifier.LinkingMetadata = secConfig.GlobalInfo.MetaData.GetLinkingMetadata()
 	return applicationIdentifier
 
@@ -384,26 +386,12 @@ func SendExitEvent(eventTracker *secUtils.EventTracker, requestIdentifier string
 	}
 }
 
-func SendUpdatedPolicy(policy secConfig.Policy) {
-	logger.Infoln("Sending Updated policy ", policy.Version)
-	type policy1 struct {
-		JSONName string `json:"jsonName"`
-		secConfig.Policy
-	}
-
-	_, err := sendEvent(policy1{"lc-policy", policy}, "", "")
-	if err != nil {
-		logger.Errorln(err)
-	}
-}
-
 func IASTDataRequest(batchSize int, completedRequestIds interface{}, pendingRequestIds []string) {
 	var tmp_event IASTDataRequestBeen
 	tmp_event.CompletedRequests = completedRequestIds
 	tmp_event.PendingRequestIds = pendingRequestIds
 	tmp_event.BatchSize = batchSize
-	tmp_event.ApplicationUUID = secConfig.GlobalInfo.ApplicationInfo.GetAppUUID()
-	tmp_event.JSONName = "iast-data-request"
+	tmp_event.ApplicationIdentifiers = getApplicationIdentifiers("iast-data-request")
 	_, err := sendEvent(tmp_event, "", "")
 	if err != nil {
 		logger.Errorln(err)
@@ -471,7 +459,7 @@ func sendBufferLogMessage() {
 		if secConfig.SecureWS != nil {
 			tmp_event, ok := i.(LogMessage)
 			if ok {
-				tmp_event.ApplicationUUID = secConfig.GlobalInfo.ApplicationInfo.GetAppUUID()
+				tmp_event.ApplicationIdentifiers = getApplicationIdentifiers("critical-messages")
 				tmp_event.LinkingMetadata = secConfig.GlobalInfo.MetaData.GetLinkingMetadata()
 				sendEvent(tmp_event, "", "LogMessage")
 			}
@@ -484,8 +472,7 @@ func SendLogMessage(log, caller, logLevel string) {
 
 	var tmp_event LogMessage
 
-	tmp_event.ApplicationUUID = secConfig.GlobalInfo.ApplicationInfo.GetAppUUID()
-	tmp_event.JSONName = "critical-messages"
+	tmp_event.ApplicationIdentifiers = getApplicationIdentifiers("critical-messages")
 	tmp_event.Timestamp = time.Now().Unix() * 1000
 	tmp_event.Level = logLevel
 	tmp_event.Message = log

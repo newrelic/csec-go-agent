@@ -96,8 +96,8 @@ func parseControlCommand(arg []byte) (error, bool) {
 			logger.Errorln("Unable to unmarshall cc100 ", err)
 		} else {
 			logger.Debugln("defaultPolicy", defaultPolicy.Data)
-			policy := secConfig.UpdateGlobalConf(defaultPolicy.Data, string(arg))
-			eventGeneration.SendUpdatedPolicy(policy)
+			secConfig.UpdateGlobalConf(defaultPolicy.Data, string(arg))
+
 		}
 		FuzzHandler.InitFuzzScheduler()
 	case POLICY_UPDATE_FAILED_DUE_TO_VALIDATION_ERROR:
