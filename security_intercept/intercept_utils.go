@@ -27,8 +27,8 @@ func IsForceDisable() bool {
 func IsDisable() bool {
 	return !secConfig.GlobalInfo.IsSecurityEnabled()
 }
-func IsRXSSDisable() bool {
-	return !secConfig.GlobalInfo.IsRxssEnabled()
+func IsRxssEnabled() bool {
+	return secConfig.GlobalInfo.IsRxssEnabled()
 }
 
 func RequestBodyReadLimit() int {
