@@ -140,7 +140,7 @@ func SendSecHealthCheck() {
 
 	healthCheck, _ := sendPriorityEvent(hc)
 	HcBuffer.ForceInsert(healthCheck)
-	populateStatusLogs(serviceStatus, stats)
+	// populateStatusLogs(serviceStatus, stats)
 
 	secConfig.GlobalInfo.EventData.SetHttpRequestCount(0)
 	secConfig.GlobalInfo.EventData.SetFuzzRequestCount(0)

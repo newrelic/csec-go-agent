@@ -122,4 +122,8 @@ func initSecurityAgent(applicationName, licenseKey string, isDebugLog bool, secu
 	initEnvironmentInfo()
 	initApplicationInfo(applicationName)
 
+	logger.Infoln("Security HOME:", secConfig.GlobalInfo.SecurityHomePath())
+	logger.Infoln("Agent location ", secConfig.GlobalInfo.EnvironmentInfo.Gopath)
+	logger.Infoln("Current working directory: ", filepath.Dir(secConfig.GlobalInfo.ApplicationInfo.GetBinaryPath()))
+
 }
