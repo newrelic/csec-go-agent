@@ -121,7 +121,6 @@ func (ws *websocket) makeConnection() (bool, bool) {
 }
 
 func (ws *websocket) reconnect() {
-	secConfig.GlobalInfo.WebSocketConnectionStats.IncreaseConnectionReconnected()
 	for {
 		if ws.isWsConnected() {
 			break
@@ -136,6 +135,7 @@ func (ws *websocket) reconnect() {
 		}
 		ok, reconnect := ws.makeConnection()
 		if ok || !reconnect {
+			secConfig.GlobalInfo.WebSocketConnectionStats.IncreaseConnectionReconnected()
 			return
 		}
 	}
