@@ -64,13 +64,14 @@ func (wcs *WebSocketConnectionStats) Reset() {
 }
 
 type IastReplayRequest struct {
-	ReceivedControlCommands uint64 `json:"receivedControlCommands"`
-	PendingControlCommands  uint64 `json:"pendingControlCommands"`
-	ReplayRequestGenerated  uint64 `json:"replayRequestGenerated"`
-	ReplayRequestExecuted   uint64 `json:"replayRequestExecuted"`
-	ReplayRequestSucceeded  uint64 `json:"replayRequestSucceeded"`
-	ReplayRequestFailed     uint64 `json:"replayRequestFailed"`
-	ReplayRequestRejected   uint64 `json:"replayRequestRejected"`
+	ReceivedControlCommands  uint64 `json:"receivedControlCommands"`
+	PendingControlCommands   uint64 `json:"pendingControlCommands"`
+	ReplayRequestGenerated   uint64 `json:"replayRequestGenerated"`
+	ReplayRequestExecuted    uint64 `json:"replayRequestExecuted"`
+	ReplayRequestSucceeded   uint64 `json:"replayRequestSucceeded"`
+	ReplayRequestFailed      uint64 `json:"replayRequestFailed"`
+	ReplayRequestRejected    uint64 `json:"replayRequestRejected"`
+	ProcessedControlCommands uint64 `json:"processedControlCommands"`
 	sync.Mutex
 }
 
@@ -109,6 +110,11 @@ func (iast *IastReplayRequest) IncreaseReplayRequestRejected() {
 	defer iast.Unlock()
 	iast.ReplayRequestRejected++
 }
+func (iast *IastReplayRequest) IncreaseProcessedControlCommands() {
+	iast.Lock()
+	defer iast.Unlock()
+	iast.ProcessedControlCommands++
+}
 
 func (iast *IastReplayRequest) Reset() {
 	iast.Lock()
@@ -120,6 +126,7 @@ func (iast *IastReplayRequest) Reset() {
 	iast.ReplayRequestSucceeded = 0
 	iast.ReplayRequestFailed = 0
 	iast.ReplayRequestRejected = 0
+	iast.ProcessedControlCommands = 0
 }
 
 type stats struct {
@@ -212,6 +219,7 @@ func incrementStat(eventType string, f1, f2, f3, f4, f5 func()) {
 		f4()
 	case "exitEvent":
 		f5()
+		f3()
 	}
 }
 

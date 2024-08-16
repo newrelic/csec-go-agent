@@ -121,6 +121,7 @@ func (ws *websocket) makeConnection() (bool, bool) {
 }
 
 func (ws *websocket) reconnect() {
+	secConfig.GlobalInfo.WebSocketConnectionStats.IncreaseConnectionReconnected()
 	for {
 		if ws.isWsConnected() {
 			break
@@ -267,7 +268,6 @@ func (ws *websocket) ReconnectAtAgentRefresh() {
 		return
 	}
 	secConfig.GlobalInfo.SetSecurityEnabled(false)
-	secConfig.GlobalInfo.WebSocketConnectionStats.IncreaseConnectionReconnected()
 	//reset ws connection
 	ws.closeWs()
 	ws.reconnect()

@@ -59,7 +59,6 @@ func (fTask *FuzzTask) Run() {
 }
 
 func registerFuzzTask(kcc11 *FuzzRequrestHandler, caseType, requestID string) {
-	secConfig.GlobalInfo.IastReplayRequest.IncreaseReceivedControlCommands()
 	task := &FuzzTask{kcc11, caseType, requestID}
 	if FuzzHandler.threadPool == nil {
 		initRestRequestThreadPool()
