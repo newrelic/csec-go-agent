@@ -116,23 +116,14 @@ func SendSecHealthCheck() {
 	hc.EventType = "sec_health_check_lc"
 	hc.ApplicationIdentifiers = getApplicationIdentifiers("LAhealthcheck")
 	hc.ProtectedServer = secConfig.GlobalInfo.ApplicationInfo.GetProtectedServer()
-	hc.IastEventStats = *secConfig.GlobalInfo.EventData.GetIastEventStats()
-	hc.RaspEventStats = *secConfig.GlobalInfo.EventData.GetRaspEventStats()
-	hc.ExitEventStats = *secConfig.GlobalInfo.EventData.GetExitEventStats()
+	hc.WebSocketConnectionStats = secConfig.GlobalInfo.WebSocketConnectionStats
+	hc.IastReplayRequest = secConfig.GlobalInfo.IastReplayRequest
+	hc.EventStats = secConfig.GlobalInfo.EventStats
 
-	var threadPoolStats ThreadPoolStats
 	if secConfig.SecureWS != nil {
-		threadPoolStats.FuzzRequestQueueSize = secConfig.SecureWS.PendingFuzzTask()
-		threadPoolStats.FuzzRequestCount = secConfig.GlobalInfo.EventData.GetFuzzRequestCount()
-		threadPoolStats.EventSendQueueSize = secConfig.SecureWS.PendingEvent()
+		hc.IastReplayRequest.PendingControlCommands = secConfig.SecureWS.PendingFuzzTask()
 	}
-	hc.ThreadPoolStats = threadPoolStats
 
-	hc.EventDropCount = hc.IastEventStats.Rejected + hc.RaspEventStats.Rejected + hc.ExitEventStats.Rejected
-	hc.EventProcessed = hc.IastEventStats.Processed + hc.RaspEventStats.Processed + hc.ExitEventStats.Processed
-	hc.EventSentCount = hc.IastEventStats.Sent + hc.RaspEventStats.Sent + hc.ExitEventStats.Sent
-
-	hc.HTTPRequestCount = secConfig.GlobalInfo.EventData.GetHttpRequestCount()
 	stats := sysInfo.GetStats(secConfig.GlobalInfo.ApplicationInfo.GetPid(), secConfig.GlobalInfo.ApplicationInfo.GetBinaryPath())
 	hc.Stats = stats
 	serviceStatus := getServiceStatus()
@@ -142,9 +133,9 @@ func SendSecHealthCheck() {
 	HcBuffer.ForceInsert(healthCheck)
 	// populateStatusLogs(serviceStatus, stats)
 
-	secConfig.GlobalInfo.EventData.SetHttpRequestCount(0)
-	secConfig.GlobalInfo.EventData.SetFuzzRequestCount(0)
-	secConfig.GlobalInfo.EventData.ResetEventStats()
+	secConfig.GlobalInfo.WebSocketConnectionStats.Reset()
+	secConfig.GlobalInfo.IastReplayRequest.Reset()
+	secConfig.GlobalInfo.EventStats.Reset()
 }
 
 func SendApplicationInfo() {

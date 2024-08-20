@@ -51,5 +51,5 @@ type SecureWSiface interface {
 	SendPriorityEvent([]byte)
 	AddCompletedRequests(string, string)
 	PendingEvent() int
-	PendingFuzzTask() int
+	PendingFuzzTask() uint64
 }

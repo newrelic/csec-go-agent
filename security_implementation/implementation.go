@@ -67,7 +67,6 @@ func (k Secureimpl) AssociateInboundRequest(r *secUtils.Info_req) {
 	if !isAgentReady() {
 		return
 	}
-	secConfig.GlobalInfo.EventData.IncreaseHttpRequestCount()
 	goroutineID := getID()
 	if r.Request.IsGRPC {
 		data, err := grpcMap.Load(goroutineID)
