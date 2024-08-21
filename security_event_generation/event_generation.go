@@ -307,7 +307,7 @@ func SendVulnerableEvent(req *secUtils.Info_req, category, eventCategory string,
 	tmp_event.HTTPResponse = secUtils.ResponseInfo{ContentType: req.ResponseContentType}
 	tmp_event.MetaData.AppServerInfo.ApplicationDirectory = secConfig.GlobalInfo.EnvironmentInfo.Wd
 	tmp_event.MetaData.AppServerInfo.ServerBaseDirectory = secConfig.GlobalInfo.EnvironmentInfo.Wd
-
+	tmp_event.MetaData.SkipScanParameters = secConfig.GlobalInfo.SkipIastScanParameters()
 	if !req.Request.IsGRPC {
 
 		if req.Request.BodyReader.GetBody != nil {
