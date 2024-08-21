@@ -25,6 +25,26 @@ type Security struct {
 	Request          struct {
 		BodyLimit int `yaml:"body_limit"`
 	} `yaml:"request"`
+	SkipIastScan struct {
+		API        []string `yaml:"api"`
+		Parameters struct {
+			Header []string `yaml:"header" json:"header"`
+			Query  []string `yaml:"query" json:"query"`
+			Body   []string `yaml:"body" json:"body"`
+		} `yaml:"parameters"`
+		IastDetectionCategory struct {
+			InsecureSettings    bool `yaml:"insecure_settings"`
+			InvalidFileAccess   bool `yaml:"invalid_file_access"`
+			SQLInjection        bool `yaml:"sql_injection"`
+			NosqlInjection      bool `yaml:"nosql_injection"`
+			LdapInjection       bool `yaml:"ldap_injection"`
+			JavascriptInjection bool `yaml:"javascript_injection"`
+			CommandInjection    bool `yaml:"command_injection"`
+			XpathInjection      bool `yaml:"xpath_injection"`
+			Ssrf                bool `yaml:"ssrf"`
+			Rxss                bool `yaml:"rxss"`
+		} `yaml:"iast_detection_category"`
+	} `yaml:"skip_iast_scan"`
 }
 
 type Policy struct {

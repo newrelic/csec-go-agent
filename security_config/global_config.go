@@ -99,10 +99,68 @@ func (info *Info_struct) SetSecurity(security Security) {
 	info.security = security
 }
 
+func (info *Info_struct) IsInsecureSettingsEnabled() bool {
+	info.securityMutex.Lock()
+	defer info.securityMutex.Unlock()
+	return !info.security.SkipIastScan.IastDetectionCategory.InsecureSettings
+}
+func (info *Info_struct) IsInvalidFileAccessEnabled() bool {
+	info.securityMutex.Lock()
+	defer info.securityMutex.Unlock()
+	return !info.security.SkipIastScan.IastDetectionCategory.InvalidFileAccess
+}
+
+func (info *Info_struct) IsSQLInjectionEnabled() bool {
+	info.securityMutex.Lock()
+	defer info.securityMutex.Unlock()
+	return !info.security.SkipIastScan.IastDetectionCategory.SQLInjection
+}
+func (info *Info_struct) IsNosqlInjectionEnabled() bool {
+	info.securityMutex.Lock()
+	defer info.securityMutex.Unlock()
+	return !info.security.SkipIastScan.IastDetectionCategory.NosqlInjection
+}
+func (info *Info_struct) IsLdapInjectionEnabled() bool {
+	info.securityMutex.Lock()
+	defer info.securityMutex.Unlock()
+	return !info.security.SkipIastScan.IastDetectionCategory.LdapInjection
+}
+func (info *Info_struct) IsJavascriptInjectionEnabled() bool {
+	info.securityMutex.Lock()
+	defer info.securityMutex.Unlock()
+	return !info.security.SkipIastScan.IastDetectionCategory.JavascriptInjection
+}
+func (info *Info_struct) IsCommandInjectionEnabled() bool {
+	info.securityMutex.Lock()
+	defer info.securityMutex.Unlock()
+	return !info.security.SkipIastScan.IastDetectionCategory.CommandInjection
+}
+func (info *Info_struct) IsXpathInjectionEnabled() bool {
+	info.securityMutex.Lock()
+	defer info.securityMutex.Unlock()
+	return !info.security.SkipIastScan.IastDetectionCategory.XpathInjection
+}
+func (info *Info_struct) IsSsrfEnabled() bool {
+	info.securityMutex.Lock()
+	defer info.securityMutex.Unlock()
+	return !info.security.SkipIastScan.IastDetectionCategory.Ssrf
+}
 func (info *Info_struct) IsRxssEnabled() bool {
 	info.securityMutex.Lock()
 	defer info.securityMutex.Unlock()
-	return info.security.Detection.Rxss.Enabled
+	return !info.security.SkipIastScan.IastDetectionCategory.Rxss
+}
+
+func (info *Info_struct) SkipIastScanParameters() interface{} {
+	info.securityMutex.Lock()
+	defer info.securityMutex.Unlock()
+	return info.security.SkipIastScan.Parameters
+}
+
+func (info *Info_struct) SkipIastScanApi() []string {
+	info.securityMutex.Lock()
+	defer info.securityMutex.Unlock()
+	return info.security.SkipIastScan.API
 }
 
 func (info *Info_struct) SecurityHomePath() string {
