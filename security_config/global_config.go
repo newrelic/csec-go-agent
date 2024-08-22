@@ -163,6 +163,12 @@ func (info *Info_struct) SkipIastScanApi() []string {
 	return info.security.SkipIastScan.API
 }
 
+func (info *Info_struct) ScanScheduleDuration() int {
+	info.securityMutex.Lock()
+	defer info.securityMutex.Unlock()
+	return info.security.ScanSchedule.Duration
+}
+
 func (info *Info_struct) SecurityHomePath() string {
 	return info.security.SecurityHomePath
 }

@@ -45,6 +45,12 @@ type Security struct {
 			Rxss                bool `yaml:"rxss"`
 		} `yaml:"iast_detection_category"`
 	} `yaml:"skip_iast_scan"`
+	ScanSchedule struct {
+		Delay                     int    `yaml:"delay"`
+		Duration                  int    `yaml:"duration"`
+		Schedule                  string `yaml:"schedule"`
+		AllowIastSampleCollection bool   `yaml:"allow_iast_sample_collection"`
+	} `yaml:"scan_schedule"`
 }
 
 type Policy struct {
