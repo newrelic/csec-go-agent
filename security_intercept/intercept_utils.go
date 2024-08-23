@@ -14,6 +14,7 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
+	"time"
 
 	logging "github.com/newrelic/csec-go-agent/internal/security_logs"
 	secUtils "github.com/newrelic/csec-go-agent/internal/security_utils"
@@ -303,4 +304,14 @@ func ToOneValueMap(header map[string][]string) (filterHeader map[string]string) 
 		filterHeader[k] = strings.Join(v, ",")
 	}
 	return
+}
+
+func InitLowSeverityEventScheduler() {
+	t := time.NewTicker(30 * time.Second)
+	for {
+		select {
+		case <-t.C:
+			secConfig.Secure.CleanLowSeverityEvent()
+		}
+	}
 }

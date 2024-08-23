@@ -464,7 +464,7 @@ func checkSecureCookies(responseHeader http.Header) {
 			})
 		}
 		if check {
-			secConfig.Secure.SendEvent("SECURE_COOKIE", "SECURE_COOKIE", arg)
+			secConfig.Secure.SendLowSeverityEvent("SECURE_COOKIE", "SECURE_COOKIE", arg)
 		}
 	}
 }
