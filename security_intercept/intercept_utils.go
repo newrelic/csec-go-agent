@@ -307,7 +307,7 @@ func ToOneValueMap(header map[string][]string) (filterHeader map[string]string) 
 }
 
 func InitLowSeverityEventScheduler() {
-	t := time.NewTicker(30 * time.Second)
+	t := time.NewTicker(30 * time.Minute)
 	for {
 		select {
 		case <-t.C:
