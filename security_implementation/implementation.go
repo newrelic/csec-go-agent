@@ -311,7 +311,7 @@ func sendEvent(eventId, caseType, eventCategory string, args interface{}, isLowS
 	if caseType == "REFLECTED_XSS" && (*req).VulnerabilityDetails.APIID != "" {
 		vulnerabilityDetails = (*req).VulnerabilityDetails
 	} else {
-		vulnerabilityDetails = presentStack((*req).Request.Method, caseType)
+		vulnerabilityDetails = presentStack((*req).Request.Method+"||"+(*req).Request.Route, caseType)
 	}
 	if isLowSeverityEvent {
 		if _, ok := lowSeverityEventMap.Load(vulnerabilityDetails.APIID); ok {
