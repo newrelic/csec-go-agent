@@ -25,6 +25,7 @@ var logger = logging.GetLogger("impl")
 var grpcMap = sync.Map{}
 var fastHttpMap = sync.Map{}
 var requestMap = sync.Map{}
+var lowSeverityEventMap = sync.Map{}
 
 const (
 	identity = "github.com/newrelic/csec-go-agent"
@@ -56,7 +57,7 @@ func (k Secureimpl) SecureExecPrepareStatement(q_address string, qargs interface
 		"parameters": qargs,
 	}
 	arg11 = append(arg11, tmp_map)
-	return k.SendEvent("SQL_DB_COMMAND", arg11)
+	return k.SendEvent("SQL_DB_COMMAND", "SQLITE", arg11)
 }
 
 /**
@@ -67,7 +68,6 @@ func (k Secureimpl) AssociateInboundRequest(r *secUtils.Info_req) {
 	if !isAgentReady() {
 		return
 	}
-	secConfig.GlobalInfo.EventData.IncreaseHttpRequestCount()
 	goroutineID := getID()
 	if r.Request.IsGRPC {
 		data, err := grpcMap.Load(goroutineID)
@@ -144,7 +144,7 @@ func (k Secureimpl) AssociateGrpcDataBytes(data []byte) bool {
 		logger.Errorln("(AssociateGrpcDataBytes) GRPC Request Not Found creating new request without headers")
 		return false
 	}
-	request.GrpcByte = append(request.GrpcByte, data)
+	// request.GrpcByte = append(request.GrpcByte, data) // deprecated
 	return true
 }
 
@@ -184,7 +184,7 @@ func (k Secureimpl) GetFuzzHeader() string {
 	if request == nil {
 		return ""
 	} else {
-		return request.RequestIdentifier
+		return request.RequestIdentifier.Raw
 	}
 }
 
@@ -193,7 +193,7 @@ func (k Secureimpl) GetTmpFiles() []string {
 	if request == nil {
 		return make([]string, 0)
 	} else {
-		return request.TmpFiles
+		return request.RequestIdentifier.TempFiles
 	}
 }
 
@@ -262,13 +262,22 @@ func (k Secureimpl) Send5xxEvent(code int) {
 	eventGeneration.Store5xxError(req, key, code)
 }
 
-func (k Secureimpl) SendEvent(category string, args interface{}) *secUtils.EventTracker {
-	secConfig.AddEventDataToListener(secConfig.TestArgs{Parameters: fmt.Sprintf("%v", args), CaseType: category})
+func (k Secureimpl) SendEvent(caseType, eventCategory string, args interface{}) *secUtils.EventTracker {
+	secConfig.AddEventDataToListener(secConfig.TestArgs{Parameters: fmt.Sprintf("%v", args), CaseType: caseType})
 	if !isAgentReady() {
 		return nil
 	}
 	eventId := increaseCount()
-	return sendEvent(eventId, category, args)
+	return sendEvent(eventId, caseType, eventCategory, args, false)
+}
+
+func (k Secureimpl) SendLowSeverityEvent(caseType, eventCategory string, args interface{}) *secUtils.EventTracker {
+	secConfig.AddEventDataToListener(secConfig.TestArgs{Parameters: fmt.Sprintf("%v", args), CaseType: caseType})
+	if !isAgentReady() {
+		return nil
+	}
+	eventId := increaseCount()
+	return sendEvent(eventId, caseType, eventCategory, args, true)
 }
 
 func (k Secureimpl) SendExitEvent(event *secUtils.EventTracker) {
@@ -287,21 +296,32 @@ func (k Secureimpl) SendExitEvent(event *secUtils.EventTracker) {
 	eventGeneration.SendExitEvent(event, requestIdentifier)
 }
 
-func sendEvent(eventId, category string, args interface{}) *secUtils.EventTracker {
+func (k Secureimpl) CleanLowSeverityEvent() {
+	lowSeverityEventMap = sync.Map{}
+}
+
+func sendEvent(eventId, caseType, eventCategory string, args interface{}, isLowSeverityEvent bool) *secUtils.EventTracker {
 	id := getID()
 	req := getRequest(id)
 	if !isAgentReady() || (req == nil) {
-		logger.Debugln(category, "no incoming skipping Event")
+		logger.Debugln(caseType, "no incoming skipping Event")
 		return nil
 	}
 	var vulnerabilityDetails secUtils.VulnerabilityDetails
-	if category == "REFLECTED_XSS" && (*req).VulnerabilityDetails.APIID != "" {
+	if caseType == "REFLECTED_XSS" && (*req).VulnerabilityDetails.APIID != "" {
 		vulnerabilityDetails = (*req).VulnerabilityDetails
 	} else {
-		vulnerabilityDetails = presentStack((*req).Request.Method, category)
+		vulnerabilityDetails = presentStack((*req).Request.Method+"||"+(*req).Request.Route, caseType)
+	}
+	if isLowSeverityEvent {
+		if _, ok := lowSeverityEventMap.Load(vulnerabilityDetails.APIID); ok {
+			return nil
+		} else {
+			lowSeverityEventMap.Store(vulnerabilityDetails.APIID, 1)
+		}
 	}
 
-	return eventGeneration.SendVulnerableEvent(req, category, args, vulnerabilityDetails, getEventID(eventId, id))
+	return eventGeneration.SendVulnerableEvent(req, caseType, eventCategory, args, vulnerabilityDetails, getEventID(eventId, id))
 
 }
 

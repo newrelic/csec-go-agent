@@ -101,6 +101,8 @@ func getApplicationIdentifiers(jsonName string) ApplicationIdentifiers {
 	applicationIdentifier.Pid = secConfig.GlobalInfo.ApplicationInfo.GetPid()
 	agentStartTime := secConfig.GlobalInfo.ApplicationInfo.GetStarttimestr().Unix() * 1000
 	applicationIdentifier.StartTime = secUtils.Int64ToString(agentStartTime)
+	applicationIdentifier.AppAccountId = secConfig.GlobalInfo.MetaData.GetAccountID()
+	applicationIdentifier.AppEntityGuid = secConfig.GlobalInfo.MetaData.GetEntityGuid()
 	applicationIdentifier.LinkingMetadata = secConfig.GlobalInfo.MetaData.GetLinkingMetadata()
 	return applicationIdentifier
 
@@ -114,23 +116,14 @@ func SendSecHealthCheck() {
 	hc.EventType = "sec_health_check_lc"
 	hc.ApplicationIdentifiers = getApplicationIdentifiers("LAhealthcheck")
 	hc.ProtectedServer = secConfig.GlobalInfo.ApplicationInfo.GetProtectedServer()
-	hc.IastEventStats = *secConfig.GlobalInfo.EventData.GetIastEventStats()
-	hc.RaspEventStats = *secConfig.GlobalInfo.EventData.GetRaspEventStats()
-	hc.ExitEventStats = *secConfig.GlobalInfo.EventData.GetExitEventStats()
+	hc.WebSocketConnectionStats = secConfig.GlobalInfo.WebSocketConnectionStats
+	hc.IastReplayRequest = secConfig.GlobalInfo.IastReplayRequest
+	hc.EventStats = secConfig.GlobalInfo.EventStats
 
-	var threadPoolStats ThreadPoolStats
 	if secConfig.SecureWS != nil {
-		threadPoolStats.FuzzRequestQueueSize = secConfig.SecureWS.PendingFuzzTask()
-		threadPoolStats.FuzzRequestCount = secConfig.GlobalInfo.EventData.GetFuzzRequestCount()
-		threadPoolStats.EventSendQueueSize = secConfig.SecureWS.PendingEvent()
+		hc.IastReplayRequest.PendingControlCommands = secConfig.SecureWS.PendingFuzzTask()
 	}
-	hc.ThreadPoolStats = threadPoolStats
 
-	hc.EventDropCount = hc.IastEventStats.Rejected + hc.RaspEventStats.Rejected + hc.ExitEventStats.Rejected
-	hc.EventProcessed = hc.IastEventStats.Processed + hc.RaspEventStats.Processed + hc.ExitEventStats.Processed
-	hc.EventSentCount = hc.IastEventStats.Sent + hc.RaspEventStats.Sent + hc.ExitEventStats.Sent
-
-	hc.HTTPRequestCount = secConfig.GlobalInfo.EventData.GetHttpRequestCount()
 	stats := sysInfo.GetStats(secConfig.GlobalInfo.ApplicationInfo.GetPid(), secConfig.GlobalInfo.ApplicationInfo.GetBinaryPath())
 	hc.Stats = stats
 	serviceStatus := getServiceStatus()
@@ -138,11 +131,11 @@ func SendSecHealthCheck() {
 
 	healthCheck, _ := sendPriorityEvent(hc)
 	HcBuffer.ForceInsert(healthCheck)
-	populateStatusLogs(serviceStatus, stats)
+	// populateStatusLogs(serviceStatus, stats)
 
-	secConfig.GlobalInfo.EventData.SetHttpRequestCount(0)
-	secConfig.GlobalInfo.EventData.SetFuzzRequestCount(0)
-	secConfig.GlobalInfo.EventData.ResetEventStats()
+	secConfig.GlobalInfo.WebSocketConnectionStats.Reset()
+	secConfig.GlobalInfo.IastReplayRequest.Reset()
+	secConfig.GlobalInfo.EventStats.Reset()
 }
 
 func SendApplicationInfo() {
@@ -289,43 +282,43 @@ func sendUrlMappingEvent() {
 	}
 }
 
-func SendVulnerableEvent(req *secUtils.Info_req, category string, args interface{}, vulnerabilityDetails secUtils.VulnerabilityDetails, eventId string) *secUtils.EventTracker {
+func SendVulnerableEvent(req *secUtils.Info_req, category, eventCategory string, args interface{}, vulnerabilityDetails secUtils.VulnerabilityDetails, eventId string) *secUtils.EventTracker {
 	var tmp_event eventJson
-
-	eventCategory := category
-	if eventCategory == "SQL_DB_COMMAND" {
-		eventCategory = "SQLITE"
-	} else if category == "NOSQL_DB_COMMAND" {
-		eventCategory = "MONGO"
-	} else if category == "REDIS_DB_COMMAND" {
-		eventCategory = "REDIS"
-		category = "SQL_DB_COMMAND"
-	} else if category == "DYNAMO_DB_COMMAND" {
-		eventCategory = "DQL"
-	}
 
 	tmp_event.ID = eventId
 	tmp_event.CaseType = category
 	tmp_event.EventCategory = eventCategory
 	tmp_event.Parameters = args
-	tmp_event.EventGenerationTime = strconv.FormatInt(time.Now().Unix()*1000, 10)
 	tmp_event.BlockingProcessingTime = "1"
 	tmp_event.HTTPRequest = req.Request
-	tmp_event.HTTPResponse = secUtils.ResponseInfo{ContentType: req.ResponseContentType}
-	if req.Request.BodyReader.GetBody != nil {
-		tmp_event.HTTPRequest.Body = string(req.Request.BodyReader.GetBody())
-	}
-	if req.Request.BodyReader.IsDataTruncated != nil {
-		tmp_event.HTTPRequest.DataTruncated = req.Request.BodyReader.IsDataTruncated()
-	}
+	tmp_event.ParentId = req.ParentID
 	tmp_event.VulnerabilityDetails = vulnerabilityDetails
 	tmp_event.ApplicationIdentifiers = getApplicationIdentifiers("Event")
+	tmp_event.EventGenerationTime = strconv.FormatInt(time.Now().Unix()*1000, 10)
+	tmp_event.HTTPResponse = secUtils.ResponseInfo{ContentType: req.ResponseContentType}
+	tmp_event.MetaData.AppServerInfo.ApplicationDirectory = secConfig.GlobalInfo.EnvironmentInfo.Wd
+	tmp_event.MetaData.AppServerInfo.ServerBaseDirectory = secConfig.GlobalInfo.EnvironmentInfo.Wd
 
-	fuzzHeader := (*req).RequestIdentifier
-	// if (*req).RequestIdentifier != "" {
-	// 	tmp_event.Stacktrace = []string{}
-	// }
-	if req.Request.IsGRPC {
+	if !req.Request.IsGRPC {
+
+		if req.Request.BodyReader.GetBody != nil {
+			tmp_event.HTTPRequest.Body = string(req.Request.BodyReader.GetBody())
+		}
+		if req.Request.BodyReader.IsDataTruncated != nil {
+			tmp_event.HTTPRequest.DataTruncated = req.Request.BodyReader.IsDataTruncated()
+		}
+
+	} else {
+
+		body := req.GrpcBody
+		grpc_body_json, err1 := json.Marshal(body)
+		if err1 != nil {
+			logger.Errorln("Error parsing gRPC request body: Invalid JSON format detected" + string(grpc_body_json))
+			return nil
+		} else {
+			tmp_event.HTTPRequest.Body = string(grpc_body_json)
+		}
+
 		tmp_event.MetaData.ReflectedMetaData = secUtils.ReflectedMetaData{
 			IsGrpcClientStream: req.ReflectedMetaData.IsGrpcClientStream,
 			IsServerStream:     req.ReflectedMetaData.IsServerStream,
@@ -334,40 +327,24 @@ func SendVulnerableEvent(req *secUtils.Info_req, category string, args interface
 		}
 	}
 
-	tmp_event.MetaData.AppServerInfo.ApplicationDirectory = secConfig.GlobalInfo.EnvironmentInfo.Wd
-	tmp_event.MetaData.AppServerInfo.ServerBaseDirectory = secConfig.GlobalInfo.EnvironmentInfo.Wd
-
 	requestType := "raspEvent"
-	if secConfig.GlobalInfo.GetCurrentPolicy().VulnerabilityScan.Enabled && secConfig.GlobalInfo.GetCurrentPolicy().VulnerabilityScan.IastScan.Enabled {
-		if fuzzHeader != "" {
+
+	requestIdentifier := req.RequestIdentifier
+
+	if secConfig.GlobalInfo.IsIASTEnable() {
+		tmp_event.IsIASTEnable = true
+		if requestIdentifier.NrRequest {
+			tmp_event.HTTPRequest.Route = ""
 			requestType = "iastEvent"
 			tmp_event.IsIASTRequest = true
-		}
-		tmp_event.IsIASTEnable = true
-	}
 
-	if tmp_event.HTTPRequest.ServerPort == "" {
-		tmp_event.HTTPRequest.ServerPort = "-1"
-	}
-
-	if tmp_event.HTTPRequest.IsGRPC {
-		body := (*req).GrpcBody
-		grpc_bodyJson, err1 := json.Marshal(body)
-		if err1 != nil {
-			logger.Errorln("grpc_body JSON invalid" + string(grpc_bodyJson))
-			return nil
-		} else {
-			tmp_event.HTTPRequest.Body = string(grpc_bodyJson)
+			if !secUtils.IsBlank(req.ParentID) {
+				apiId := requestIdentifier.APIRecordID
+				if apiId == vulnerabilityDetails.APIID {
+					(secConfig.SecureWS).AddCompletedRequests(req.ParentID, eventId)
+				}
+			}
 		}
-	}
-
-	if req.ParentID != "" && req.RequestIdentifier != "" {
-		tmp_event.ParentId = req.ParentID
-		apiId := strings.Split(req.RequestIdentifier, ":")[0]
-		if apiId == vulnerabilityDetails.APIID {
-			(secConfig.SecureWS).AddCompletedRequests(req.ParentID, eventId)
-		}
-		tmp_event.HTTPRequest.Route = ""
 	}
 
 	event_json, err1 := sendEvent(tmp_event, req.ParentID, requestType)
@@ -383,7 +360,7 @@ func SendVulnerableEvent(req *secUtils.Info_req, category string, args interface
 		logging.Disableinitlogs()
 	}
 	tracingHeader := tmp_event.HTTPRequest.Headers[NR_CSEC_TRACING_DATA]
-	return &secUtils.EventTracker{APIID: tmp_event.APIID, ID: tmp_event.ID, CaseType: tmp_event.CaseType, TracingHeader: tracingHeader, RequestIdentifier: fuzzHeader}
+	return &secUtils.EventTracker{APIID: tmp_event.APIID, ID: tmp_event.ID, CaseType: tmp_event.CaseType, TracingHeader: tracingHeader, RequestIdentifier: requestIdentifier.Raw}
 
 }
 
@@ -400,26 +377,12 @@ func SendExitEvent(eventTracker *secUtils.EventTracker, requestIdentifier string
 	}
 }
 
-func SendUpdatedPolicy(policy secConfig.Policy) {
-	logger.Infoln("Sending Updated policy ", policy.Version)
-	type policy1 struct {
-		JSONName string `json:"jsonName"`
-		secConfig.Policy
-	}
-
-	_, err := sendEvent(policy1{"lc-policy", policy}, "", "")
-	if err != nil {
-		logger.Errorln(err)
-	}
-}
-
 func IASTDataRequest(batchSize int, completedRequestIds interface{}, pendingRequestIds []string) {
 	var tmp_event IASTDataRequestBeen
 	tmp_event.CompletedRequests = completedRequestIds
 	tmp_event.PendingRequestIds = pendingRequestIds
 	tmp_event.BatchSize = batchSize
-	tmp_event.ApplicationUUID = secConfig.GlobalInfo.ApplicationInfo.GetAppUUID()
-	tmp_event.JSONName = "iast-data-request"
+	tmp_event.ApplicationIdentifiers = getApplicationIdentifiers("iast-data-request")
 	_, err := sendEvent(tmp_event, "", "")
 	if err != nil {
 		logger.Errorln(err)
@@ -487,7 +450,7 @@ func sendBufferLogMessage() {
 		if secConfig.SecureWS != nil {
 			tmp_event, ok := i.(LogMessage)
 			if ok {
-				tmp_event.ApplicationUUID = secConfig.GlobalInfo.ApplicationInfo.GetAppUUID()
+				tmp_event.ApplicationIdentifiers = getApplicationIdentifiers("critical-messages")
 				tmp_event.LinkingMetadata = secConfig.GlobalInfo.MetaData.GetLinkingMetadata()
 				sendEvent(tmp_event, "", "LogMessage")
 			}
@@ -500,8 +463,7 @@ func SendLogMessage(log, caller, logLevel string) {
 
 	var tmp_event LogMessage
 
-	tmp_event.ApplicationUUID = secConfig.GlobalInfo.ApplicationInfo.GetAppUUID()
-	tmp_event.JSONName = "critical-messages"
+	tmp_event.ApplicationIdentifiers = getApplicationIdentifiers("critical-messages")
 	tmp_event.Timestamp = time.Now().Unix() * 1000
 	tmp_event.Level = logLevel
 	tmp_event.Message = log

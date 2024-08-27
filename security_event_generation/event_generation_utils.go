@@ -110,18 +110,13 @@ type userProvidedApplicationInfo struct {
 
 type healthcheck struct {
 	ApplicationIdentifiers
-	EventType        string               `json:"eventType"`
-	ProtectedServer  string               `json:"protectedServer"`
-	EventDropCount   uint64               `json:"eventDropCount"`
-	EventProcessed   uint64               `json:"eventProcessed"`
-	EventSentCount   uint64               `json:"eventSentCount"`
-	HTTPRequestCount uint64               `json:"httpRequestCount"`
-	Stats            interface{}          `json:"stats"`
-	ServiceStatus    interface{}          `json:"serviceStatus"`
-	IastEventStats   secConfig.EventStats `json:"iastEventStats"`
-	RaspEventStats   secConfig.EventStats `json:"raspEventStats"`
-	ExitEventStats   secConfig.EventStats `json:"exitEventStats"`
-	ThreadPoolStats  ThreadPoolStats      `json:"threadPoolStats"`
+	EventType                string                             `json:"eventType"`
+	ProtectedServer          string                             `json:"protectedServer"`
+	Stats                    interface{}                        `json:"stats"`
+	ServiceStatus            interface{}                        `json:"serviceStatus"`
+	WebSocketConnectionStats secConfig.WebSocketConnectionStats `json:"webSocketConnectionStats"`
+	IastReplayRequest        secConfig.IastReplayRequest        `json:"iastReplayRequest"`
+	EventStats               secConfig.EventStats               `json:"eventStats"`
 }
 
 type ThreadPoolStats struct {
@@ -162,6 +157,8 @@ type ApplicationIdentifiers struct {
 	JSONName         string      `json:"jsonName"`
 	Pid              string      `json:"pid"`
 	StartTime        string      `json:"startTime"`
+	AppAccountId     string      `json:"appAccountId"`
+	AppEntityGuid    string      `json:"appEntityGuid"`
 	LinkingMetadata  interface{} `json:"linkingMetadata"`
 }
 
@@ -171,8 +168,7 @@ type FuzzFailBean struct {
 }
 
 type IASTDataRequestBeen struct {
-	JSONName          string      `json:"jsonName"`
-	ApplicationUUID   string      `json:"applicationUUID"`
+	ApplicationIdentifiers
 	BatchSize         int         `json:"batchSize"`
 	CompletedRequests interface{} `json:"completedRequests"`
 	PendingRequestIds []string    `json:"pendingRequestIds"`
@@ -191,15 +187,13 @@ type Urlmappings struct {
 }
 
 type LogMessage struct {
-	JSONName        string      `json:"jsonName"`
-	ApplicationUUID string      `json:"applicationUUID"`
-	Timestamp       int64       `json:"timestamp"`
-	Level           string      `json:"level"`
-	Message         string      `json:"message"`
-	Caller          string      `json:"caller"`
-	Exception       Exception   `json:"exception"`
-	ThreadName      string      `json:"threadName"`
-	LinkingMetadata interface{} `json:"linkingMetadata"`
+	ApplicationIdentifiers
+	Timestamp  int64     `json:"timestamp"`
+	Level      string    `json:"level"`
+	Message    string    `json:"message"`
+	Caller     string    `json:"caller"`
+	Exception  Exception `json:"exception"`
+	ThreadName string    `json:"threadName"`
 }
 
 type Exception struct {

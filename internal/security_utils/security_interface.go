@@ -30,13 +30,15 @@ type Secureiface interface {
 	AssociateFastHttpData(net.Conn)
 	DisassociateFastHttpData()
 	GetFastHttpData() net.Conn
-	SendEvent(category string, args interface{}) *EventTracker
+	SendEvent(caseType, eventCategory string, args interface{}) *EventTracker
+	SendLowSeverityEvent(caseType, eventCategory string, args interface{}) *EventTracker
 	GetFuzzHeader() string
 	GetTmpFiles() []string
 	NewGoroutineLinker(interface{})
 	NewGoroutine() interface{}
 	SendPanicEvent(string)
 	Send5xxEvent(int)
+	CleanLowSeverityEvent()
 }
 
 // ---------------------------------------------------
@@ -51,5 +53,5 @@ type SecureWSiface interface {
 	SendPriorityEvent([]byte)
 	AddCompletedRequests(string, string)
 	PendingEvent() int
-	PendingFuzzTask() int
+	PendingFuzzTask() uint64
 }
