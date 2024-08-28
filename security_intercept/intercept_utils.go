@@ -14,6 +14,7 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/dlclark/regexp2"
 	logging "github.com/newrelic/csec-go-agent/internal/security_logs"
@@ -318,4 +319,14 @@ func isSkipIastScanApi(url, route string) (bool, string) {
 		}
 	}
 	return false, ""
+}
+
+func InitLowSeverityEventScheduler() {
+	t := time.NewTicker(30 * time.Minute)
+	for {
+		select {
+		case <-t.C:
+			secConfig.Secure.CleanLowSeverityEvent()
+		}
+	}
 }

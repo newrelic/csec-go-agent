@@ -25,6 +25,7 @@ var logger = logging.GetLogger("impl")
 var grpcMap = sync.Map{}
 var fastHttpMap = sync.Map{}
 var requestMap = sync.Map{}
+var lowSeverityEventMap = sync.Map{}
 
 const (
 	identity = "github.com/newrelic/csec-go-agent"
@@ -67,7 +68,6 @@ func (k Secureimpl) AssociateInboundRequest(r *secUtils.Info_req) {
 	if !isAgentReady() {
 		return
 	}
-	secConfig.GlobalInfo.EventData.IncreaseHttpRequestCount()
 	goroutineID := getID()
 	if r.Request.IsGRPC {
 		data, err := grpcMap.Load(goroutineID)
@@ -268,7 +268,16 @@ func (k Secureimpl) SendEvent(caseType, eventCategory string, args interface{}) 
 		return nil
 	}
 	eventId := increaseCount()
-	return sendEvent(eventId, caseType, eventCategory, args)
+	return sendEvent(eventId, caseType, eventCategory, args, false)
+}
+
+func (k Secureimpl) SendLowSeverityEvent(caseType, eventCategory string, args interface{}) *secUtils.EventTracker {
+	secConfig.AddEventDataToListener(secConfig.TestArgs{Parameters: fmt.Sprintf("%v", args), CaseType: caseType})
+	if !isAgentReady() {
+		return nil
+	}
+	eventId := increaseCount()
+	return sendEvent(eventId, caseType, eventCategory, args, true)
 }
 
 func (k Secureimpl) SendExitEvent(event *secUtils.EventTracker) {
@@ -287,7 +296,11 @@ func (k Secureimpl) SendExitEvent(event *secUtils.EventTracker) {
 	eventGeneration.SendExitEvent(event, requestIdentifier)
 }
 
-func sendEvent(eventId, caseType, eventCategory string, args interface{}) *secUtils.EventTracker {
+func (k Secureimpl) CleanLowSeverityEvent() {
+	lowSeverityEventMap = sync.Map{}
+}
+
+func sendEvent(eventId, caseType, eventCategory string, args interface{}, isLowSeverityEvent bool) *secUtils.EventTracker {
 	id := getID()
 	req := getRequest(id)
 	if !isAgentReady() || (req == nil) {
@@ -298,7 +311,14 @@ func sendEvent(eventId, caseType, eventCategory string, args interface{}) *secUt
 	if caseType == "REFLECTED_XSS" && (*req).VulnerabilityDetails.APIID != "" {
 		vulnerabilityDetails = (*req).VulnerabilityDetails
 	} else {
-		vulnerabilityDetails = presentStack((*req).Request.Method, caseType)
+		vulnerabilityDetails = presentStack((*req).Request.Method+"||"+(*req).Request.Route, caseType)
+	}
+	if isLowSeverityEvent {
+		if _, ok := lowSeverityEventMap.Load(vulnerabilityDetails.APIID); ok {
+			return nil
+		} else {
+			lowSeverityEventMap.Store(vulnerabilityDetails.APIID, 1)
+		}
 	}
 
 	return eventGeneration.SendVulnerableEvent(req, caseType, eventCategory, args, vulnerabilityDetails, getEventID(eventId, id))

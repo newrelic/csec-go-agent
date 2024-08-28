@@ -1,5 +1,22 @@
 # Changelog
 
+## [v1.4.0] - 2024-08-27
+### Features:
+* Added new key identifiers to all event JSONs.
+* Introduced detailed IAST scan metric reporting via HealthCheck for better insights.
+* Added support for Secure Cookie event reporting to provide detailed vulnerability information.
+* Added support for application/xml and text/xml content-types for RXSS vulnerability detection.
+* Implemented a new mechanism to uniquely generate low severity events based on API ID, with a 30-minute time interval
+
+### Changes:
+* Update IAST Header Parsing Minimum Expected Length Set to 8.
+* Updated API ID generation to utilize both stacktrace and route information.
+* Performed comprehensive code refactoring and cleanup for improved system efficiency and maintainability.
+* Json Version bump to 1.2.5
+
+### Deprecations:
+* Status File Used for Debugging: This feature has been deprecated. All debugging capabilities have been moved to either Init Logging or Error Inbox and will be removed in a future agent release
+
 ## [v1.3.0] - 2024-06-24
 ### Features
 * Added functionality to report panics in user code.

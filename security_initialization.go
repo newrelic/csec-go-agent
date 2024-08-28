@@ -121,7 +121,7 @@ func initSecurityAgent(applicationName, licenseKey string, isDebugLog bool, secu
 	logging.EndStage("1", "Security agent is starting")
 	initEnvironmentInfo()
 	initApplicationInfo(applicationName)
-
+	go secIntercept.InitLowSeverityEventScheduler()
 	logger.Infoln("Security HOME:", secConfig.GlobalInfo.SecurityHomePath())
 	logger.Infoln("Agent location ", secConfig.GlobalInfo.EnvironmentInfo.Gopath)
 	logger.Infoln("Current working directory: ", filepath.Dir(secConfig.GlobalInfo.ApplicationInfo.GetBinaryPath()))
