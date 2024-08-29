@@ -609,7 +609,7 @@ func UpdateLinkData(linkingMetadata map[string]string) {
 			secConfig.GlobalInfo.MetaData.SetEntityName(entityname)
 		}
 		if !IsDisable() && !IsForceDisable() {
-			go secWs.InitializeWsConnecton()
+			go secWs.StartAgentWithDelay()
 		}
 	} else {
 		secConfig.GlobalInfo.MetaData.SetLinkingMetadata(linkingMetadata)

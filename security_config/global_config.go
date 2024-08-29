@@ -172,6 +172,18 @@ func (info *Info_struct) ScanScheduleDuration() int {
 	return info.security.ScanSchedule.Duration
 }
 
+func (info *Info_struct) ScanScheduleDelay() int {
+	info.securityMutex.Lock()
+	defer info.securityMutex.Unlock()
+	return info.security.ScanSchedule.Delay
+}
+
+func (info *Info_struct) ScanScheduleAllowIastSampleCollection() bool {
+	info.securityMutex.Lock()
+	defer info.securityMutex.Unlock()
+	return info.security.ScanSchedule.AllowIastSampleCollection
+}
+
 func (info *Info_struct) SecurityHomePath() string {
 	return info.security.SecurityHomePath
 }
