@@ -10,6 +10,17 @@ type Security struct {
 	Agent                 struct {
 		Enabled bool `json:"enabled"`
 	} `json:"agent"`
+	RestrictionCriteria struct {
+		AccountInfo struct {
+			AccountIDValue []string `yaml:"account_id_value"`
+		} `yaml:"account_info"`
+		MappingParameters struct {
+			Header []string `yaml:"header"`
+			Body   []string `yaml:"body"`
+			Query  []string `yaml:"query"`
+			Path   []string `yaml:"path"`
+		} `yaml:"mapping_parameters"`
+	} `yaml:"restriction_criteria"`
 	Detection struct {
 		Rci struct {
 			Enabled bool `json:"enabled"`

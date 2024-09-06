@@ -108,6 +108,23 @@ func (info *Info_struct) IsRxssEnabled() bool {
 	return info.security.Detection.Rxss.Enabled
 }
 
+func (info *Info_struct) RestrictionCriteriaAccountIDValue() []string {
+	info.securityMutex.Lock()
+	defer info.securityMutex.Unlock()
+	return info.security.RestrictionCriteria.AccountInfo.AccountIDValue
+}
+
+func (info *Info_struct) RestrictionCriteriaHeader() []string {
+	info.securityMutex.Lock()
+	defer info.securityMutex.Unlock()
+	return info.security.RestrictionCriteria.MappingParameters.Header
+}
+func (info *Info_struct) RestrictionCriteriaQuery() []string {
+	info.securityMutex.Lock()
+	defer info.securityMutex.Unlock()
+	return info.security.RestrictionCriteria.MappingParameters.Query
+}
+
 func (info *Info_struct) SecurityHomePath() string {
 	return info.security.SecurityHomePath
 }
