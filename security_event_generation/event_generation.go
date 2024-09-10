@@ -120,6 +120,10 @@ func SendSecHealthCheck() {
 	hc.IastReplayRequest = secConfig.GlobalInfo.IastReplayRequest
 	hc.EventStats = secConfig.GlobalInfo.EventStats
 
+	hc.ProcStartTime = secConfig.GlobalInfo.ApplicationInfo.GetStarttimestr().Unix() * 1000
+	hc.TrafficStartedTime = secConfig.GlobalInfo.ApplicationInfo.GetTrafficStartedTime()
+	hc.ScanStartTime = secConfig.GlobalInfo.ApplicationInfo.GetScanStartTime()
+
 	if secConfig.SecureWS != nil {
 		hc.IastReplayRequest.PendingControlCommands = secConfig.SecureWS.PendingFuzzTask()
 	}

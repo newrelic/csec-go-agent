@@ -117,6 +117,9 @@ type healthcheck struct {
 	WebSocketConnectionStats secConfig.WebSocketConnectionStats `json:"webSocketConnectionStats"`
 	IastReplayRequest        secConfig.IastReplayRequest        `json:"iastReplayRequest"`
 	EventStats               secConfig.EventStats               `json:"eventStats"`
+	ProcStartTime            int64                              `json:"procStartTime"`      // check
+	TrafficStartedTime       int64                              `json:"trafficStartedTime"` // first event
+	ScanStartTime            int64                              `json:"scanStartTime"`      // first CC
 }
 
 type ThreadPoolStats struct {

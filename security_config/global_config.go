@@ -138,10 +138,16 @@ func (info *Info_struct) SetBodyLimit(bodyLimit int) {
 }
 
 func (info *Info_struct) ScanControllersIastLoadInterval() int {
-	return info.security.ScanControllers.IastLoadInterval
+	return info.security.ScanControllers.IastScanRequestrateLimit
 }
 func (info *Info_struct) SetscanControllersIastLoadInterval(iastLoadInterval int) {
-	info.security.ScanControllers.IastLoadInterval = iastLoadInterval
+	info.security.ScanControllers.IastScanRequestrateLimit = iastLoadInterval
+}
+func (info *Info_struct) ScanInstanceCount() int {
+	return info.security.ScanControllers.ScanInstanceCount
+}
+func (info *Info_struct) SetScanInstanceCount(scanInstanceCount int) {
+	info.security.ScanControllers.ScanInstanceCount = scanInstanceCount
 }
 
 func (info *Info_struct) GetApiData() []any {
@@ -339,9 +345,13 @@ type runningApplicationInfo struct {
 	cmdline          []string
 	ports            []int
 	ServerIp         string
-	starttimestr     time.Time
-	binaryPath       string
-	serverName       []string
+
+	starttimestr       time.Time
+	trafficStartedTime time.Time
+	scanStartTime      time.Time
+
+	binaryPath string
+	serverName []string
 }
 
 func (r *runningApplicationInfo) GetAppName() string {
@@ -452,6 +462,31 @@ func (r *runningApplicationInfo) SetStarttimestr(value time.Time) {
 	r.starttimestr = value
 }
 
+func (r *runningApplicationInfo) GetTrafficStartedTime() int64 {
+
+	if r.trafficStartedTime.IsZero() {
+		return 0
+	} else {
+		return r.trafficStartedTime.Unix() * 1000
+	}
+}
+
+func (r *runningApplicationInfo) SetTrafficStartedTime(value time.Time) {
+	r.trafficStartedTime = value
+}
+
+func (r *runningApplicationInfo) GetScanStartTime() int64 {
+
+	if r.trafficStartedTime.IsZero() {
+		return 0
+	} else {
+		return r.scanStartTime.Unix() * 1000
+	}
+}
+
+func (r *runningApplicationInfo) SetScanStartTime(value time.Time) {
+	r.scanStartTime = value
+}
 func (r *runningApplicationInfo) GetBinaryPath() string {
 	return r.binaryPath
 }

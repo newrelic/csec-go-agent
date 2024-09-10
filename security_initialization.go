@@ -40,6 +40,9 @@ func checkDefaultConfig() {
 	if secConfig.GlobalInfo.ScanControllersIastLoadInterval() > 3600 {
 		secConfig.GlobalInfo.SetscanControllersIastLoadInterval(3600)
 	}
+	if secConfig.GlobalInfo.ScanInstanceCount() == 0 {
+		secConfig.GlobalInfo.SetScanInstanceCount(-1)
+	}
 
 }
 
