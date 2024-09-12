@@ -7,48 +7,26 @@ import (
 	secConfig "github.com/newrelic/csec-go-agent/security_config"
 )
 
-func accountIdMatcher(accountIds, values []string) bool {
-
-	for _, aid := range accountIds {
-		for _, value := range values {
-			if secUtils.CaseInsensitiveEquals(aid, value) {
-				return true
-			}
-		}
-	}
-	return false
-
-}
+var CONTENT_TYPE_TEXT_JSON = "text/json"
+var CONTENT_TYPE_TEXT_XML = "text/xml"
+var CONTENT_TYPE_APPLICATION_JSON = "application/json"
+var CONTENT_TYPE_APPLICATION_XML = "application/xml"
+var CONTENT_TYPE_APPLICATION_X_WWW_FORM_URLENCODED = "application/x-www-form-urlencoded"
 
 func headerRestrictionCheck(requestHeader map[string][]string) bool {
 	restrictedHeaders := secConfig.GlobalInfo.RestrictionCriteriaHeader()
 	if len(restrictedHeaders) <= 0 {
 		return true
 	}
-
-	for _, restrictedHeader := range restrictedHeaders {
-
-		value, ok := requestHeader[restrictedHeader] //check to verify the presence of restricted header in request headers
-		if ok {
-			accountIdMatcher(secConfig.GlobalInfo.RestrictionCriteriaAccountIDValue(), value)
-		}
-	}
-	return false
+	return matcher(secConfig.GlobalInfo.RestrictionCriteriaHeader(), requestHeader)
 }
 
 func queryRestrictionCheck(query map[string][]string) bool {
-	queryKey := secConfig.GlobalInfo.RestrictionCriteriaQuery()
 	if len(query) <= 0 {
 		return true
 	}
-	for k := range queryKey {
-		key := queryKey[k]
-		value, ok := query[key]
-		if ok {
-			accountIdMatcher(secConfig.GlobalInfo.RestrictionCriteriaAccountIDValue(), value)
-		}
-	}
-	return false
+	return matcher(secConfig.GlobalInfo.RestrictionCriteriaQuery(), query)
+
 }
 
 func pathRestrictionCheck(u string) bool {
@@ -66,6 +44,53 @@ func pathRestrictionCheck(u string) bool {
 
 }
 
-func pathRestrictionBody(body string) bool {
+func bodyRestrictionCheck(body, contentType string) bool {
+	switch strings.ToLower(contentType) {
+	case CONTENT_TYPE_TEXT_JSON:
+	case CONTENT_TYPE_APPLICATION_JSON:
+
+		key_value, err := secUtils.JsonToMapParser(body)
+		if err == nil {
+			return matcher(secConfig.GlobalInfo.RestrictionCriteriaBody(), key_value)
+		}
+		break
+	case CONTENT_TYPE_APPLICATION_XML:
+	case CONTENT_TYPE_TEXT_XML:
+
+		key_value, err := secUtils.XmlToMapParser([]byte(body))
+		if err == nil {
+			return matcher(secConfig.GlobalInfo.RestrictionCriteriaBody(), key_value)
+		}
+		break
+	case CONTENT_TYPE_APPLICATION_X_WWW_FORM_URLENCODED:
+		break
+	}
+
 	return true
+
+}
+
+func matcher(attr []string, query map[string][]string) bool {
+	if len(query) <= 0 {
+		return true
+	}
+	for _, key := range attr {
+		value, ok := query[key]
+		if ok {
+			accountIdMatcher(secConfig.GlobalInfo.RestrictionCriteriaAccountIDValue(), value)
+		}
+	}
+	return false
+}
+
+func accountIdMatcher(accountIds, values []string) bool {
+
+	for _, aid := range accountIds {
+		for _, value := range values {
+			if secUtils.CaseInsensitiveEquals(aid, value) {
+				return true
+			}
+		}
+	}
+	return false
 }

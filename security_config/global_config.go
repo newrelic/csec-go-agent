@@ -125,6 +125,12 @@ func (info *Info_struct) RestrictionCriteriaQuery() []string {
 	return info.security.RestrictionCriteria.MappingParameters.Query
 }
 
+func (info *Info_struct) RestrictionCriteriaBody() []string {
+	info.securityMutex.Lock()
+	defer info.securityMutex.Unlock()
+	return info.security.RestrictionCriteria.MappingParameters.Body
+}
+
 func (info *Info_struct) SecurityHomePath() string {
 	return info.security.SecurityHomePath
 }
