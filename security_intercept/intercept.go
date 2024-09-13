@@ -456,6 +456,10 @@ func traceResponseOperations() {
 }
 
 func checkSecureCookies(responseHeader http.Header) {
+
+	if secConfig.GlobalInfo.IsInsecureSettingsEnabled() {
+		return
+	}
 	if responseHeader != nil {
 		logger.Debugln("Verifying SecureCookies, response header", responseHeader)
 		tmpRes := http.Response{Header: responseHeader}
@@ -478,7 +482,7 @@ func checkSecureCookies(responseHeader http.Header) {
 }
 
 func xssCheck(r *secUtils.Info_req) {
-	if IsRxssEnabled() && r.ResponseBody != "" {
+	if !IsRxssEnabled() && r.ResponseBody != "" {
 
 		contentType := r.ResponseContentType
 		if !secUtils.IsContentTypeSupported(contentType) {
@@ -891,7 +895,7 @@ func associateApplicationPort(data ...interface{}) {
 }
 
 func mongoHandler(data ...interface{}) *secUtils.EventTracker {
-	if !isAgentInitialized() {
+	if !isAgentInitialized() || secConfig.GlobalInfo.IsNosqlInjectionEnabled() {
 		return nil
 	}
 	if len(data) < 2 {
