@@ -25,13 +25,14 @@ type Security struct {
 	Request          struct {
 		BodyLimit int `yaml:"body_limit"`
 	} `yaml:"request"`
-	SkipIastScan struct {
-		API        []string `yaml:"api"`
-		Parameters struct {
+
+	ExcludeFromIastScan struct {
+		API                   []string `yaml:"api"`
+		HttpRequestParameters struct {
 			Header []string `yaml:"header" json:"header"`
 			Query  []string `yaml:"query" json:"query"`
 			Body   []string `yaml:"body" json:"body"`
-		} `yaml:"parameters"`
+		} `yaml:"http_request_parameters"`
 		IastDetectionCategory struct {
 			InsecureSettings    bool `yaml:"insecure_settings"`
 			InvalidFileAccess   bool `yaml:"invalid_file_access"`
@@ -44,7 +45,7 @@ type Security struct {
 			Ssrf                bool `yaml:"ssrf"`
 			Rxss                bool `yaml:"rxss"`
 		} `yaml:"iast_detection_category"`
-	} `yaml:"skip_iast_scan"`
+	} `yaml:"exclude_from_iast_scan"`
 	ScanSchedule struct {
 		Delay                     int    `yaml:"delay"`
 		Duration                  int    `yaml:"duration"`
