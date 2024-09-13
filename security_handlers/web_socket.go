@@ -360,6 +360,7 @@ func readThread(ws *websocket) {
 
 // Utils
 func getConnectionHeader() http.Header {
+
 	connectionHeader := http.Header{
 		"NR-CSEC-CONNECTION-TYPE":         []string{"LANGUAGE_COLLECTOR"},
 		"NR-LICENSE-KEY":                  []string{secConfig.GlobalInfo.ApplicationInfo.GetApiAccessorToken()},
@@ -374,7 +375,9 @@ func getConnectionHeader() http.Header {
 		"NR-CSEC-IAST-DATA-TRANSFER-MODE": []string{"PULL"},
 		"NR-CSEC-ENTITY-GUID":             []string{secConfig.GlobalInfo.MetaData.GetEntityGuid()},
 		"NR-CSEC-ENTITY-NAME":             []string{secConfig.GlobalInfo.MetaData.GetEntityName()},
+		"NR-CSEC-IGNORED-VUL-CATEGORIES":  skipDetectionheader(),
 	}
+
 	printConnectionHeader(connectionHeader)
 	return connectionHeader
 }
@@ -416,4 +419,41 @@ func (ws *websocket) flushWsController() {
 	for ws.writecontroller != nil && len(ws.writecontroller) > 0 {
 		<-ws.writecontroller
 	}
+}
+
+func skipDetectionheader() []string {
+	var category_map []string
+
+	if !secConfig.GlobalInfo.IsInsecureSettingsEnabled() {
+		category_map = append(category_map, "CRYPTO", "HASH", "RANDOM", "SECURE_COOKIE", "TRUSTBOUNDARY")
+	}
+	if !secConfig.GlobalInfo.IsInvalidFileAccessEnabled() {
+		category_map = append(category_map, "FILE_OPERATION")
+	}
+	if !secConfig.GlobalInfo.IsSQLInjectionEnabled() {
+		category_map = append(category_map, "SQL_DB_COMMAND")
+	}
+	if !secConfig.GlobalInfo.IsNosqlInjectionEnabled() {
+		category_map = append(category_map, "NOSQL_DB_COMMAND")
+	}
+	if !secConfig.GlobalInfo.IsLdapInjectionEnabled() {
+		category_map = append(category_map, "LDAP")
+	}
+	if !secConfig.GlobalInfo.IsJavascriptInjectionEnabled() {
+		category_map = append(category_map, "JAVASCRIPT_INJECTION")
+	}
+	if !secConfig.GlobalInfo.IsCommandInjectionEnabled() {
+		category_map = append(category_map, "SYSTEM_COMMAND")
+	}
+	if !secConfig.GlobalInfo.IsXpathInjectionEnabled() {
+		category_map = append(category_map, "XPATH")
+	}
+	if !secConfig.GlobalInfo.IsSsrfEnabled() {
+		category_map = append(category_map, "HTTP_REQUEST")
+	}
+	if !secConfig.GlobalInfo.IsRxssEnabled() {
+		category_map = append(category_map, "REFLECTED_XSS")
+	}
+
+	return category_map
 }
