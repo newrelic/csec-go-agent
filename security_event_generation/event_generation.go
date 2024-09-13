@@ -327,6 +327,16 @@ func SendVulnerableEvent(req *secUtils.Info_req, category, eventCategory string,
 		}
 	}
 
+	if secConfig.GlobalInfo.SecurityMode() == "IAST_RESTRICTED" {
+
+		if tmp_event.HTTPRequest.DataTruncated {
+			return nil
+		}
+		if !secConfig.BodyRestrictionCheck(tmp_event.HTTPRequest.Body, tmp_event.HTTPRequest.ContentType) {
+			return nil
+		}
+	}
+
 	requestType := "raspEvent"
 
 	requestIdentifier := req.RequestIdentifier
