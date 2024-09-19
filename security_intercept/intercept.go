@@ -744,7 +744,7 @@ func inboundcallHandlerv1(request interface{}, csecAttributes map[string]any) {
 }
 
 func outboundcallHandler(req interface{}) *secUtils.EventTracker {
-	if req == nil || !isAgentInitialized() {
+	if req == nil || !isAgentInitialized() || secConfig.GlobalInfo.IsSsrfEnabled() {
 		return nil
 	}
 	r, ok := req.(*http.Request)
