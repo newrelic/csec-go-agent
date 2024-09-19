@@ -428,7 +428,7 @@ func skipDetectionheader() []string {
 		category_map = append(category_map, "CRYPTO", "HASH", "RANDOM", "SECURE_COOKIE", "TRUSTBOUNDARY")
 	}
 	if !secConfig.GlobalInfo.IsInvalidFileAccessEnabled() {
-		category_map = append(category_map, "FILE_OPERATION")
+		category_map = append(category_map, "FILE_OPERATION", "FILE_INTEGRITY")
 	}
 	if !secConfig.GlobalInfo.IsSQLInjectionEnabled() {
 		category_map = append(category_map, "SQL_DB_COMMAND")
