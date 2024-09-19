@@ -105,53 +105,53 @@ func (info *Info_struct) SetSecurity(security Security) {
 func (info *Info_struct) IsInsecureSettingsEnabled() bool {
 	info.securityMutex.Lock()
 	defer info.securityMutex.Unlock()
-	return !info.security.ExcludeFromIastScan.IastDetectionCategory.InsecureSettings
+	return info.security.ExcludeFromIastScan.IastDetectionCategory.InsecureSettings
 }
 func (info *Info_struct) IsInvalidFileAccessEnabled() bool {
 	info.securityMutex.Lock()
 	defer info.securityMutex.Unlock()
-	return !info.security.ExcludeFromIastScan.IastDetectionCategory.InvalidFileAccess
+	return info.security.ExcludeFromIastScan.IastDetectionCategory.InvalidFileAccess
 }
 
 func (info *Info_struct) IsSQLInjectionEnabled() bool {
 	info.securityMutex.Lock()
 	defer info.securityMutex.Unlock()
-	return !info.security.ExcludeFromIastScan.IastDetectionCategory.SQLInjection
+	return info.security.ExcludeFromIastScan.IastDetectionCategory.SQLInjection
 }
 func (info *Info_struct) IsNosqlInjectionEnabled() bool {
 	info.securityMutex.Lock()
 	defer info.securityMutex.Unlock()
-	return !info.security.ExcludeFromIastScan.IastDetectionCategory.NosqlInjection
+	return info.security.ExcludeFromIastScan.IastDetectionCategory.NosqlInjection
 }
 func (info *Info_struct) IsLdapInjectionEnabled() bool {
 	info.securityMutex.Lock()
 	defer info.securityMutex.Unlock()
-	return !info.security.ExcludeFromIastScan.IastDetectionCategory.LdapInjection
+	return info.security.ExcludeFromIastScan.IastDetectionCategory.LdapInjection
 }
 func (info *Info_struct) IsJavascriptInjectionEnabled() bool {
 	info.securityMutex.Lock()
 	defer info.securityMutex.Unlock()
-	return !info.security.ExcludeFromIastScan.IastDetectionCategory.JavascriptInjection
+	return info.security.ExcludeFromIastScan.IastDetectionCategory.JavascriptInjection
 }
 func (info *Info_struct) IsCommandInjectionEnabled() bool {
 	info.securityMutex.Lock()
 	defer info.securityMutex.Unlock()
-	return !info.security.ExcludeFromIastScan.IastDetectionCategory.CommandInjection
+	return info.security.ExcludeFromIastScan.IastDetectionCategory.CommandInjection
 }
 func (info *Info_struct) IsXpathInjectionEnabled() bool {
 	info.securityMutex.Lock()
 	defer info.securityMutex.Unlock()
-	return !info.security.ExcludeFromIastScan.IastDetectionCategory.XpathInjection
+	return info.security.ExcludeFromIastScan.IastDetectionCategory.XpathInjection
 }
 func (info *Info_struct) IsSsrfEnabled() bool {
 	info.securityMutex.Lock()
 	defer info.securityMutex.Unlock()
-	return !info.security.ExcludeFromIastScan.IastDetectionCategory.Ssrf
+	return info.security.ExcludeFromIastScan.IastDetectionCategory.Ssrf
 }
 func (info *Info_struct) IsRxssEnabled() bool {
 	info.securityMutex.Lock()
 	defer info.securityMutex.Unlock()
-	return !info.security.ExcludeFromIastScan.IastDetectionCategory.Rxss
+	return info.security.ExcludeFromIastScan.IastDetectionCategory.Rxss
 }
 
 func (info *Info_struct) SkipIastScanParameters() interface{} {
