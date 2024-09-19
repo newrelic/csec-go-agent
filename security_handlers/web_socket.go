@@ -424,34 +424,34 @@ func (ws *websocket) flushWsController() {
 func skipDetectionheader() []string {
 	var category_map []string
 
-	if !secConfig.GlobalInfo.IsInsecureSettingsEnabled() {
+	if secConfig.GlobalInfo.IsInsecureSettingsEnabled() {
 		category_map = append(category_map, "CRYPTO", "HASH", "RANDOM", "SECURE_COOKIE", "TRUSTBOUNDARY")
 	}
-	if !secConfig.GlobalInfo.IsInvalidFileAccessEnabled() {
+	if secConfig.GlobalInfo.IsInvalidFileAccessEnabled() {
 		category_map = append(category_map, "FILE_OPERATION", "FILE_INTEGRITY")
 	}
-	if !secConfig.GlobalInfo.IsSQLInjectionEnabled() {
+	if secConfig.GlobalInfo.IsSQLInjectionEnabled() {
 		category_map = append(category_map, "SQL_DB_COMMAND")
 	}
-	if !secConfig.GlobalInfo.IsNosqlInjectionEnabled() {
+	if secConfig.GlobalInfo.IsNosqlInjectionEnabled() {
 		category_map = append(category_map, "NOSQL_DB_COMMAND")
 	}
-	if !secConfig.GlobalInfo.IsLdapInjectionEnabled() {
+	if secConfig.GlobalInfo.IsLdapInjectionEnabled() {
 		category_map = append(category_map, "LDAP")
 	}
-	if !secConfig.GlobalInfo.IsJavascriptInjectionEnabled() {
+	if secConfig.GlobalInfo.IsJavascriptInjectionEnabled() {
 		category_map = append(category_map, "JAVASCRIPT_INJECTION")
 	}
-	if !secConfig.GlobalInfo.IsCommandInjectionEnabled() {
+	if secConfig.GlobalInfo.IsCommandInjectionEnabled() {
 		category_map = append(category_map, "SYSTEM_COMMAND")
 	}
-	if !secConfig.GlobalInfo.IsXpathInjectionEnabled() {
+	if secConfig.GlobalInfo.IsXpathInjectionEnabled() {
 		category_map = append(category_map, "XPATH")
 	}
-	if !secConfig.GlobalInfo.IsSsrfEnabled() {
+	if secConfig.GlobalInfo.IsSsrfEnabled() {
 		category_map = append(category_map, "HTTP_REQUEST")
 	}
-	if !secConfig.GlobalInfo.IsRxssEnabled() {
+	if secConfig.GlobalInfo.IsRxssEnabled() {
 		category_map = append(category_map, "REFLECTED_XSS")
 	}
 
