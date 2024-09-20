@@ -37,6 +37,15 @@ type Info_struct struct {
 	IastReplayRequest        IastReplayRequest
 	EventStats               EventStats
 	DroppedEvent             DroppedEvent
+	dealyAgentTill           time.Time
+}
+
+func (info *Info_struct) GetDealyAgentTill() time.Time {
+	return info.dealyAgentTill
+}
+
+func (info *Info_struct) SetDealyAgentTill(t int) {
+	info.dealyAgentTill = time.Now().Add(time.Duration(t) * time.Minute)
 }
 
 func (info *Info_struct) GetCurrentPolicy() Policy {

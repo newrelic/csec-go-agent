@@ -93,6 +93,7 @@ func initRestRequestThreadPool() {
 }
 
 func InitFuzzScheduler() {
+	dealyAgentTill := secConfig.GlobalInfo.GetDealyAgentTill()
 	logger.Debugln("dealyAgentTill SleepTime", dealyAgentTill)
 	time.Sleep(time.Until(dealyAgentTill))
 	if !secConfig.GlobalInfo.IsIASTEnable() {
