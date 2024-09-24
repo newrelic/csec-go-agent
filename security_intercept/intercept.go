@@ -86,7 +86,7 @@ func HookWrapRawNamed(from string, to, toc interface{}) (string, error) {
  */
 
 func TraceFileOperation(fname string, flag int, isFileOpen bool) *secUtils.EventTracker {
-	if secConfig.GlobalInfo.IsInvalidFileAccessEnabled() {
+	if secConfig.GlobalInfo.IsInvalidFileAccessDisabled() {
 		return nil
 	}
 	securityHomePath := secConfig.GlobalInfo.SecurityHomePath()
@@ -121,7 +121,7 @@ func TraceFileOperation(fname string, flag int, isFileOpen bool) *secUtils.Event
  */
 
 func TraceSystemCommand(command string) *secUtils.EventTracker {
-	if !isAgentInitialized() || command == "" || secConfig.GlobalInfo.IsCommandInjectionEnabled() {
+	if !isAgentInitialized() || command == "" || secConfig.GlobalInfo.IsCommandInjectionDisabled() {
 		return nil
 	}
 	var arg []string
@@ -141,7 +141,7 @@ func TraceMongoHooks(e error) {
 }
 
 func TraceMongoOperation(arguments []byte, queryType string) *secUtils.EventTracker {
-	if !isAgentInitialized() || secConfig.GlobalInfo.IsNosqlInjectionEnabled() {
+	if !isAgentInitialized() || secConfig.GlobalInfo.IsNosqlInjectionDisabled() {
 		return nil
 	}
 	if len(arguments) == 0 {
@@ -177,7 +177,7 @@ func TraceSqlHooks(e error) {
 }
 
 func TraceSqlOperation(query string, args ...interface{}) *secUtils.EventTracker {
-	if !isAgentInitialized() || secConfig.GlobalInfo.IsSQLInjectionEnabled() {
+	if !isAgentInitialized() || secConfig.GlobalInfo.IsSQLInjectionDisabled() {
 		return nil
 	}
 	if query == "" {
@@ -199,7 +199,7 @@ func TraceSqlOperation(query string, args ...interface{}) *secUtils.EventTracker
 }
 
 func TracePrepareStatement(q, p string) {
-	if !isAgentInitialized() || secConfig.GlobalInfo.IsSQLInjectionEnabled() {
+	if !isAgentInitialized() || secConfig.GlobalInfo.IsSQLInjectionDisabled() {
 		return
 	}
 	if q == "" {
@@ -209,7 +209,7 @@ func TracePrepareStatement(q, p string) {
 }
 
 func TraceExecPrepareStatement(q_address string, args ...interface{}) *secUtils.EventTracker {
-	if !isAgentInitialized() || secConfig.GlobalInfo.IsSQLInjectionEnabled() {
+	if !isAgentInitialized() || secConfig.GlobalInfo.IsSQLInjectionDisabled() {
 		return nil
 	}
 	parameters := map[int]interface{}{}
@@ -226,7 +226,7 @@ func TraceExecPrepareStatement(q_address string, args ...interface{}) *secUtils.
  */
 
 func TraceXpathOperation(a string) *secUtils.EventTracker {
-	if !isAgentInitialized() || a == "" || secConfig.GlobalInfo.IsXpathInjectionEnabled() {
+	if !isAgentInitialized() || a == "" || secConfig.GlobalInfo.IsXpathInjectionDisabled() {
 		return nil
 	}
 	var arg []string
@@ -239,7 +239,7 @@ func TraceXpathOperation(a string) *secUtils.EventTracker {
  */
 
 func TraceLdapOperation(a map[string]string) *secUtils.EventTracker {
-	if !isAgentInitialized() || secConfig.GlobalInfo.IsLdapInjectionEnabled() {
+	if !isAgentInitialized() || secConfig.GlobalInfo.IsLdapInjectionDisabled() {
 		return nil
 	}
 	var arg []interface{}
@@ -252,7 +252,7 @@ func TraceLdapOperation(a map[string]string) *secUtils.EventTracker {
  */
 
 func TraceJsOperation(a string) *secUtils.EventTracker {
-	if !isAgentInitialized() || a == "" || secConfig.GlobalInfo.IsJavascriptInjectionEnabled() {
+	if !isAgentInitialized() || a == "" || secConfig.GlobalInfo.IsJavascriptInjectionDisabled() {
 		return nil
 	}
 	var arg []string
@@ -457,7 +457,7 @@ func traceResponseOperations() {
 
 func checkSecureCookies(responseHeader http.Header) {
 
-	if secConfig.GlobalInfo.IsInsecureSettingsEnabled() {
+	if secConfig.GlobalInfo.IsInsecureSettingsDisabled() {
 		return
 	}
 	if responseHeader != nil {
@@ -482,7 +482,7 @@ func checkSecureCookies(responseHeader http.Header) {
 }
 
 func xssCheck(r *secUtils.Info_req) {
-	if !IsRxssEnabled() && r.ResponseBody != "" {
+	if !IsRxssDisabled() && r.ResponseBody != "" {
 
 		contentType := r.ResponseContentType
 		if !secUtils.IsContentTypeSupported(contentType) {
@@ -744,7 +744,7 @@ func inboundcallHandlerv1(request interface{}, csecAttributes map[string]any) {
 }
 
 func outboundcallHandler(req interface{}) *secUtils.EventTracker {
-	if req == nil || !isAgentInitialized() || secConfig.GlobalInfo.IsSsrfEnabled() {
+	if req == nil || !isAgentInitialized() || secConfig.GlobalInfo.IsSsrfDisabled() {
 		return nil
 	}
 	r, ok := req.(*http.Request)
@@ -895,7 +895,7 @@ func associateApplicationPort(data ...interface{}) {
 }
 
 func mongoHandler(data ...interface{}) *secUtils.EventTracker {
-	if !isAgentInitialized() || secConfig.GlobalInfo.IsNosqlInjectionEnabled() {
+	if !isAgentInitialized() || secConfig.GlobalInfo.IsNosqlInjectionDisabled() {
 		return nil
 	}
 	if len(data) < 2 {

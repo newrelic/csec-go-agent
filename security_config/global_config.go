@@ -111,53 +111,53 @@ func (info *Info_struct) SetSecurity(security Security) {
 	info.security = security
 }
 
-func (info *Info_struct) IsInsecureSettingsEnabled() bool {
+func (info *Info_struct) IsInsecureSettingsDisabled() bool {
 	info.securityMutex.Lock()
 	defer info.securityMutex.Unlock()
 	return info.security.ExcludeFromIastScan.IastDetectionCategory.InsecureSettings
 }
-func (info *Info_struct) IsInvalidFileAccessEnabled() bool {
+func (info *Info_struct) IsInvalidFileAccessDisabled() bool {
 	info.securityMutex.Lock()
 	defer info.securityMutex.Unlock()
 	return info.security.ExcludeFromIastScan.IastDetectionCategory.InvalidFileAccess
 }
 
-func (info *Info_struct) IsSQLInjectionEnabled() bool {
+func (info *Info_struct) IsSQLInjectionDisabled() bool {
 	info.securityMutex.Lock()
 	defer info.securityMutex.Unlock()
 	return info.security.ExcludeFromIastScan.IastDetectionCategory.SQLInjection
 }
-func (info *Info_struct) IsNosqlInjectionEnabled() bool {
+func (info *Info_struct) IsNosqlInjectionDisabled() bool {
 	info.securityMutex.Lock()
 	defer info.securityMutex.Unlock()
 	return info.security.ExcludeFromIastScan.IastDetectionCategory.NosqlInjection
 }
-func (info *Info_struct) IsLdapInjectionEnabled() bool {
+func (info *Info_struct) IsLdapInjectionDisabled() bool {
 	info.securityMutex.Lock()
 	defer info.securityMutex.Unlock()
 	return info.security.ExcludeFromIastScan.IastDetectionCategory.LdapInjection
 }
-func (info *Info_struct) IsJavascriptInjectionEnabled() bool {
+func (info *Info_struct) IsJavascriptInjectionDisabled() bool {
 	info.securityMutex.Lock()
 	defer info.securityMutex.Unlock()
 	return info.security.ExcludeFromIastScan.IastDetectionCategory.JavascriptInjection
 }
-func (info *Info_struct) IsCommandInjectionEnabled() bool {
+func (info *Info_struct) IsCommandInjectionDisabled() bool {
 	info.securityMutex.Lock()
 	defer info.securityMutex.Unlock()
 	return info.security.ExcludeFromIastScan.IastDetectionCategory.CommandInjection
 }
-func (info *Info_struct) IsXpathInjectionEnabled() bool {
+func (info *Info_struct) IsXpathInjectionDisabled() bool {
 	info.securityMutex.Lock()
 	defer info.securityMutex.Unlock()
 	return info.security.ExcludeFromIastScan.IastDetectionCategory.XpathInjection
 }
-func (info *Info_struct) IsSsrfEnabled() bool {
+func (info *Info_struct) IsSsrfDisabled() bool {
 	info.securityMutex.Lock()
 	defer info.securityMutex.Unlock()
 	return info.security.ExcludeFromIastScan.IastDetectionCategory.Ssrf
 }
-func (info *Info_struct) IsRxssEnabled() bool {
+func (info *Info_struct) IsRxssDisabled() bool {
 	info.securityMutex.Lock()
 	defer info.securityMutex.Unlock()
 	return info.security.ExcludeFromIastScan.IastDetectionCategory.Rxss
