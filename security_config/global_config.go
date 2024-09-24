@@ -135,7 +135,7 @@ func (info *Info_struct) BodyLimit() int {
 
 func (info *Info_struct) SetBodyLimit(bodyLimit int) {
 	info.security.Request.BodyLimit = bodyLimit
-	return
+
 }
 
 func (info *Info_struct) GetApiData() []any {
@@ -321,21 +321,23 @@ type EnvironmentInfo struct {
 
 type runningApplicationInfo struct {
 	sync.Mutex
-	appName          string
-	apiAccessorToken string
-	protectedServer  string
-	appUUID          string
-	sha256           string
-	size             string
-	contextPath      string
-	pid              string
-	Cmd              string
-	cmdline          []string
-	ports            []int
-	ServerIp         string
-	starttimestr     time.Time
-	binaryPath       string
-	serverName       []string
+	appName            string
+	apiAccessorToken   string
+	protectedServer    string
+	appUUID            string
+	sha256             string
+	size               string
+	contextPath        string
+	pid                string
+	Cmd                string
+	cmdline            []string
+	ports              []int
+	ServerIp           string
+	starttimestr       time.Time
+	trafficStartedTime time.Time
+	scanStartTime      time.Time
+	binaryPath         string
+	serverName         []string
 }
 
 func (r *runningApplicationInfo) GetAppName() string {
@@ -464,6 +466,32 @@ func (r *runningApplicationInfo) SetServerName(value string) {
 	r.Lock()
 	defer r.Unlock()
 	r.serverName = append(r.serverName, value)
+}
+
+func (r *runningApplicationInfo) GetTrafficStartedTime() int64 {
+
+	if r.trafficStartedTime.IsZero() {
+		return 0
+	} else {
+		return r.trafficStartedTime.Unix() * 1000
+	}
+}
+
+func (r *runningApplicationInfo) SetTrafficStartedTime(value time.Time) {
+	r.trafficStartedTime = value
+}
+
+func (r *runningApplicationInfo) GetScanStartTime() int64 {
+
+	if r.trafficStartedTime.IsZero() {
+		return 0
+	} else {
+		return r.scanStartTime.Unix() * 1000
+	}
+}
+
+func (r *runningApplicationInfo) SetScanStartTime(value time.Time) {
+	r.scanStartTime = value
 }
 
 type Instrumentation struct {

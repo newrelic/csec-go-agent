@@ -27,10 +27,17 @@ type FuzzTask struct {
 	requestID           string
 }
 
+var firstIastReplay = true
+
 func (fTask *FuzzTask) Run() {
 
 	if !secConfig.SecureWS.GetStatus() {
 		logger.Infoln("WS not connected drop FuzzTask ")
+	}
+
+	if firstIastReplay {
+		secConfig.GlobalInfo.ApplicationInfo.SetScanStartTime(time.Now())
+		firstIastReplay = false
 	}
 
 	if fTask.fuzzRequrestHandler.IsGRPC {
