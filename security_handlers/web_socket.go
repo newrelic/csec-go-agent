@@ -8,7 +8,6 @@ import (
 	"crypto/x509"
 	"errors"
 	"io"
-	"io/ioutil"
 	"math/rand"
 	"net/http"
 	"os"
@@ -24,8 +23,6 @@ import (
 )
 
 var logger = logging.GetLogger("wsclient")
-
-const validatorDefaultEndpoint = "wss://csec.nr-data.net"
 
 type eventStruct struct {
 	event     []byte
@@ -57,29 +54,22 @@ func (ws *websocket) clean() {
 	}
 }
 
-func (ws *websocket) write(s eventStruct) bool {
+func (ws *websocket) write(s eventStruct) error {
 	ws.Lock()
 	defer ws.Unlock()
 	if !ws.isWsConnected() {
-		return false
+		return errors.New("event discarded due to inactive WebSocket connection")
 	}
-	err := ws.conn.WriteMessage(gorillaWS.TextMessage, s.event)
-	if err != nil {
-		logger.Errorln("Failed to send event over websocket : ", err.Error())
-		increaseEventErrorCount(s.eventType)
-		return false
-	}
-	increaseEventEventSentCount(s.eventType)
-	logger.Debugln("Event sent event over websocket done")
-	return true
+	return ws.conn.WriteMessage(gorillaWS.TextMessage, s.event)
+
 }
 
 func (ws *websocket) read() ([]byte, error) {
-
 	if !ws.isWsConnected() {
-		return nil, errors.New("Failed to read CC over websocket ,ws is not connected")
+		return nil, errors.New("error reading control command: Inactive WebSocket connection")
 	}
 	_, message, err := ws.conn.ReadMessage()
+
 	if err != nil && err != io.EOF {
 		return message, err
 	}
@@ -88,64 +78,40 @@ func (ws *websocket) read() ([]byte, error) {
 
 func (ws *websocket) makeConnection() (bool, bool) {
 	if ws.isWsConnected() {
-		logger.Debugln("Websocket connection already initialized : Skip")
-		eventGeneration.SendApplicationInfo() // sending updated appinfo
+		logger.Debugln("webSocket connection already established, skipping new connection initialization")
 		return true, false
 	}
 	ws.Lock()
-	validatorEndpoint := ""
-	if validatorEndpoint = secConfig.GlobalInfo.ValidatorServiceUrl(); validatorEndpoint == "" {
-		validatorEndpoint = validatorDefaultEndpoint
-	}
-	connectionHeader := getConnectionHeader()
-	printConnectionHeader(connectionHeader)
 
 	var wsDialer = &gorillaWS.Dialer{
 		Proxy:            http.ProxyFromEnvironment,
 		HandshakeTimeout: 30 * time.Second,
+		TLSClientConfig:  createCaCert(),
 	}
-	caCertPool, err := x509.SystemCertPool()
-	if err != nil {
-		logger.Errorln(err)
-		ws.Unlock()
-		return false, false
-	}
-	caCert := []byte(secUtils.CaCert)
 
-	envCert := os.Getenv("NEW_RELIC_SECURITY_CA_BUNDLE_PATH")
-	if envCert != "" {
-		caCert, err = ioutil.ReadFile(envCert)
-		if err != nil {
-			logger.Errorln(err, "unsing default caCert")
-			caCert = []byte(secUtils.CaCert)
-		}
-	}
-	caCertPool.AppendCertsFromPEM(caCert)
-	wsDialer.TLSClientConfig = &tls.Config{RootCAs: caCertPool}
+	validatorEndpoint := secConfig.GlobalInfo.ValidatorServiceUrl()
+	conn, res, err := wsDialer.Dial(validatorEndpoint, getConnectionHeader())
 
-	conn, res, err := wsDialer.Dial(validatorEndpoint, connectionHeader)
 	if err != nil || conn == nil {
-		logging.PrintInitErrolog("Failed to connect Validator " + validatorEndpoint)
-		logger.Errorln("Failed to connect Validator  : ", err, validatorEndpoint)
+		logging.PrintInitErrolog("Error connecting to Validator service: Connection failed " + err.Error() + validatorEndpoint)
+		logger.Errorln("Error connecting to Validator service: Connection failed ", err.Error(), validatorEndpoint)
 		ws.conn = nil
 		ws.Unlock()
+		secConfig.GlobalInfo.WebSocketConnectionStats.IncreaseConnectionFailure()
 		if res != nil {
-			if body, _ := ioutil.ReadAll(res.Body); secUtils.CaseInsensitiveContains(string(body), "Invalid License Key!") {
+			if body, _ := io.ReadAll(res.Body); secUtils.CaseInsensitiveContains(string(body), "Invalid License Key!") {
 				logger.Debugln("Invalid License Key No need to reconnect")
 				return false, false
 			}
 		}
 		return false, true
 	} else {
-		logging.PrintInitlog("Connected to Prevent-Web service at : " + validatorEndpoint)
-		logger.Infoln("K.Reconnect init k.Conn successful", validatorEndpoint)
+		logger.Infoln("Security Agent is now ACTIVE for ", secConfig.GlobalInfo.ApplicationInfo.GetAppUUID())
+		logging.EndStage("4", "Web socket connection to SaaS validator established successfully at "+validatorEndpoint)
 		ws.conn = conn
 		ws.Unlock()
 
-		logger.Infoln("Security Agent is now ACTIVE for ", secConfig.GlobalInfo.ApplicationInfo.GetAppUUID())
-		logger.Infoln("!!! Websocket worker goroutine starting...")
-		logger.Infoln("Web socket connection to SaaS validator established successfully at", validatorEndpoint)
-		logging.EndStage("4", "Web socket connection to SaaS validator established successfully at "+validatorEndpoint)
+		logger.Infoln("Initializing WebSocket worker goroutine...")
 		ws.flushWsController()
 		go writeThread(ws)
 		go readThread(ws)
@@ -159,20 +125,19 @@ func (ws *websocket) reconnect() {
 		if ws.isWsConnected() {
 			break
 		}
-
 		sleeptimeForReconnect := time.Duration(rand.Intn(10)+5) * time.Second
-		logger.Infoln("sleeping before reconnecting", sleeptimeForReconnect)
+		logger.Infoln("Sleeping for", sleeptimeForReconnect, " before attempting to reconnect")
 		time.Sleep(sleeptimeForReconnect)
-		logger.Infoln("sleep end, retrying to connect with validator")
+		logger.Infoln("Sleep end, retrying connection with Validator service")
 
 		if ws.isWsConnected() {
 			break
 		}
 		ok, reconnect := ws.makeConnection()
 		if ok || !reconnect {
+			secConfig.GlobalInfo.WebSocketConnectionStats.IncreaseConnectionReconnected()
 			return
 		}
-
 	}
 }
 
@@ -189,9 +154,9 @@ func (ws *websocket) connect() bool {
 			return false
 		}
 		sleeptimeForReconnect := time.Duration(rand.Intn(10)+5) * time.Second
-		logger.Infoln("sleeping before reconnecting", sleeptimeForReconnect)
+		logger.Infoln("Sleeping for", sleeptimeForReconnect, " before attempting to reconnect")
 		time.Sleep(sleeptimeForReconnect)
-		logger.Infoln("sleep end, retrying to connect with validator")
+		logger.Infoln("Sleep end, retrying connection with Validator service")
 	}
 	return true
 }
@@ -218,12 +183,14 @@ func (ws *websocket) closeWs() {
 }
 
 func (ws *websocket) RegisterEvent(s []byte, eventID string, eventType string) {
-	increaseEventProcessed(eventType)
+
+	secConfig.GlobalInfo.EventStats.IncreaseEventSubmittedCount(eventType)
 	if !ws.isWsConnected() && eventType != "LogMessage" {
-		increaseEventDropCount(eventType)
+		secConfig.GlobalInfo.EventStats.IncreaseEventRejectedCount(eventType)
 		logger.Debugln("Drop event WS not connected or Reconnecting", len(ws.eventBuffer), cap(ws.eventBuffer))
 		return
 	}
+
 	select {
 	case ws.eventBuffer <- eventStruct{event: s, eventType: eventType}:
 		logger.Debugln("Added EVENT", len(ws.eventBuffer), " ", cap(ws.eventBuffer))
@@ -231,20 +198,28 @@ func (ws *websocket) RegisterEvent(s []byte, eventID string, eventType string) {
 		if eventID != "" {
 			FuzzHandler.RemoveCompletedRequestIds(eventID)
 		}
-		increaseEventDropCount(eventType)
+		secConfig.GlobalInfo.EventStats.IncreaseEventRejectedCount(eventType)
 		logger.Errorln("cring.Full : Unable to add event to cring ", len(ws.eventBuffer), cap(ws.eventBuffer))
 	}
 }
 
 func (ws *websocket) SendPriorityEvent(s []byte) {
+	secConfig.GlobalInfo.EventStats.IncreaseEventSubmittedCount("PriorityEvent")
 	if !ws.isWsConnected() {
+		secConfig.GlobalInfo.EventStats.IncreaseEventRejectedCount("PriorityEvent")
 		logger.Debugln("Drop priority event WS not connected or Reconnecting", len(ws.eventBuffer), cap(ws.eventBuffer))
 		return
 	}
 	if logger.IsDebug() {
 		logger.Debugln("priority event send", string(s))
 	}
-	ws.write(eventStruct{event: s, eventType: "PriorityEvent"})
+	err := ws.write(eventStruct{event: s, eventType: "PriorityEvent"})
+	if err != nil {
+		secConfig.GlobalInfo.EventStats.IncreaseEventErrorCount("PriorityEvent")
+		logger.Errorln("Failed to send event over websocket : ", err.Error())
+	} else {
+		secConfig.GlobalInfo.EventStats.IncreaseEventCompletedCount("PriorityEvent")
+	}
 }
 
 func (ws *websocket) GetStatus() bool {
@@ -277,14 +252,9 @@ func (ws *websocket) ReconnectAtWill() {
 		}
 	}
 	secConfig.GlobalInfo.SetSecurityEnabled(false)
-
-	// for ws.pendingEvent() > 0 {
-	// 	logger.Debugln("wait for event threadPool empty")
-	// 	time.Sleep(100 * time.Millisecond)
-	// }
+	secConfig.GlobalInfo.WebSocketConnectionStats.IncreaseReceivedReconnectAtWill()
 
 	//reset ws connection
-
 	ws.closeWs()
 	ws.reconnect()
 
@@ -312,11 +282,11 @@ func (ws *websocket) AddCompletedRequests(parentId, apiID string) {
 func (ws *websocket) PendingEvent() int {
 	return ws.pendingEvent()
 }
-func (ws *websocket) PendingFuzzTask() int {
+func (ws *websocket) PendingFuzzTask() uint64 {
 	if FuzzHandler.threadPool == nil {
 		return 0
 	}
-	return FuzzHandler.threadPool.PendingTask()
+	return uint64(FuzzHandler.threadPool.PendingTask())
 }
 
 func InitializeWsConnecton() {
@@ -333,29 +303,37 @@ func InitializeWsConnecton() {
 
 // Read,Write Threads
 func writeThread(ws *websocket) {
-	logger.Info("Start ws write Thread")
+	logger.Info("WebSocket write thread started")
 	ws.isWriteThreadRunning = true
 	defer func() {
 		ws.isWriteThreadRunning = false
-		logger.Info("Close ws write Thread")
+		logger.Info("WebSocket write thread stopped")
 	}()
 	for {
 		select {
 		case <-ws.writecontroller:
 			return
 		case event := <-ws.eventBuffer:
-			logger.Debugln("send event", len(ws.eventBuffer), " ", cap(ws.eventBuffer))
-			ws.write(event)
+			err := ws.write(event)
+			if err != nil {
+				logger.Errorln("Failed to send event over websocket : ", err.Error())
+				secConfig.GlobalInfo.EventStats.IncreaseEventErrorCount(event.eventType)
+				secConfig.GlobalInfo.WebSocketConnectionStats.IncreaseConnectionFailure()
+			} else {
+				logger.Debugln("Event sent event over websocket done")
+				secConfig.GlobalInfo.WebSocketConnectionStats.IncreaseMessagesSent()
+				secConfig.GlobalInfo.EventStats.IncreaseEventCompletedCount(event.eventType)
+			}
 		}
 	}
 }
 
 func readThread(ws *websocket) {
-	logger.Info("Start ws read Thread")
+	logger.Info("WebSocket read thread started")
 	ws.isReadThreadRunning = true
 	defer func() {
 		ws.isReadThreadRunning = false
-		logger.Info("Close ws read Thread")
+		logger.Info("WebSocket read thread stopped")
 	}()
 	for {
 		buf, err := ws.read()
@@ -371,6 +349,7 @@ func readThread(ws *websocket) {
 			}
 
 		}
+		secConfig.GlobalInfo.WebSocketConnectionStats.IncreaseMessagesReceived()
 		err, _ = parseControlCommand(buf)
 		if err != nil {
 			eventGeneration.SendLogMessage("Unable to unmarshall control command"+err.Error(), "security_handlers", "SEVERE")
@@ -381,7 +360,7 @@ func readThread(ws *websocket) {
 
 // Utils
 func getConnectionHeader() http.Header {
-	return http.Header{
+	connectionHeader := http.Header{
 		"NR-CSEC-CONNECTION-TYPE":         []string{"LANGUAGE_COLLECTOR"},
 		"NR-LICENSE-KEY":                  []string{secConfig.GlobalInfo.ApplicationInfo.GetApiAccessorToken()},
 		"NR-AGENT-RUN-TOKEN":              []string{secConfig.GlobalInfo.MetaData.GetAgentRunId()},
@@ -396,7 +375,8 @@ func getConnectionHeader() http.Header {
 		"NR-CSEC-ENTITY-GUID":             []string{secConfig.GlobalInfo.MetaData.GetEntityGuid()},
 		"NR-CSEC-ENTITY-NAME":             []string{secConfig.GlobalInfo.MetaData.GetEntityName()},
 	}
-
+	printConnectionHeader(connectionHeader)
+	return connectionHeader
 }
 
 func printConnectionHeader(header http.Header) {
@@ -409,44 +389,23 @@ func printConnectionHeader(header http.Header) {
 	}
 }
 
-func increaseEventProcessed(eventType string) {
-	if eventType == "iastEvent" {
-		secConfig.GlobalInfo.EventData.GetIastEventStats().IncreaseEventProcessedCount()
-	} else if eventType == "raspEvent" {
-		secConfig.GlobalInfo.EventData.GetRaspEventStats().IncreaseEventProcessedCount()
-	} else if eventType == "exitEvent" {
-		secConfig.GlobalInfo.EventData.GetExitEventStats().IncreaseEventProcessedCount()
+func createCaCert() *tls.Config {
+	caCertPool, err := x509.SystemCertPool()
+	if err != nil {
+		logger.Errorln("erro while createing CA certificate:", err)
+		return nil
 	}
-}
-
-func increaseEventDropCount(eventType string) {
-	if eventType == "iastEvent" {
-		secConfig.GlobalInfo.EventData.GetIastEventStats().IncreaseEventRejectedCount()
-	} else if eventType == "raspEvent" {
-		secConfig.GlobalInfo.EventData.GetRaspEventStats().IncreaseEventRejectedCount()
-	} else if eventType == "exitEvent" {
-		secConfig.GlobalInfo.EventData.GetExitEventStats().IncreaseEventRejectedCount()
+	caCert := []byte(secUtils.CaCert)
+	envCert := os.Getenv("NEW_RELIC_SECURITY_CA_BUNDLE_PATH")
+	if envCert != "" {
+		caCert, err = os.ReadFile(envCert)
+		if err != nil {
+			logger.Errorln(err, "using default CA certificate ")
+			caCert = []byte(secUtils.CaCert)
+		}
 	}
-}
-
-func increaseEventEventSentCount(eventType string) {
-	if eventType == "iastEvent" {
-		secConfig.GlobalInfo.EventData.GetIastEventStats().IncreaseEventSentCount()
-	} else if eventType == "raspEvent" {
-		secConfig.GlobalInfo.EventData.GetRaspEventStats().IncreaseEventSentCount()
-	} else if eventType == "exitEvent" {
-		secConfig.GlobalInfo.EventData.GetExitEventStats().IncreaseEventSentCount()
-	}
-}
-
-func increaseEventErrorCount(eventType string) {
-	if eventType == "iastEvent" {
-		secConfig.GlobalInfo.EventData.GetIastEventStats().IncreaseEventErrorCount()
-	} else if eventType == "raspEvent" {
-		secConfig.GlobalInfo.EventData.GetRaspEventStats().IncreaseEventErrorCount()
-	} else if eventType == "exitEvent" {
-		secConfig.GlobalInfo.EventData.GetExitEventStats().IncreaseEventErrorCount()
-	}
+	caCertPool.AppendCertsFromPEM(caCert)
+	return &tls.Config{RootCAs: caCertPool}
 }
 
 func (ws *websocket) flushWsController() {

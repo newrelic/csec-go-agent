@@ -55,6 +55,8 @@ func getHttpsClient() *http.Client {
 }
 
 func (httpFuzz SecHttpFuzz) ExecuteFuzzRequest(fuzzRequest *sechandler.FuzzRequrestHandler, caseType string, fuzzId string) {
+	secConfig.GlobalInfo.IastReplayRequest.IncreaseReplayRequestExecuted()
+
 	fuzzRequestID := fmt.Sprintf("%v", fuzzRequest.Headers[secIntercept.NR_CSEC_FUZZ_REQUEST_ID])
 	applicationPort := ":" + strconv.Itoa(fuzzRequest.ServerPort)
 	fuzzRequestURL := secConfig.GlobalInfo.ApplicationInfo.GetServerIp() + applicationPort + fuzzRequest.Url
@@ -76,6 +78,7 @@ func (httpFuzz SecHttpFuzz) ExecuteFuzzRequest(fuzzRequest *sechandler.FuzzRequr
 	if req == nil || err != nil {
 		logger.Infoln("ERROR: request type", fuzzRequest.Method, err)
 		secIntercept.SendLogMessage(err.Error(), "security_instrumentation", "SEVERE")
+		secConfig.GlobalInfo.IastReplayRequest.IncreaseReplayRequestFailed()
 		return
 	}
 
@@ -88,7 +91,10 @@ func (httpFuzz SecHttpFuzz) ExecuteFuzzRequest(fuzzRequest *sechandler.FuzzRequr
 		value := fmt.Sprintf("%v", headerValue)
 		req.Header.Set(headerKey, value)
 	}
-	req.Header.Set("Content-Type", fuzzRequest.ContentType)
+
+	if !secUtils.IsBlank(fuzzRequest.ContentType) {
+		req.Header.Set("Content-Type", fuzzRequest.ContentType)
+	}
 	req.Header.Set("nr-csec-parent-id", fuzzId)
 
 	if fuzzRequestClient == nil {
@@ -97,9 +103,11 @@ func (httpFuzz SecHttpFuzz) ExecuteFuzzRequest(fuzzRequest *sechandler.FuzzRequr
 	response, err := fuzzRequestClient.Do(req)
 	if err != nil {
 		logger.Debugln("ERROR: fuzz request fail : ", fuzzRequestID, err.Error())
+		secConfig.GlobalInfo.IastReplayRequest.IncreaseReplayRequestFailed()
 		//secIntercept.SendLogMessage("fuzz request fail :"+err.Error(), "security_instrumentation", "SEVERE")
 	} else {
 		defer response.Body.Close()
+		secConfig.GlobalInfo.IastReplayRequest.IncreaseReplayRequestSucceeded()
 		logger.Debugln("fuzz request successful : ", fuzzRequestID)
 	}
 }

@@ -24,6 +24,7 @@ const (
 	ENCRYPTED_DATA_DECRYPTED_DATA                 = "Encrypted Data: %s, Decrypted data: %s"
 	ERROR_WHILE_GENERATING_REQUIRED_SALT_FROM_S_S = "Error while generating required salt from %s"
 	ERROR_WHILE_VERIFY_HASH_DATA                  = "Hash Data not macth %s: %s"
+	EMPTY_DATA                                    = "Empty decrypted data"
 )
 
 func Decrypt(password, encryptedData, hashVerifier string) (string, error) {
@@ -60,6 +61,10 @@ func Decrypt(password, encryptedData, hashVerifier string) (string, error) {
 	cipher.NewCBCDecrypter(block, make([]byte, block.BlockSize())).CryptBlocks(decrypted, encryptedBytes)
 	decrypted = removePadding(decrypted)
 	decryptedData := string(decrypted[OFFSET:])
+
+	if IsBlank(decryptedData) {
+		return "", fmt.Errorf(EMPTY_DATA)
+	}
 
 	if verifyHashData(hashVerifier, decryptedData) {
 		return decryptedData, nil

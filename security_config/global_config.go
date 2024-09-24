@@ -4,7 +4,6 @@
 package security_config
 
 import (
-	"math"
 	"os"
 	"strconv"
 	"sync"
@@ -19,7 +18,6 @@ var Secure secUtils.Secureiface
 var SecureWS secUtils.SecureWSiface
 
 type Info_struct struct {
-	EventData           eventData
 	ApiData             *sync.Map
 	EnvironmentInfo     EnvironmentInfo
 	ApplicationInfo     runningApplicationInfo
@@ -34,6 +32,11 @@ type Info_struct struct {
 	isForceDisable bool
 
 	MetaData metaData
+
+	WebSocketConnectionStats WebSocketConnectionStats
+	IastReplayRequest        IastReplayRequest
+	EventStats               EventStats
+	DroppedEvent             DroppedEvent
 }
 
 func (info *Info_struct) GetCurrentPolicy() Policy {
@@ -113,7 +116,10 @@ func (info *Info_struct) SetSecurityHomePath(path string) {
 }
 
 func (info *Info_struct) ValidatorServiceUrl() string {
-	return info.security.Validator_service_url
+	if info.security.Validator_service_url != "" {
+		return info.security.Validator_service_url
+	}
+	return ValidatorDefaultEndpoint
 }
 func (info *Info_struct) SetValidatorServiceUrl(path string) {
 	info.security.Validator_service_url = path
@@ -238,11 +244,9 @@ func (m *metaData) SetLinkingMetadata(value interface{}) {
 
 // EventData used to track number of request
 type eventData struct {
-	httpRequestCount uint64
-	fuzzRequestCount uint64
-	iastEventStats   EventStats
-	raspEventStats   EventStats
-	exitEventStats   EventStats
+	iastEventStats EventStats
+	raspEventStats EventStats
+	exitEventStats EventStats
 	sync.Mutex
 }
 
@@ -271,70 +275,6 @@ func (e *eventData) GetExitEventStats() *EventStats {
 	return &e.exitEventStats
 }
 
-func (e *eventData) GetHttpRequestCount() uint64 {
-	var out uint64
-	if e == nil {
-		return out
-	}
-	e.Lock()
-	defer e.Unlock()
-	return e.httpRequestCount
-}
-
-func (e *eventData) SetHttpRequestCount(value uint64) {
-	if e == nil {
-		return
-	}
-	e.Lock()
-	defer e.Unlock()
-	e.httpRequestCount = value
-}
-
-func (e *eventData) IncreaseHttpRequestCount() {
-	if e == nil {
-		return
-	}
-	e.Lock()
-	defer e.Unlock()
-
-	e.httpRequestCount++
-	if e.httpRequestCount == 0 {
-		e.httpRequestCount = math.MaxUint64
-	}
-}
-
-func (e *eventData) GetFuzzRequestCount() uint64 {
-	var out uint64
-	if e == nil {
-		return out
-	}
-	e.Lock()
-	defer e.Unlock()
-	return e.fuzzRequestCount
-}
-
-func (e *eventData) SetFuzzRequestCount(value uint64) {
-	if e == nil {
-		return
-	}
-	e.Lock()
-	defer e.Unlock()
-	e.fuzzRequestCount = value
-}
-
-func (e *eventData) IncreaseFuzzRequestCount() {
-	if e == nil {
-		return
-	}
-	e.Lock()
-	defer e.Unlock()
-
-	e.fuzzRequestCount++
-	if e.fuzzRequestCount == 0 {
-		e.fuzzRequestCount = math.MaxUint64
-	}
-}
-
 func (e *eventData) ResetEventStats() {
 	if e == nil {
 		return
@@ -346,54 +286,6 @@ func (e *eventData) ResetEventStats() {
 	e.raspEventStats = EventStats{}
 	e.exitEventStats = EventStats{}
 
-}
-
-type EventStats struct {
-	Processed  uint64 `json:"processed"`
-	Sent       uint64 `json:"sent"`
-	Rejected   uint64 `json:"rejected"`
-	ErrorCount uint64 `json:"errorCount"`
-}
-
-func (e *EventStats) IncreaseEventProcessedCount() {
-	if e == nil {
-		return
-	}
-	e.Processed++
-	if e.Processed == 0 {
-		e.Processed = math.MaxUint64
-	}
-}
-
-func (e *EventStats) IncreaseEventSentCount() {
-	if e == nil {
-		return
-	}
-	e.Sent++
-	if e.Sent == 0 {
-		e.Sent = math.MaxUint64
-	}
-}
-
-func (e *EventStats) IncreaseEventRejectedCount() {
-	if e == nil {
-		return
-	}
-
-	e.Rejected++
-	if e.Rejected == 0 {
-		e.Rejected = math.MaxUint64
-	}
-}
-
-func (e *EventStats) IncreaseEventErrorCount() {
-	if e == nil {
-		return
-	}
-	e.ErrorCount++
-	if e.ErrorCount == 0 {
-		e.ErrorCount = math.MaxUint64
-	}
 }
 
 type Urlmappings struct {
@@ -587,12 +479,13 @@ type traceHooksApplied struct {
 
 func InitDefaultConfig() {
 	//init default info
-	GlobalInfo.EventData = eventData{}
+	GlobalInfo.EventStats = EventStats{}
 	GlobalInfo.InstrumentationData = Instrumentation{}
 	GlobalInfo.EnvironmentInfo = EnvironmentInfo{}
 	GlobalInfo.ApplicationInfo = runningApplicationInfo{}
 	GlobalInfo.MetaData = metaData{}
 	GlobalInfo.MetaData.linkingMetadata = map[string]string{}
+	GlobalInfo.WebSocketConnectionStats = WebSocketConnectionStats{}
 
 }
 
