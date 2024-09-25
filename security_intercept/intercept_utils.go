@@ -315,3 +315,11 @@ func InitLowSeverityEventScheduler() {
 		}
 	}
 }
+
+func getRequestUri(url string) string {
+	idx := strings.Index(url, "?")
+	if idx != -1 {
+		return url[:idx]
+	}
+	return url
+}
