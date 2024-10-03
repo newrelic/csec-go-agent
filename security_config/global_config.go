@@ -135,7 +135,13 @@ func (info *Info_struct) BodyLimit() int {
 
 func (info *Info_struct) SetBodyLimit(bodyLimit int) {
 	info.security.Request.BodyLimit = bodyLimit
-	return
+}
+
+func (info *Info_struct) ScanControllersIastLoadInterval() int {
+	return info.security.ScanControllers.IastLoadInterval
+}
+func (info *Info_struct) SetscanControllersIastLoadInterval(iastLoadInterval int) {
+	info.security.ScanControllers.IastLoadInterval = iastLoadInterval
 }
 
 func (info *Info_struct) GetApiData() []any {
