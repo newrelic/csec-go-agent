@@ -19,6 +19,7 @@ type Info_req struct {
 	ReflectedMetaData    ReflectedMetaData
 	ParentID             string
 	BodyLimit            int
+	TraceId              string
 }
 
 type ReflectedMetaData struct {

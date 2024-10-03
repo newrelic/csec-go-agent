@@ -174,7 +174,7 @@ func (info *Info_struct) IastProbingInterval() int {
 }
 
 type metaData struct {
-	linkingMetadata interface{}
+	linkingMetadata map[string]string
 	accountID       string
 	agentRunId      string
 	entityGuid      string
@@ -230,13 +230,13 @@ func (m *metaData) SetAgentRunId(value string) {
 	m.agentRunId = value
 }
 
-func (m *metaData) GetLinkingMetadata() interface{} {
+func (m *metaData) GetLinkingMetadata() map[string]string {
 	m.Lock()
 	defer m.Unlock()
 	return m.linkingMetadata
 }
 
-func (m *metaData) SetLinkingMetadata(value interface{}) {
+func (m *metaData) SetLinkingMetadata(value map[string]string) {
 	m.Lock()
 	defer m.Unlock()
 	m.linkingMetadata = value

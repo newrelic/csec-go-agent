@@ -299,6 +299,7 @@ func SendVulnerableEvent(req *secUtils.Info_req, category, eventCategory string,
 	tmp_event.MetaData.AppServerInfo.ApplicationDirectory = secConfig.GlobalInfo.EnvironmentInfo.Wd
 	tmp_event.MetaData.AppServerInfo.ServerBaseDirectory = secConfig.GlobalInfo.EnvironmentInfo.Wd
 
+	tmp_event.LinkingMetadata["trace.id"] = req.TraceId
 	if !req.Request.IsGRPC {
 
 		if req.Request.BodyReader.GetBody != nil {
