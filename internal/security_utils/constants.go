@@ -1,0 +1,18 @@
+package security_utils
+
+const (
+	NR_CSEC_CONNECTION_TYPE         = "NR-CSEC-CONNECTION-TYPE"
+	NR_LICENSE_KEY                  = "NR-LICENSE-KEY"
+	NR_AGENT_RUN_TOKEN              = "NR-AGENT-RUN-TOKEN"
+	NR_CSEC_VERSION                 = "NR-CSEC-VERSION"
+	NR_CSEC_COLLECTOR_TYPE          = "NR-CSEC-COLLECTOR-TYPE"
+	NR_CSEC_MODE                    = "NR-CSEC-MODE"
+	NR_CSEC_APP_UUID                = "NR-CSEC-APP-UUID"
+	NR_CSEC_BUILD_NUMBER            = "NR-CSEC-BUILD-NUMBER"
+	NR_CSEC_JSON_VERSION            = "NR-CSEC-JSON-VERSION"
+	NR_ACCOUNT_ID                   = "NR-ACCOUNT-ID"
+	NR_CSEC_IAST_DATA_TRANSFER_MODE = "NR-CSEC-IAST-DATA-TRANSFER-MODE"
+	NR_CSEC_ENTITY_GUID             = "NR-CSEC-ENTITY-GUID"
+	NR_CSEC_ENTITY_NAME             = "NR-CSEC-ENTITY-NAME"
+	MaxPayloadSize                  = 1000 * 1000
+)
