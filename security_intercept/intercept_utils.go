@@ -310,6 +310,12 @@ func ToOneValueMap(header map[string][]string) (filterHeader map[string]string) 
 func isSkipIastScanApi(url, route string) (bool, string) {
 	regexp := secConfig.GlobalInfo.SkipIastScanApi()
 	for i := range regexp {
+		if !strings.HasPrefix(regexp[i], "^") {
+			regexp[i] = "^" + regexp[i]
+		}
+		if !strings.HasSuffix(regexp[i], "$") {
+			regexp[i] = regexp[i] + "$"
+		}
 		re := regexp2.MustCompile(regexp[i], 0)
 		if isMatch, _ := re.MatchString(url); isMatch {
 			return true, regexp[i]
