@@ -374,6 +374,7 @@ func getConnectionHeader() http.Header {
 		"NR-CSEC-IAST-DATA-TRANSFER-MODE": []string{"PULL"},
 		"NR-CSEC-ENTITY-GUID":             []string{secConfig.GlobalInfo.MetaData.GetEntityGuid()},
 		"NR-CSEC-ENTITY-NAME":             []string{secConfig.GlobalInfo.MetaData.GetEntityName()},
+		"NR-CSEC-PROCESS-START-TIME":      []string{secUtils.Int64ToString(secConfig.GlobalInfo.ApplicationInfo.GetStarttimestr().Unix() * 1000)},
 	}
 	printConnectionHeader(connectionHeader)
 	return connectionHeader
