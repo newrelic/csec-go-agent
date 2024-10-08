@@ -320,9 +320,6 @@ func isSkipIastScanApi(url, route string) (bool, string) {
 		if isMatch, _ := re.MatchString(url); isMatch {
 			return true, regexp[i]
 		}
-		if isMatch, _ := re.MatchString(route); isMatch {
-			return true, regexp[i]
-		}
 	}
 	return false, ""
 }
