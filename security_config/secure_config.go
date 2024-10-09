@@ -50,7 +50,7 @@ type Security struct {
 		Delay                     int    `yaml:"delay"`
 		Duration                  int    `yaml:"duration"`
 		Schedule                  string `yaml:"schedule"`
-		AllowIastSampleCollection bool   `yaml:"allow_iast_sample_collection"`
+		AllowIastSampleCollection bool   `yaml:"always_sample_traces"`
 	} `yaml:"scan_schedule"`
 }
 
