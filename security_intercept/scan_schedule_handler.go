@@ -1,11 +1,13 @@
 package security_intercept
 
 import (
+	"context"
 	"time"
 
+	"github.com/adhocore/gronx"
+	"github.com/adhocore/gronx/pkg/tasker"
 	secConfig "github.com/newrelic/csec-go-agent/security_config"
 	secWs "github.com/newrelic/csec-go-agent/security_handlers"
-	"github.com/robfig/cron"
 )
 
 func StartWsConnection() {
@@ -45,8 +47,11 @@ func startAgentWithCronExpr(expr string) {
 		time.Sleep(time.Until(nextTime))
 		secWs.InitializeWsConnecton()
 	} else {
-		c := cron.New()
-		c.AddFunc(expr, func() {
+		taskr := tasker.New(
+			tasker.Option{
+				Verbose: false,
+			})
+		taskr.Task(expr, func(ctx context.Context) (int, error) {
 			if isStarted {
 				if !secConfig.SecureWS.GetStatus() {
 					logger.Debugln("Reconnecting agent due to cron expr")
@@ -59,8 +64,9 @@ func startAgentWithCronExpr(expr string) {
 				isStarted = true
 				go shutdownAtDurationReached()
 			}
+			return 0, nil
 		})
-		c.Start()
+		go taskr.Run()
 	}
 }
 
@@ -84,11 +90,10 @@ func shutdownAtDurationReached() {
 }
 
 func getNextTime(expr string) time.Time {
-	specParser := cron.NewParser(cron.Second | cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.DowOptional | cron.Descriptor)
-	sched, err := specParser.Parse(expr)
+	nextTime, err := gronx.NextTick(expr, true)
 	if err != nil {
 		return time.Now()
 	} else {
-		return sched.Next(time.Now())
+		return nextTime
 	}
 }
