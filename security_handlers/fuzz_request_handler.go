@@ -94,7 +94,7 @@ func initRestRequestThreadPool() {
 
 func InitFuzzScheduler() {
 	dealyAgentTill := secConfig.GlobalInfo.GetDealyAgentTill()
-	logger.Debugln("dealyAgentTill SleepTime", dealyAgentTill)
+	logger.Debugln("IAST data pull request is scheduled at", dealyAgentTill)
 	time.Sleep(time.Until(dealyAgentTill))
 	if !secConfig.GlobalInfo.IsIASTEnable() {
 		return
