@@ -21,7 +21,7 @@ func StartWsConnection() {
 		startAgentWithCronExpr(expr)
 	} else {
 		secWs.InitializeWsConnecton()
-		go shutdownAtDurationReached()
+		go shutdownAtDurationReached(0)
 	}
 
 }
@@ -29,12 +29,12 @@ func StartWsConnection() {
 func startAgentWithDelay() {
 	if secConfig.GlobalInfo.ScanScheduleAllowIastSampleCollection() {
 		secWs.InitializeWsConnecton()
-		go shutdownAtDurationReached()
+		go shutdownAtDurationReached(secConfig.GlobalInfo.ScanScheduleDelay())
 	} else {
 		logger.Debugln("Security Agent delay scan time is set to:", time.Now().Add(time.Duration(secConfig.GlobalInfo.ScanScheduleDelay())*time.Minute).Format(time.ANSIC))
 		time.Sleep(time.Duration(secConfig.GlobalInfo.ScanScheduleDelay()) * time.Minute)
 		secWs.InitializeWsConnecton()
-		go shutdownAtDurationReached()
+		go shutdownAtDurationReached(0)
 	}
 }
 
@@ -56,13 +56,13 @@ func startAgentWithCronExpr(expr string) {
 				if !secConfig.SecureWS.GetStatus() {
 					logger.Debugln("Reconnecting agent due to cron expr")
 					secConfig.SecureWS.ReconnectAtAgentRefresh()
-					go shutdownAtDurationReached()
+					go shutdownAtDurationReached(0)
 				}
 			} else {
 				logger.Debugln("Initialize ws connecton agent due to cron expr")
 				secWs.InitializeWsConnecton()
 				isStarted = true
-				go shutdownAtDurationReached()
+				go shutdownAtDurationReached(0)
 			}
 			return 0, nil
 		})
@@ -70,14 +70,15 @@ func startAgentWithCronExpr(expr string) {
 	}
 }
 
-func shutdownAtDurationReached() {
+func shutdownAtDurationReached(delta int) {
 	logger.Debugln("IAST Duration is set to: ", secConfig.GlobalInfo.ScanScheduleDuration())
 	duration := secConfig.GlobalInfo.ScanScheduleDuration()
 	if duration <= 0 {
 		return
 	}
-	logger.Debugln("Security Agent Duration scan time is set to:", time.Now().Add(time.Duration(secConfig.GlobalInfo.ScanScheduleDuration())*time.Minute).Format(time.ANSIC))
-	t := time.NewTicker(time.Duration(duration) * time.Minute)
+	duration += delta
+	logger.Debugln("Security Agent Duration scan time is set to:", time.Now().Add(time.Duration(duration)*time.Minute).Format(time.ANSIC))
+	t := time.NewTicker(time.Duration(duration+delta) * time.Minute)
 	for {
 		select {
 		case <-t.C:
