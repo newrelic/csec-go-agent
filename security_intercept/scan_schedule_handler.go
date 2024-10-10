@@ -12,7 +12,7 @@ func StartWsConnection() {
 
 	secConfig.GlobalInfo.SetDealyAgentTill(secConfig.GlobalInfo.ScanScheduleDelay())
 	if secConfig.GlobalInfo.ScanScheduleDelay() > 0 {
-		logger.Debugln("IAST delay is set to: ", secConfig.GlobalInfo.ScanScheduleDelay())
+		logger.Debugln("IAST delay is set to: ", secConfig.GlobalInfo.ScanScheduleDelay(), "min")
 		startAgentWithDelay()
 	} else if expr := secConfig.GlobalInfo.ScanScheduleSchedule(); expr != "" {
 		logger.Debugln("IAST Cron Expr is set to: ", expr)
@@ -25,38 +25,40 @@ func StartWsConnection() {
 }
 
 func startAgentWithDelay() {
+	delay := secConfig.GlobalInfo.ScanScheduleDelay()
+
 	if secConfig.GlobalInfo.ScanScheduleAllowIastSampleCollection() {
+		logger.Debugln("initializing websocket connection immediately, scan schedule allow iast sample collection set true")
 		secWs.InitializeWsConnecton()
-		go shutdownAtDurationReached(secConfig.GlobalInfo.ScanScheduleDelay())
+		go shutdownAtDurationReached(delay)
 	} else {
-		logger.Debugln("Security Agent delay scan time is set to:", time.Now().Add(time.Duration(secConfig.GlobalInfo.ScanScheduleDelay())*time.Minute).Format(time.ANSIC))
-		time.Sleep(time.Duration(secConfig.GlobalInfo.ScanScheduleDelay()) * time.Minute)
+		dealyAgentTill := time.Duration(delay) * time.Minute
+		logger.Debugln("Security Agent delay scan time is set to:", time.Now().Add(dealyAgentTill).Format(time.ANSIC))
+		time.Sleep(dealyAgentTill)
+		logger.Debugln("initializing websocket connection delay end")
 		secWs.InitializeWsConnecton()
 		go shutdownAtDurationReached(0)
 	}
 }
 
+// scheduler
 func startAgentWithCronExpr(expr string) {
 	go cronExprTask(expr)
 }
 
+// Duration
 func shutdownAtDurationReached(delta int) {
-	logger.Debugln("IAST Duration is set to: ", secConfig.GlobalInfo.ScanScheduleDuration())
 	duration := secConfig.GlobalInfo.ScanScheduleDuration()
+
+	logger.Debugln("IAST Duration is set to: ", duration)
 	if duration <= 0 {
 		return
 	}
 	duration += delta
-	logger.Debugln("Security Agent Duration scan time is set to:", time.Now().Add(time.Duration(duration)*time.Minute).Format(time.ANSIC))
-	t := time.NewTicker(time.Duration(duration) * time.Minute)
-	for {
-		select {
-		case <-t.C:
-			DeactivateSecurity()
-			t.Stop()
-			return
-		}
-	}
+	logger.Debugln("Security Agent shutdown is set to:", time.Now().Add(time.Duration(duration)*time.Minute).Format(time.ANSIC))
+	timeout := time.NewTimer(time.Duration(duration+delta) * time.Minute)
+	<-timeout.C
+	DeactivateSecurity()
 
 }
 
