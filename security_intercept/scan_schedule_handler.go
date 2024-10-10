@@ -1,11 +1,9 @@
 package security_intercept
 
 import (
-	"context"
 	"time"
 
 	"github.com/adhocore/gronx"
-	"github.com/adhocore/gronx/pkg/tasker"
 	secConfig "github.com/newrelic/csec-go-agent/security_config"
 	secWs "github.com/newrelic/csec-go-agent/security_handlers"
 )
@@ -39,35 +37,7 @@ func startAgentWithDelay() {
 }
 
 func startAgentWithCronExpr(expr string) {
-
-	isStarted := false
-	if secConfig.GlobalInfo.ScanScheduleDuration() == 0 {
-		nextTime := getNextTime(expr)
-		logger.Debugln("Security Agent delay scan time is set via cron expr to:", nextTime.Format(time.ANSIC))
-		time.Sleep(time.Until(nextTime))
-		secWs.InitializeWsConnecton()
-	} else {
-		taskr := tasker.New(
-			tasker.Option{
-				Verbose: false,
-			})
-		taskr.Task(expr, func(ctx context.Context) (int, error) {
-			if isStarted {
-				if !secConfig.SecureWS.GetStatus() {
-					logger.Debugln("Reconnecting agent due to cron expr")
-					secConfig.SecureWS.ReconnectAtAgentRefresh()
-					go shutdownAtDurationReached(0)
-				}
-			} else {
-				logger.Debugln("Initialize ws connecton agent due to cron expr")
-				secWs.InitializeWsConnecton()
-				isStarted = true
-				go shutdownAtDurationReached(0)
-			}
-			return 0, nil
-		})
-		go taskr.Run()
-	}
+	go cronExprTask(expr)
 }
 
 func shutdownAtDurationReached(delta int) {
@@ -96,5 +66,32 @@ func getNextTime(expr string) time.Time {
 		return time.Now()
 	} else {
 		return nextTime
+	}
+}
+
+func cronExprTask(expr string) {
+	isStarted := false
+	for {
+		nextTime := getNextTime(expr)
+		logger.Debugln("Security Agent delay scan time is set via cron expr to:", nextTime.Format(time.ANSIC))
+		time.Sleep(time.Until(nextTime))
+
+		if isStarted {
+			if !secConfig.SecureWS.GetStatus() {
+				logger.Debugln("Reconnecting agent due to cron expr ")
+				secConfig.SecureWS.ReconnectAtAgentRefresh()
+			}
+		} else {
+			isStarted = true
+			logger.Debugln("Initialize ws connecton agent due to cron expr")
+			secWs.InitializeWsConnecton()
+		}
+
+		if secConfig.GlobalInfo.ScanScheduleDuration() == 0 {
+			return
+		} else {
+			go shutdownAtDurationReached(0)
+		}
+
 	}
 }
