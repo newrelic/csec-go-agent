@@ -78,7 +78,7 @@ func shutdownAtDurationReached(delta int) {
 	}
 	duration += delta
 	logger.Debugln("Security Agent Duration scan time is set to:", time.Now().Add(time.Duration(duration)*time.Minute).Format(time.ANSIC))
-	t := time.NewTicker(time.Duration(duration+delta) * time.Minute)
+	t := time.NewTicker(time.Duration(duration) * time.Minute)
 	for {
 		select {
 		case <-t.C:
