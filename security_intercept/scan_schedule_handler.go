@@ -32,9 +32,9 @@ func startAgentWithDelay() {
 		secWs.InitializeWsConnecton()
 		go shutdownAtDurationReached(delay)
 	} else {
-		dealyAgentTill := time.Duration(delay) * time.Minute
-		logger.Debugln("Security Agent delay scan time is set to:", time.Now().Add(dealyAgentTill).Format(time.ANSIC))
-		time.Sleep(dealyAgentTill)
+		delayAgentTill := time.Duration(delay) * time.Minute
+		logger.Debugln("Security Agent delay scan time is set to:", time.Now().Add(delayAgentTill).Format(time.ANSIC))
+		time.Sleep(delayAgentTill)
 		logger.Debugln("initializing websocket connection delay end")
 		secWs.InitializeWsConnecton()
 		go shutdownAtDurationReached(0)
