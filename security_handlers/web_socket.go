@@ -116,6 +116,7 @@ func (ws *websocket) makeConnection() (bool, bool) {
 		go writeThread(ws)
 		go readThread(ws)
 		eventGeneration.SendApplicationInfo()
+		eventGeneration.InitScheduler()
 		return true, false
 	}
 }
@@ -298,8 +299,7 @@ func InitializeWsConnecton() {
 	ws.writecontroller = make(chan string, 10)
 	secConfig.SecureWS = ws
 	if ws.connect() {
-		go eventGeneration.InitHcScheduler()
-		go eventGeneration.InitPanicReportScheduler()
+		eventGeneration.SendInitEvents()
 	}
 }
 

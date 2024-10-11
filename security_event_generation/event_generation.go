@@ -37,47 +37,71 @@ var (
 	firstEvent            = true
 	HcBuffer              *secUtils.Cring
 	logger                = logging.GetLogger("hook")
-	removeChannel         = make(chan string)
-	panicChannel          = make(chan string)
+	hcChannel             chan bool
+	panicChannel          chan bool
 	errorBuffer           = secUtils.NewCring(15)
 	applicationPanic      = make(map[string]*PanicReport)
 	applicationPanicMutex = sync.Mutex{}
 )
 
-func InitHcScheduler() {
+func SendInitEvents() {
 	logging.EndStage("5", "Security agent components started")
-	SendSecHealthCheck()
 	sendBufferLogMessage()
 	sendUrlMappingEvent()
-	t := time.NewTicker(5 * time.Minute)
-	for {
-		select {
-		case <-t.C:
-			SendSecHealthCheck()
-		case <-removeChannel:
-			return
-		}
+
+}
+
+func InitScheduler() {
+	if hcChannel == nil {
+		hcChannel = initHcScheduler()
 	}
+	if panicChannel == nil {
+		panicChannel = initPanicReportScheduler()
+	}
+}
+
+func initHcScheduler() chan bool {
+	quit := make(chan bool, 5)
+	t := time.NewTicker(5 * time.Minute)
+	go func() {
+		SendSecHealthCheck()
+		for {
+			select {
+			case <-t.C:
+				SendSecHealthCheck()
+			case <-quit:
+				return
+			}
+		}
+	}()
+	return quit
 }
 
 func RemoveHcScheduler() {
-	removeChannel <- "end"
+	hcChannel <- true
+	hcChannel = nil
 }
 
-func InitPanicReportScheduler() {
+func initPanicReportScheduler() chan bool {
+	quit := make(chan bool, 5)
 	t := time.NewTicker(30 * time.Second)
-	for {
-		select {
-		case <-t.C:
-			sendApplicationRuntimeError()
-		case <-panicChannel:
-			return
+	go func() {
+		sendApplicationRuntimeError()
+		for {
+			select {
+			case <-t.C:
+				sendApplicationRuntimeError()
+			case <-quit:
+				return
+			}
 		}
-	}
+	}()
+	return quit
 }
 
 func RemovePanicReportScheduler() {
-	panicChannel <- "end"
+	panicChannel <- true
+	panicChannel = nil
 }
 
 func initHcBuffer() {

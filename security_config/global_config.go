@@ -40,14 +40,6 @@ type Info_struct struct {
 	dealyAgentTill           time.Time
 }
 
-func (info *Info_struct) GetDealyAgentTill() time.Time {
-	return info.dealyAgentTill
-}
-
-func (info *Info_struct) SetDealyAgentTill(t int) {
-	info.dealyAgentTill = time.Now().Add(time.Duration(t) * time.Minute)
-}
-
 func (info *Info_struct) GetCurrentPolicy() Policy {
 	info.ploicyMutex.Lock()
 	defer info.ploicyMutex.Unlock()
@@ -218,6 +210,9 @@ func (info *Info_struct) SetValidatorServiceUrl(path string) {
 
 func (info *Info_struct) SecurityMode() string {
 	return info.security.Mode
+}
+func (info *Info_struct) IsIastMode() bool {
+	return secUtils.CaseInsensitiveEquals(info.security.Mode, "IAST")
 }
 
 func (info *Info_struct) BodyLimit() int {

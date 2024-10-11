@@ -95,11 +95,9 @@ func initRestRequestThreadPool() {
 	FuzzHandler.threadPool = threadpool.NewThreadPool(queueSize, maxPoolSize, logger, "RestRequestThreadPool")
 }
 
-func InitFuzzScheduler() {
-	dealyAgentTill := secConfig.GlobalInfo.GetDealyAgentTill()
-	logger.Debugln("IAST data pull request is scheduled at", dealyAgentTill)
-	time.Sleep(time.Until(dealyAgentTill))
-	if !secConfig.GlobalInfo.IsIASTEnable() {
+func (r *RestRequestThreadPool) initFuzzScheduler() {
+	if !secConfig.GlobalInfo.IsIastMode() {
+		r.isFuzzSchedulerInitialized = false
 		return
 	}
 	if FuzzHandler.threadPool == nil {
@@ -109,6 +107,7 @@ func InitFuzzScheduler() {
 	fuzzcontroller = false
 	for {
 		if fuzzcontroller {
+			r.isFuzzSchedulerInitialized = false
 			logger.Info("WebSocket Fuzz scheduler thread stopped")
 			return
 		}
