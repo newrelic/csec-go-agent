@@ -577,7 +577,7 @@ func SendExitEvent(exitEvent interface{}, err error) {
 func ProcessInit(server_name string) {
 	secConfig.GlobalInfo.ApplicationInfo.SetServerName(server_name)
 
-	if secConfig.GlobalInfo.MetaData.GetAccountID() != "" {
+	if secConfig.GlobalInfo.MetaData.GetAccountID() != "" && secConfig.SecureWS != nil {
 		eventGeneration.SendApplicationInfo()
 	}
 }
