@@ -95,6 +95,10 @@ func initRestRequestThreadPool() {
 	FuzzHandler.threadPool = threadpool.NewThreadPool(queueSize, maxPoolSize, logger, "RestRequestThreadPool")
 }
 
+func CloseFuzzScheduler() {
+	fuzzcontroller = true
+}
+
 func (r *RestRequestThreadPool) initFuzzScheduler() {
 	if !secConfig.GlobalInfo.IsIastMode() {
 		r.isFuzzSchedulerInitialized = false

@@ -48,7 +48,12 @@ func startAgentWithDelay(delay time.Duration) {
 func shutdownAtDurationReached() {
 	<-durationTimer.C
 	durationTimer = nil
-	DeactivateSecurity()
+	logger.Debugln("Security Agent shutdown duration reached")
+	if secConfig.GlobalInfo.ScanScheduleAllowIastSampleCollection() {
+		secWs.CloseFuzzScheduler()
+	} else {
+		DeactivateSecurity()
+	}
 }
 
 func getNextTime(expr string) time.Time {
