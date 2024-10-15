@@ -49,27 +49,27 @@ func shutdownAtDurationReached() {
 	<-durationTimer.C
 	durationTimer = nil
 	logger.Debugln("Security Agent shutdown duration reached")
-	if secConfig.GlobalInfo.ScanScheduleAllowIastSampleCollection() {
-		secWs.CloseFuzzScheduler()
-	} else {
+	secWs.CloseFuzzScheduler()
+	if !secConfig.GlobalInfo.ScanScheduleAllowIastSampleCollection() {
 		DeactivateSecurity()
 	}
 }
 
-func getNextTime(expr string) time.Time {
+func getNextTime(expr string) (time.Time, error) {
 	nextTime, err := gronx.NextTick(expr, true)
 	if err != nil {
-		return time.Now()
+		logger.Errorln("Invalid cron expr", err)
+		return time.Now(), err
 	} else {
-		return nextTime
+		return nextTime, nil
 	}
 }
 
 func cronExprTask(expr string, duration int) {
 	for {
-		nextTime := getNextTime(expr)
+		nextTime, err := getNextTime(expr)
 		startAgentWithDelay(nextTime.Sub(time.Now()))
-		if duration == 0 {
+		if duration <= 0 || err != nil {
 			return
 		}
 		time.Sleep(2 * time.Second)
@@ -92,9 +92,6 @@ func InitFuzzScheduler() {
 			logger.Debugln("Security Agent shutdown is set to:", time.Now().UTC().Add(time.Duration(duration)*time.Minute).Format(time.ANSIC))
 			durationTimer = time.NewTimer(time.Duration(duration) * time.Minute)
 			go shutdownAtDurationReached()
-		} else if duration != 0 {
-			logger.Debugln("Security Agent new shutdown is update to:", time.Now().UTC().Add(time.Duration(duration)*time.Minute).Format(time.ANSIC))
-			durationTimer.Reset(time.Duration(duration) * time.Minute)
 		}
 	}
 }

@@ -173,7 +173,6 @@ func (ws *websocket) closeWs() {
 		logger.Infoln("Send closeRead thread signal")
 		ws.readcontroller <- "close"
 	}
-	fuzzcontroller = true
 	ws.Lock()
 	if ws.conn != nil {
 		ws.conn.Close()
