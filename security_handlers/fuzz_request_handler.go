@@ -134,8 +134,8 @@ func InitFuzzScheduler() {
 		logger.Debugln("InitFuzzScheduler test ", batchSize, remainingRecordCapacity, currentRecordBacklog, currentFetchThreshold)
 
 		if batchSize > 100/fetchRatio && remainingRecordCapacity > batchSize {
-			logger.Debugln("InitFuzzScheduler", batchSize*2)
-			eventGeneration.IASTDataRequest(batchSize*2, FuzzHandler.CompletedRequestIds(), FuzzHandler.PendingRequestIds())
+			logger.Debugln("InitFuzzScheduler", batchSize)
+			eventGeneration.IASTDataRequest(batchSize, FuzzHandler.CompletedRequestIds(), FuzzHandler.PendingRequestIds())
 		}
 	}
 }

@@ -26,7 +26,7 @@ type Security struct {
 		BodyLimit int `yaml:"body_limit"`
 	} `yaml:"request"`
 	ScanControllers struct {
-		IastLoadInterval int `yaml:"iast_load_interval"`
+		IastScanRequestRateLimit int `yaml:"iast_scan_request_rate_limit"`
 	} `yaml:"scan_controllers"`
 }
 
