@@ -51,6 +51,7 @@ type RequestInfo struct {
 	DataTruncated bool                `json:"dataTruncated"`
 	BodyReader    SecWriter           `json:"-"`
 	Route         string              `json:"route"`
+	URI           string              `json:"requestURI"`
 }
 
 type SecWriter struct {

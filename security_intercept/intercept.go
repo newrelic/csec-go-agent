@@ -311,9 +311,10 @@ func TraceIncommingRequest(url, host string, hdrMap map[string][]string, method 
 	infoReq.Request.ServerName = serverName
 	infoReq.BodyLimit = secConfig.GlobalInfo.BodyLimit()
 	infoReq.ParentID = getHeaderValue(hdrMap, NR_CSEC_PARENT_ID)
+	infoReq.Request.URI = getRequestUri(url)
 	infoReq.TraceId = traceId
 
-	if reqtype == "gRPC" {
+  if reqtype == "gRPC" {
 		infoReq.Request.IsGRPC = true
 	}
 
