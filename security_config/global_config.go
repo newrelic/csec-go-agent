@@ -135,7 +135,13 @@ func (info *Info_struct) BodyLimit() int {
 
 func (info *Info_struct) SetBodyLimit(bodyLimit int) {
 	info.security.Request.BodyLimit = bodyLimit
-	return
+}
+
+func (info *Info_struct) ScanControllersIastLoadInterval() int {
+	return info.security.ScanControllers.IastScanRequestRateLimit
+}
+func (info *Info_struct) SetscanControllersIastLoadInterval(iastLoadInterval int) {
+	info.security.ScanControllers.IastScanRequestRateLimit = iastLoadInterval
 }
 
 func (info *Info_struct) GetApiData() []any {
@@ -174,7 +180,7 @@ func (info *Info_struct) IastProbingInterval() int {
 }
 
 type metaData struct {
-	linkingMetadata interface{}
+	linkingMetadata map[string]string
 	accountID       string
 	agentRunId      string
 	entityGuid      string
@@ -230,13 +236,13 @@ func (m *metaData) SetAgentRunId(value string) {
 	m.agentRunId = value
 }
 
-func (m *metaData) GetLinkingMetadata() interface{} {
+func (m *metaData) GetLinkingMetadata() map[string]string {
 	m.Lock()
 	defer m.Unlock()
 	return m.linkingMetadata
 }
 
-func (m *metaData) SetLinkingMetadata(value interface{}) {
+func (m *metaData) SetLinkingMetadata(value map[string]string) {
 	m.Lock()
 	defer m.Unlock()
 	m.linkingMetadata = value
