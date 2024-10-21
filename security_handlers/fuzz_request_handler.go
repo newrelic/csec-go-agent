@@ -30,10 +30,17 @@ type FuzzTask struct {
 	requestID           string
 }
 
+var firstIastReplay = true
+
 func (fTask *FuzzTask) Run() {
 
 	if !secConfig.SecureWS.GetStatus() {
 		logger.Infoln("WS not connected drop FuzzTask ")
+	}
+
+	if firstIastReplay {
+		secConfig.GlobalInfo.ApplicationInfo.SetScanStartTime(time.Now())
+		firstIastReplay = false
 	}
 
 	if fTask.fuzzRequrestHandler.IsGRPC {
@@ -135,16 +142,21 @@ func (r *RestRequestThreadPool) initFuzzScheduler() {
 			//logger.Debugln("LastFuzzRequestTime", FuzzHandler.LastFuzzRequestTime(), currentTime)
 			continue
 		}
+		currentFetchThreshold := secConfig.GlobalInfo.ScanControllersIastLoadInterval() / 12
 
-		currentFetchThreshold := 300 //SECURITY_POLICY_VULNERABILITY_SCAN_IAST_SCAN_PROBING_THRESHOLD
+		if currentFetchThreshold <= 0 {
+			return
+		}
+
+		fetchRatio := 300 / currentFetchThreshold
 		remainingRecordCapacity := FuzzHandler.threadPool.RemainingCapacity()
 		currentRecordBacklog := FuzzHandler.threadPool.PendingTask()
 		batchSize := currentFetchThreshold - currentRecordBacklog
 		logger.Debugln("InitFuzzScheduler test ", batchSize, remainingRecordCapacity, currentRecordBacklog, currentFetchThreshold)
 
-		if batchSize > 100 && remainingRecordCapacity > batchSize {
-			logger.Debugln("InitFuzzScheduler", batchSize*2)
-			eventGeneration.IASTDataRequest(batchSize*2, FuzzHandler.CompletedRequestIds(), FuzzHandler.PendingRequestIds())
+		if batchSize > 100/fetchRatio && remainingRecordCapacity > batchSize {
+			logger.Debugln("InitFuzzScheduler", batchSize)
+			eventGeneration.IASTDataRequest(batchSize, FuzzHandler.CompletedRequestIds(), FuzzHandler.PendingRequestIds())
 		}
 	}
 }

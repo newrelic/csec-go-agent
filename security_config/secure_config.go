@@ -25,7 +25,6 @@ type Security struct {
 	Request          struct {
 		BodyLimit int `yaml:"body_limit"`
 	} `yaml:"request"`
-
 	ExcludeFromIastScan struct {
 		API                   []string `yaml:"api"`
 		HttpRequestParameters struct {
@@ -52,6 +51,9 @@ type Security struct {
 		Schedule                  string `yaml:"schedule"`
 		AllowIastSampleCollection bool   `yaml:"always_sample_traces"`
 	} `yaml:"scan_schedule"`
+	ScanControllers struct {
+		IastScanRequestRateLimit int `yaml:"iast_scan_request_rate_limit"`
+	} `yaml:"scan_controllers"`
 }
 
 type Policy struct {

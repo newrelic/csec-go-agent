@@ -144,6 +144,10 @@ func SendSecHealthCheck() {
 	hc.IastReplayRequest = secConfig.GlobalInfo.IastReplayRequest
 	hc.EventStats = secConfig.GlobalInfo.EventStats
 
+	hc.ProcStartTime = secConfig.GlobalInfo.ApplicationInfo.GetStarttimestr().Unix() * 1000
+	hc.TrafficStartedTime = secConfig.GlobalInfo.ApplicationInfo.GetTrafficStartedTime()
+	hc.ScanStartTime = secConfig.GlobalInfo.ApplicationInfo.GetScanStartTime()
+
 	if secConfig.SecureWS != nil {
 		hc.IastReplayRequest.PendingControlCommands = secConfig.SecureWS.PendingFuzzTask()
 	}
@@ -323,6 +327,8 @@ func SendVulnerableEvent(req *secUtils.Info_req, category, eventCategory string,
 	tmp_event.MetaData.AppServerInfo.ApplicationDirectory = secConfig.GlobalInfo.EnvironmentInfo.Wd
 	tmp_event.MetaData.AppServerInfo.ServerBaseDirectory = secConfig.GlobalInfo.EnvironmentInfo.Wd
 	tmp_event.MetaData.SkipScanParameters = secConfig.GlobalInfo.SkipIastScanParameters()
+	tmp_event.LinkingMetadata = copyMap(secConfig.GlobalInfo.MetaData.GetLinkingMetadata())
+	tmp_event.LinkingMetadata["trace.id"] = req.TraceId
 	if !req.Request.IsGRPC {
 
 		if req.Request.BodyReader.GetBody != nil {
@@ -378,6 +384,7 @@ func SendVulnerableEvent(req *secUtils.Info_req, category, eventCategory string,
 	}
 
 	if firstEvent {
+		secConfig.GlobalInfo.ApplicationInfo.SetTrafficStartedTime(time.Now())
 		logging.EndStage("8", "First event sent for validation. Security agent started successfully.")
 		logging.PrintInitlog("First event processed : " + string(event_json))
 		firstEvent = false
@@ -552,4 +559,12 @@ func getServiceStatus() map[string]interface{} {
 	ServiceStatus["iastRestClient"] = iastRestClientStatus()
 	return ServiceStatus
 
+}
+
+func copyMap(originalMap map[string]string) map[string]string {
+	targetMap := make(map[string]string)
+	for key, value := range originalMap {
+		targetMap[key] = value
+	}
+	return targetMap
 }

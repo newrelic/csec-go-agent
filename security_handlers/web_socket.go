@@ -377,6 +377,7 @@ func getConnectionHeader() http.Header {
 		"NR-CSEC-ENTITY-GUID":             []string{secConfig.GlobalInfo.MetaData.GetEntityGuid()},
 		"NR-CSEC-ENTITY-NAME":             []string{secConfig.GlobalInfo.MetaData.GetEntityName()},
 		"NR-CSEC-IGNORED-VUL-CATEGORIES":  []string{strings.Join(skipDetectionheader(), ",")},
+		"NR-CSEC-PROCESS-START-TIME":      []string{secUtils.Int64ToString(secConfig.GlobalInfo.ApplicationInfo.GetStarttimestr().Unix() * 1000)},
 	}
 
 	printConnectionHeader(connectionHeader)
