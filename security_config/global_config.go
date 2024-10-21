@@ -37,6 +37,7 @@ type Info_struct struct {
 	IastReplayRequest        IastReplayRequest
 	EventStats               EventStats
 	DroppedEvent             DroppedEvent
+	dealyAgentTill           time.Time
 }
 
 func (info *Info_struct) GetCurrentPolicy() Policy {
@@ -102,10 +103,92 @@ func (info *Info_struct) SetSecurity(security Security) {
 	info.security = security
 }
 
-func (info *Info_struct) IsRxssEnabled() bool {
+func (info *Info_struct) IsInsecureSettingsDisabled() bool {
 	info.securityMutex.Lock()
 	defer info.securityMutex.Unlock()
-	return info.security.Detection.Rxss.Enabled
+	return info.security.ExcludeFromIastScan.IastDetectionCategory.InsecureSettings
+}
+func (info *Info_struct) IsInvalidFileAccessDisabled() bool {
+	info.securityMutex.Lock()
+	defer info.securityMutex.Unlock()
+	return info.security.ExcludeFromIastScan.IastDetectionCategory.InvalidFileAccess
+}
+
+func (info *Info_struct) IsSQLInjectionDisabled() bool {
+	info.securityMutex.Lock()
+	defer info.securityMutex.Unlock()
+	return info.security.ExcludeFromIastScan.IastDetectionCategory.SQLInjection
+}
+func (info *Info_struct) IsNosqlInjectionDisabled() bool {
+	info.securityMutex.Lock()
+	defer info.securityMutex.Unlock()
+	return info.security.ExcludeFromIastScan.IastDetectionCategory.NosqlInjection
+}
+func (info *Info_struct) IsLdapInjectionDisabled() bool {
+	info.securityMutex.Lock()
+	defer info.securityMutex.Unlock()
+	return info.security.ExcludeFromIastScan.IastDetectionCategory.LdapInjection
+}
+func (info *Info_struct) IsJavascriptInjectionDisabled() bool {
+	info.securityMutex.Lock()
+	defer info.securityMutex.Unlock()
+	return info.security.ExcludeFromIastScan.IastDetectionCategory.JavascriptInjection
+}
+func (info *Info_struct) IsCommandInjectionDisabled() bool {
+	info.securityMutex.Lock()
+	defer info.securityMutex.Unlock()
+	return info.security.ExcludeFromIastScan.IastDetectionCategory.CommandInjection
+}
+func (info *Info_struct) IsXpathInjectionDisabled() bool {
+	info.securityMutex.Lock()
+	defer info.securityMutex.Unlock()
+	return info.security.ExcludeFromIastScan.IastDetectionCategory.XpathInjection
+}
+func (info *Info_struct) IsSsrfDisabled() bool {
+	info.securityMutex.Lock()
+	defer info.securityMutex.Unlock()
+	return info.security.ExcludeFromIastScan.IastDetectionCategory.Ssrf
+}
+func (info *Info_struct) IsRxssDisabled() bool {
+	info.securityMutex.Lock()
+	defer info.securityMutex.Unlock()
+	return info.security.ExcludeFromIastScan.IastDetectionCategory.Rxss
+}
+
+func (info *Info_struct) SkipIastScanParameters() interface{} {
+	info.securityMutex.Lock()
+	defer info.securityMutex.Unlock()
+	return info.security.ExcludeFromIastScan.HttpRequestParameters
+}
+
+func (info *Info_struct) SkipIastScanApi() []string {
+	info.securityMutex.Lock()
+	defer info.securityMutex.Unlock()
+	return info.security.ExcludeFromIastScan.API
+}
+
+func (info *Info_struct) ScanScheduleDuration() int {
+	info.securityMutex.Lock()
+	defer info.securityMutex.Unlock()
+	return info.security.ScanSchedule.Duration
+}
+
+func (info *Info_struct) ScanScheduleDelay() int {
+	info.securityMutex.Lock()
+	defer info.securityMutex.Unlock()
+	return info.security.ScanSchedule.Delay
+}
+
+func (info *Info_struct) ScanScheduleAllowIastSampleCollection() bool {
+	info.securityMutex.Lock()
+	defer info.securityMutex.Unlock()
+	return info.security.ScanSchedule.AllowIastSampleCollection
+}
+
+func (info *Info_struct) ScanScheduleSchedule() string {
+	info.securityMutex.Lock()
+	defer info.securityMutex.Unlock()
+	return info.security.ScanSchedule.Schedule
 }
 
 func (info *Info_struct) SecurityHomePath() string {
@@ -127,6 +210,9 @@ func (info *Info_struct) SetValidatorServiceUrl(path string) {
 
 func (info *Info_struct) SecurityMode() string {
 	return info.security.Mode
+}
+func (info *Info_struct) IsIastMode() bool {
+	return secUtils.CaseInsensitiveEquals(info.security.Mode, "IAST")
 }
 
 func (info *Info_struct) BodyLimit() int {

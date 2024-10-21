@@ -70,6 +70,7 @@ type metaData struct {
 		ApplicationDirectory string `json:"applicationDirectory"`
 		ServerBaseDirectory  string `json:"serverBaseDirectory"`
 	} `json:"appServerInfo"`
+	SkipScanParameters interface{} `json:"skipScanParameters"`
 }
 
 // ---------------------------------------------------

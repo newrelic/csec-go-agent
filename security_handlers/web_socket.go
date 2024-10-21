@@ -116,6 +116,7 @@ func (ws *websocket) makeConnection() (bool, bool) {
 		go writeThread(ws)
 		go readThread(ws)
 		eventGeneration.SendApplicationInfo()
+		eventGeneration.InitScheduler()
 		return true, false
 	}
 }
@@ -272,6 +273,7 @@ func (ws *websocket) ReconnectAtAgentRefresh() {
 	ws.closeWs()
 	ws.reconnect()
 	secConfig.GlobalInfo.SetSecurityEnabled(true)
+	secConfig.GlobalInfo.SetSecurityAgentEnabled(true)
 	ws.reconnectWill.Unlock()
 }
 
@@ -296,8 +298,7 @@ func InitializeWsConnecton() {
 	ws.writecontroller = make(chan string, 10)
 	secConfig.SecureWS = ws
 	if ws.connect() {
-		go eventGeneration.InitHcScheduler()
-		go eventGeneration.InitPanicReportScheduler()
+		eventGeneration.SendInitEvents()
 	}
 }
 
@@ -360,6 +361,7 @@ func readThread(ws *websocket) {
 
 // Utils
 func getConnectionHeader() http.Header {
+
 	connectionHeader := http.Header{
 		"NR-CSEC-CONNECTION-TYPE":         []string{"LANGUAGE_COLLECTOR"},
 		"NR-LICENSE-KEY":                  []string{secConfig.GlobalInfo.ApplicationInfo.GetApiAccessorToken()},
@@ -374,8 +376,10 @@ func getConnectionHeader() http.Header {
 		"NR-CSEC-IAST-DATA-TRANSFER-MODE": []string{"PULL"},
 		"NR-CSEC-ENTITY-GUID":             []string{secConfig.GlobalInfo.MetaData.GetEntityGuid()},
 		"NR-CSEC-ENTITY-NAME":             []string{secConfig.GlobalInfo.MetaData.GetEntityName()},
+		"NR-CSEC-IGNORED-VUL-CATEGORIES":  []string{strings.Join(skipDetectionheader(), ",")},
 		"NR-CSEC-PROCESS-START-TIME":      []string{secUtils.Int64ToString(secConfig.GlobalInfo.ApplicationInfo.GetStarttimestr().Unix() * 1000)},
 	}
+
 	printConnectionHeader(connectionHeader)
 	return connectionHeader
 }
@@ -417,4 +421,41 @@ func (ws *websocket) flushWsController() {
 	for ws.writecontroller != nil && len(ws.writecontroller) > 0 {
 		<-ws.writecontroller
 	}
+}
+
+func skipDetectionheader() []string {
+	var category_map []string
+
+	if secConfig.GlobalInfo.IsInsecureSettingsDisabled() {
+		category_map = append(category_map, "CRYPTO", "HASH", "RANDOM", "SECURE_COOKIE", "TRUSTBOUNDARY")
+	}
+	if secConfig.GlobalInfo.IsInvalidFileAccessDisabled() {
+		category_map = append(category_map, "FILE_OPERATION", "FILE_INTEGRITY")
+	}
+	if secConfig.GlobalInfo.IsSQLInjectionDisabled() {
+		category_map = append(category_map, "SQL_DB_COMMAND")
+	}
+	if secConfig.GlobalInfo.IsNosqlInjectionDisabled() {
+		category_map = append(category_map, "NOSQL_DB_COMMAND")
+	}
+	if secConfig.GlobalInfo.IsLdapInjectionDisabled() {
+		category_map = append(category_map, "LDAP")
+	}
+	if secConfig.GlobalInfo.IsJavascriptInjectionDisabled() {
+		category_map = append(category_map, "JAVASCRIPT_INJECTION")
+	}
+	if secConfig.GlobalInfo.IsCommandInjectionDisabled() {
+		category_map = append(category_map, "SYSTEM_COMMAND")
+	}
+	if secConfig.GlobalInfo.IsXpathInjectionDisabled() {
+		category_map = append(category_map, "XPATH")
+	}
+	if secConfig.GlobalInfo.IsSsrfDisabled() {
+		category_map = append(category_map, "HTTP_REQUEST")
+	}
+	if secConfig.GlobalInfo.IsRxssDisabled() {
+		category_map = append(category_map, "REFLECTED_XSS")
+	}
+
+	return category_map
 }

@@ -19,7 +19,10 @@ const (
 	maxPoolSize = 3
 )
 
-var FuzzHandler = RestRequestThreadPool{fuzzedApi: sync.Map{}}
+var (
+	FuzzHandler    = RestRequestThreadPool{fuzzedApi: sync.Map{}}
+	fuzzcontroller = false
+)
 
 type FuzzTask struct {
 	fuzzRequrestHandler *FuzzRequrestHandler
@@ -99,15 +102,26 @@ func initRestRequestThreadPool() {
 	FuzzHandler.threadPool = threadpool.NewThreadPool(queueSize, maxPoolSize, logger, "RestRequestThreadPool")
 }
 
-func InitFuzzScheduler() {
-	if !secConfig.GlobalInfo.IsIASTEnable() {
+func CloseFuzzScheduler() {
+	fuzzcontroller = true
+}
+
+func (r *RestRequestThreadPool) initFuzzScheduler() {
+	if !secConfig.GlobalInfo.IsIastMode() {
+		r.isFuzzSchedulerInitialized = false
 		return
 	}
 	if FuzzHandler.threadPool == nil {
 		initRestRequestThreadPool()
 	}
 	eventGeneration.SendLogMessage("initializing fuzz request scheduler", "InitFuzzScheduler", "INFO")
+	fuzzcontroller = false
 	for {
+		if fuzzcontroller {
+			r.isFuzzSchedulerInitialized = false
+			logger.Info("WebSocket Fuzz scheduler thread stopped")
+			return
+		}
 		iastProbingInterval := secConfig.GlobalInfo.IastProbingInterval()
 		logger.Debugln("iastProbingInterval SleepTime", iastProbingInterval)
 		time.Sleep(time.Duration(iastProbingInterval) * time.Second)
