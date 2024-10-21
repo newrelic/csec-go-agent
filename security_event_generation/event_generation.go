@@ -120,6 +120,10 @@ func SendSecHealthCheck() {
 	hc.IastReplayRequest = secConfig.GlobalInfo.IastReplayRequest
 	hc.EventStats = secConfig.GlobalInfo.EventStats
 
+	hc.ProcStartTime = secConfig.GlobalInfo.ApplicationInfo.GetStarttimestr().Unix() * 1000
+	hc.TrafficStartedTime = secConfig.GlobalInfo.ApplicationInfo.GetTrafficStartedTime()
+	hc.ScanStartTime = secConfig.GlobalInfo.ApplicationInfo.GetScanStartTime()
+
 	if secConfig.SecureWS != nil {
 		hc.IastReplayRequest.PendingControlCommands = secConfig.SecureWS.PendingFuzzTask()
 	}
@@ -355,6 +359,7 @@ func SendVulnerableEvent(req *secUtils.Info_req, category, eventCategory string,
 	}
 
 	if firstEvent {
+		secConfig.GlobalInfo.ApplicationInfo.SetTrafficStartedTime(time.Now())
 		logging.EndStage("8", "First event sent for validation. Security agent started successfully.")
 		logging.PrintInitlog("First event processed : " + string(event_json))
 		firstEvent = false
