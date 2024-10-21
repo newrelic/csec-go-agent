@@ -302,7 +302,8 @@ func SendVulnerableEvent(req *secUtils.Info_req, category, eventCategory string,
 	tmp_event.HTTPResponse = secUtils.ResponseInfo{ContentType: req.ResponseContentType}
 	tmp_event.MetaData.AppServerInfo.ApplicationDirectory = secConfig.GlobalInfo.EnvironmentInfo.Wd
 	tmp_event.MetaData.AppServerInfo.ServerBaseDirectory = secConfig.GlobalInfo.EnvironmentInfo.Wd
-
+	tmp_event.LinkingMetadata = copyMap(secConfig.GlobalInfo.MetaData.GetLinkingMetadata())
+	tmp_event.LinkingMetadata["trace.id"] = req.TraceId
 	if !req.Request.IsGRPC {
 
 		if req.Request.BodyReader.GetBody != nil {
@@ -533,4 +534,12 @@ func getServiceStatus() map[string]interface{} {
 	ServiceStatus["iastRestClient"] = iastRestClientStatus()
 	return ServiceStatus
 
+}
+
+func copyMap(originalMap map[string]string) map[string]string {
+	targetMap := make(map[string]string)
+	for key, value := range originalMap {
+		targetMap[key] = value
+	}
+	return targetMap
 }

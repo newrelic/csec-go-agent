@@ -19,6 +19,7 @@ type Info_req struct {
 	ReflectedMetaData    ReflectedMetaData
 	ParentID             string
 	BodyLimit            int
+	TraceId              string
 }
 
 type ReflectedMetaData struct {
@@ -50,6 +51,7 @@ type RequestInfo struct {
 	DataTruncated bool                `json:"dataTruncated"`
 	BodyReader    SecWriter           `json:"-"`
 	Route         string              `json:"route"`
+	URI           string              `json:"requestURI"`
 }
 
 type SecWriter struct {

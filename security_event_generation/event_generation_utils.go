@@ -147,22 +147,22 @@ type Exitevent struct {
 }
 
 type ApplicationIdentifiers struct {
-	ApplicationUUID  string      `json:"applicationUUID"`
-	CollectorVersion string      `json:"collectorVersion"`
-	GroupName        string      `json:"groupName"`
-	BuildNumber      string      `json:"buildNumber"`
-	NodeID           string      `json:"nodeId"`
-	CollectorType    string      `json:"collectorType"`
-	PolicyVersion    string      `json:"policyVersion"`
-	Language         string      `json:"language"`
-	Framework        string      `json:"framework"`
-	JSONVersion      string      `json:"jsonVersion"`
-	JSONName         string      `json:"jsonName"`
-	Pid              string      `json:"pid"`
-	StartTime        string      `json:"startTime"`
-	AppAccountId     string      `json:"appAccountId"`
-	AppEntityGuid    string      `json:"appEntityGuid"`
-	LinkingMetadata  interface{} `json:"linkingMetadata"`
+	ApplicationUUID  string            `json:"applicationUUID"`
+	CollectorVersion string            `json:"collectorVersion"`
+	GroupName        string            `json:"groupName"`
+	BuildNumber      string            `json:"buildNumber"`
+	NodeID           string            `json:"nodeId"`
+	CollectorType    string            `json:"collectorType"`
+	PolicyVersion    string            `json:"policyVersion"`
+	Language         string            `json:"language"`
+	Framework        string            `json:"framework"`
+	JSONVersion      string            `json:"jsonVersion"`
+	JSONName         string            `json:"jsonName"`
+	Pid              string            `json:"pid"`
+	StartTime        string            `json:"startTime"`
+	AppAccountId     string            `json:"appAccountId"`
+	AppEntityGuid    string            `json:"appEntityGuid"`
+	LinkingMetadata  map[string]string `json:"linkingMetadata"`
 }
 
 type FuzzFailBean struct {
