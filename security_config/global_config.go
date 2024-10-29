@@ -37,6 +37,7 @@ type Info_struct struct {
 	IastReplayRequest        IastReplayRequest
 	EventStats               EventStats
 	DroppedEvent             DroppedEvent
+	dealyAgentTill           time.Time
 }
 
 func (info *Info_struct) GetCurrentPolicy() Policy {
@@ -102,10 +103,92 @@ func (info *Info_struct) SetSecurity(security Security) {
 	info.security = security
 }
 
-func (info *Info_struct) IsRxssEnabled() bool {
+func (info *Info_struct) IsInsecureSettingsDisabled() bool {
 	info.securityMutex.Lock()
 	defer info.securityMutex.Unlock()
-	return info.security.Detection.Rxss.Enabled
+	return info.security.ExcludeFromIastScan.IastDetectionCategory.InsecureSettings
+}
+func (info *Info_struct) IsInvalidFileAccessDisabled() bool {
+	info.securityMutex.Lock()
+	defer info.securityMutex.Unlock()
+	return info.security.ExcludeFromIastScan.IastDetectionCategory.InvalidFileAccess
+}
+
+func (info *Info_struct) IsSQLInjectionDisabled() bool {
+	info.securityMutex.Lock()
+	defer info.securityMutex.Unlock()
+	return info.security.ExcludeFromIastScan.IastDetectionCategory.SQLInjection
+}
+func (info *Info_struct) IsNosqlInjectionDisabled() bool {
+	info.securityMutex.Lock()
+	defer info.securityMutex.Unlock()
+	return info.security.ExcludeFromIastScan.IastDetectionCategory.NosqlInjection
+}
+func (info *Info_struct) IsLdapInjectionDisabled() bool {
+	info.securityMutex.Lock()
+	defer info.securityMutex.Unlock()
+	return info.security.ExcludeFromIastScan.IastDetectionCategory.LdapInjection
+}
+func (info *Info_struct) IsJavascriptInjectionDisabled() bool {
+	info.securityMutex.Lock()
+	defer info.securityMutex.Unlock()
+	return info.security.ExcludeFromIastScan.IastDetectionCategory.JavascriptInjection
+}
+func (info *Info_struct) IsCommandInjectionDisabled() bool {
+	info.securityMutex.Lock()
+	defer info.securityMutex.Unlock()
+	return info.security.ExcludeFromIastScan.IastDetectionCategory.CommandInjection
+}
+func (info *Info_struct) IsXpathInjectionDisabled() bool {
+	info.securityMutex.Lock()
+	defer info.securityMutex.Unlock()
+	return info.security.ExcludeFromIastScan.IastDetectionCategory.XpathInjection
+}
+func (info *Info_struct) IsSsrfDisabled() bool {
+	info.securityMutex.Lock()
+	defer info.securityMutex.Unlock()
+	return info.security.ExcludeFromIastScan.IastDetectionCategory.Ssrf
+}
+func (info *Info_struct) IsRxssDisabled() bool {
+	info.securityMutex.Lock()
+	defer info.securityMutex.Unlock()
+	return info.security.ExcludeFromIastScan.IastDetectionCategory.Rxss
+}
+
+func (info *Info_struct) SkipIastScanParameters() interface{} {
+	info.securityMutex.Lock()
+	defer info.securityMutex.Unlock()
+	return info.security.ExcludeFromIastScan.HttpRequestParameters
+}
+
+func (info *Info_struct) SkipIastScanApi() []string {
+	info.securityMutex.Lock()
+	defer info.securityMutex.Unlock()
+	return info.security.ExcludeFromIastScan.API
+}
+
+func (info *Info_struct) ScanScheduleDuration() int {
+	info.securityMutex.Lock()
+	defer info.securityMutex.Unlock()
+	return info.security.ScanSchedule.Duration
+}
+
+func (info *Info_struct) ScanScheduleDelay() int {
+	info.securityMutex.Lock()
+	defer info.securityMutex.Unlock()
+	return info.security.ScanSchedule.Delay
+}
+
+func (info *Info_struct) ScanScheduleAllowIastSampleCollection() bool {
+	info.securityMutex.Lock()
+	defer info.securityMutex.Unlock()
+	return info.security.ScanSchedule.AllowIastSampleCollection
+}
+
+func (info *Info_struct) ScanScheduleSchedule() string {
+	info.securityMutex.Lock()
+	defer info.securityMutex.Unlock()
+	return info.security.ScanSchedule.Schedule
 }
 
 func (info *Info_struct) SecurityHomePath() string {
@@ -128,6 +211,9 @@ func (info *Info_struct) SetValidatorServiceUrl(path string) {
 func (info *Info_struct) SecurityMode() string {
 	return info.security.Mode
 }
+func (info *Info_struct) IsIastMode() bool {
+	return secUtils.CaseInsensitiveEquals(info.security.Mode, "IAST")
+}
 
 func (info *Info_struct) BodyLimit() int {
 	return info.security.Request.BodyLimit * 1000
@@ -135,7 +221,14 @@ func (info *Info_struct) BodyLimit() int {
 
 func (info *Info_struct) SetBodyLimit(bodyLimit int) {
 	info.security.Request.BodyLimit = bodyLimit
-	return
+}
+
+func (info *Info_struct) ScanControllersIastLoadInterval() int {
+	return info.security.ScanControllers.IastScanRequestRateLimit
+}
+
+func (info *Info_struct) SetscanControllersIastLoadInterval(iastLoadInterval int) {
+	info.security.ScanControllers.IastScanRequestRateLimit = iastLoadInterval
 }
 
 func (info *Info_struct) GetApiData() []any {
@@ -174,7 +267,7 @@ func (info *Info_struct) IastProbingInterval() int {
 }
 
 type metaData struct {
-	linkingMetadata interface{}
+	linkingMetadata map[string]string
 	accountID       string
 	agentRunId      string
 	entityGuid      string
@@ -230,13 +323,13 @@ func (m *metaData) SetAgentRunId(value string) {
 	m.agentRunId = value
 }
 
-func (m *metaData) GetLinkingMetadata() interface{} {
+func (m *metaData) GetLinkingMetadata() map[string]string {
 	m.Lock()
 	defer m.Unlock()
 	return m.linkingMetadata
 }
 
-func (m *metaData) SetLinkingMetadata(value interface{}) {
+func (m *metaData) SetLinkingMetadata(value map[string]string) {
 	m.Lock()
 	defer m.Unlock()
 	m.linkingMetadata = value
@@ -321,21 +414,23 @@ type EnvironmentInfo struct {
 
 type runningApplicationInfo struct {
 	sync.Mutex
-	appName          string
-	apiAccessorToken string
-	protectedServer  string
-	appUUID          string
-	sha256           string
-	size             string
-	contextPath      string
-	pid              string
-	Cmd              string
-	cmdline          []string
-	ports            []int
-	ServerIp         string
-	starttimestr     time.Time
-	binaryPath       string
-	serverName       []string
+	appName            string
+	apiAccessorToken   string
+	protectedServer    string
+	appUUID            string
+	sha256             string
+	size               string
+	contextPath        string
+	pid                string
+	Cmd                string
+	cmdline            []string
+	ports              []int
+	ServerIp           string
+	starttimestr       time.Time
+	trafficStartedTime time.Time
+	scanStartTime      time.Time
+	binaryPath         string
+	serverName         []string
 }
 
 func (r *runningApplicationInfo) GetAppName() string {
@@ -464,6 +559,32 @@ func (r *runningApplicationInfo) SetServerName(value string) {
 	r.Lock()
 	defer r.Unlock()
 	r.serverName = append(r.serverName, value)
+}
+
+func (r *runningApplicationInfo) GetTrafficStartedTime() int64 {
+
+	if r.trafficStartedTime.IsZero() {
+		return 0
+	} else {
+		return r.trafficStartedTime.Unix() * 1000
+	}
+}
+
+func (r *runningApplicationInfo) SetTrafficStartedTime(value time.Time) {
+	r.trafficStartedTime = value
+}
+
+func (r *runningApplicationInfo) GetScanStartTime() int64 {
+
+	if r.trafficStartedTime.IsZero() {
+		return 0
+	} else {
+		return r.scanStartTime.Unix() * 1000
+	}
+}
+
+func (r *runningApplicationInfo) SetScanStartTime(value time.Time) {
+	r.scanStartTime = value
 }
 
 type Instrumentation struct {

@@ -481,7 +481,7 @@ func isusercode(name, path string) bool {
 	}
 
 	// handle standard packages
-	return !strings.Contains(path, "go/src")
+	return !secUtils.CaseInsensitiveContains(path, "go/src")
 
 }
 

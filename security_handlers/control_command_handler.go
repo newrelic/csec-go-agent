@@ -103,7 +103,6 @@ func parseControlCommand(arg []byte) (error, bool) {
 			secConfig.UpdateGlobalConf(defaultPolicy.Data, string(arg))
 
 		}
-		FuzzHandler.InitFuzzScheduler()
 	case POLICY_UPDATE_FAILED_DUE_TO_VALIDATION_ERROR:
 		logger.Warnln("Updated policy failed validation. Reverting to default policy for the mode", cc.Data)
 		secConfig.InstantiateDefaultPolicy()

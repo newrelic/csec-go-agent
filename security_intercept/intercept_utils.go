@@ -16,6 +16,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/dlclark/regexp2"
 	logging "github.com/newrelic/csec-go-agent/internal/security_logs"
 	secUtils "github.com/newrelic/csec-go-agent/internal/security_utils"
 	secConfig "github.com/newrelic/csec-go-agent/security_config"
@@ -28,8 +29,8 @@ func IsForceDisable() bool {
 func IsDisable() bool {
 	return !secConfig.GlobalInfo.IsSecurityEnabled()
 }
-func IsRxssEnabled() bool {
-	return secConfig.GlobalInfo.IsRxssEnabled()
+func IsRxssDisabled() bool {
+	return secConfig.GlobalInfo.IsRxssDisabled()
 }
 
 func RequestBodyReadLimit() int {
@@ -306,6 +307,23 @@ func ToOneValueMap(header map[string][]string) (filterHeader map[string]string) 
 	return
 }
 
+func isSkipIastScanApi(url, route string) (bool, string) {
+	regexp := secConfig.GlobalInfo.SkipIastScanApi()
+	for i := range regexp {
+		if !strings.HasPrefix(regexp[i], "^") {
+			regexp[i] = "^" + regexp[i]
+		}
+		if !strings.HasSuffix(regexp[i], "$") {
+			regexp[i] = regexp[i] + "$"
+		}
+		re := regexp2.MustCompile(regexp[i], 0)
+		if isMatch, _ := re.MatchString(url); isMatch {
+			return true, regexp[i]
+		}
+	}
+	return false, ""
+}
+
 func InitLowSeverityEventScheduler() {
 	t := time.NewTicker(30 * time.Minute)
 	for {
@@ -314,4 +332,12 @@ func InitLowSeverityEventScheduler() {
 			secConfig.Secure.CleanLowSeverityEvent()
 		}
 	}
+}
+
+func getRequestUri(url string) string {
+	idx := strings.Index(url, "?")
+	if idx != -1 {
+		return url[:idx]
+	}
+	return url
 }

@@ -37,47 +37,71 @@ var (
 	firstEvent            = true
 	HcBuffer              *secUtils.Cring
 	logger                = logging.GetLogger("hook")
-	removeChannel         = make(chan string)
-	panicChannel          = make(chan string)
+	hcChannel             chan bool
+	panicChannel          chan bool
 	errorBuffer           = secUtils.NewCring(15)
 	applicationPanic      = make(map[string]*PanicReport)
 	applicationPanicMutex = sync.Mutex{}
 )
 
-func InitHcScheduler() {
+func SendInitEvents() {
 	logging.EndStage("5", "Security agent components started")
-	SendSecHealthCheck()
 	sendBufferLogMessage()
 	sendUrlMappingEvent()
-	t := time.NewTicker(5 * time.Minute)
-	for {
-		select {
-		case <-t.C:
-			SendSecHealthCheck()
-		case <-removeChannel:
-			return
-		}
+
+}
+
+func InitScheduler() {
+	if hcChannel == nil {
+		hcChannel = initHcScheduler()
 	}
+	if panicChannel == nil {
+		panicChannel = initPanicReportScheduler()
+	}
+}
+
+func initHcScheduler() chan bool {
+	quit := make(chan bool, 5)
+	t := time.NewTicker(5 * time.Minute)
+	go func() {
+		SendSecHealthCheck()
+		for {
+			select {
+			case <-t.C:
+				SendSecHealthCheck()
+			case <-quit:
+				return
+			}
+		}
+	}()
+	return quit
 }
 
 func RemoveHcScheduler() {
-	removeChannel <- "end"
+	hcChannel <- true
+	hcChannel = nil
 }
 
-func InitPanicReportScheduler() {
+func initPanicReportScheduler() chan bool {
+	quit := make(chan bool, 5)
 	t := time.NewTicker(30 * time.Second)
-	for {
-		select {
-		case <-t.C:
-			sendApplicationRuntimeError()
-		case <-panicChannel:
-			return
+	go func() {
+		sendApplicationRuntimeError()
+		for {
+			select {
+			case <-t.C:
+				sendApplicationRuntimeError()
+			case <-quit:
+				return
+			}
 		}
-	}
+	}()
+	return quit
 }
 
 func RemovePanicReportScheduler() {
-	panicChannel <- "end"
+	panicChannel <- true
+	panicChannel = nil
 }
 
 func initHcBuffer() {
@@ -119,6 +143,10 @@ func SendSecHealthCheck() {
 	hc.WebSocketConnectionStats = secConfig.GlobalInfo.WebSocketConnectionStats
 	hc.IastReplayRequest = secConfig.GlobalInfo.IastReplayRequest
 	hc.EventStats = secConfig.GlobalInfo.EventStats
+
+	hc.ProcStartTime = secConfig.GlobalInfo.ApplicationInfo.GetStarttimestr().Unix() * 1000
+	hc.TrafficStartedTime = secConfig.GlobalInfo.ApplicationInfo.GetTrafficStartedTime()
+	hc.ScanStartTime = secConfig.GlobalInfo.ApplicationInfo.GetScanStartTime()
 
 	if secConfig.SecureWS != nil {
 		hc.IastReplayRequest.PendingControlCommands = secConfig.SecureWS.PendingFuzzTask()
@@ -298,7 +326,9 @@ func SendVulnerableEvent(req *secUtils.Info_req, category, eventCategory string,
 	tmp_event.HTTPResponse = secUtils.ResponseInfo{ContentType: req.ResponseContentType}
 	tmp_event.MetaData.AppServerInfo.ApplicationDirectory = secConfig.GlobalInfo.EnvironmentInfo.Wd
 	tmp_event.MetaData.AppServerInfo.ServerBaseDirectory = secConfig.GlobalInfo.EnvironmentInfo.Wd
-
+	tmp_event.MetaData.SkipScanParameters = secConfig.GlobalInfo.SkipIastScanParameters()
+	tmp_event.LinkingMetadata = copyMap(secConfig.GlobalInfo.MetaData.GetLinkingMetadata())
+	tmp_event.LinkingMetadata["trace.id"] = req.TraceId
 	if !req.Request.IsGRPC {
 
 		if req.Request.BodyReader.GetBody != nil {
@@ -354,6 +384,7 @@ func SendVulnerableEvent(req *secUtils.Info_req, category, eventCategory string,
 	}
 
 	if firstEvent {
+		secConfig.GlobalInfo.ApplicationInfo.SetTrafficStartedTime(time.Now())
 		logging.EndStage("8", "First event sent for validation. Security agent started successfully.")
 		logging.PrintInitlog("First event processed : " + string(event_json))
 		firstEvent = false
@@ -528,4 +559,12 @@ func getServiceStatus() map[string]interface{} {
 	ServiceStatus["iastRestClient"] = iastRestClientStatus()
 	return ServiceStatus
 
+}
+
+func copyMap(originalMap map[string]string) map[string]string {
+	targetMap := make(map[string]string)
+	for key, value := range originalMap {
+		targetMap[key] = value
+	}
+	return targetMap
 }
