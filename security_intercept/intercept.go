@@ -328,7 +328,7 @@ func TraceIncommingRequest(url, host string, hdrMap map[string][]string, method 
 	infoReq.Request.URI = getRequestUri(url)
 	infoReq.TraceId = traceId
 
-  if reqtype == "gRPC" {
+	if reqtype == "gRPC" {
 		infoReq.Request.IsGRPC = true
 	}
 
@@ -625,7 +625,7 @@ func UpdateLinkData(linkingMetadata map[string]string) {
 		}
 		if secConfig.SecureWS != nil {
 			SendLogMessage("Reconnect security agent at refresh call", "UpdateLinkData", "INFO")
-			secConfig.SecureWS.ReconnectAtAgentRefresh()
+			go secConfig.SecureWS.ReconnectAtAgentRefresh()
 		}
 	}
 
