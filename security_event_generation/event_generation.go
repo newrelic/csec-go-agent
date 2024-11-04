@@ -323,7 +323,7 @@ func SendVulnerableEvent(req *secUtils.Info_req, category, eventCategory string,
 	tmp_event.VulnerabilityDetails = vulnerabilityDetails
 	tmp_event.ApplicationIdentifiers = getApplicationIdentifiers("Event")
 	tmp_event.EventGenerationTime = strconv.FormatInt(time.Now().Unix()*1000, 10)
-	tmp_event.HTTPResponse = secUtils.ResponseInfo{ContentType: req.ResponseContentType}
+	tmp_event.HTTPResponse = req.Response
 	tmp_event.MetaData.AppServerInfo.ApplicationDirectory = secConfig.GlobalInfo.EnvironmentInfo.Wd
 	tmp_event.MetaData.AppServerInfo.ServerBaseDirectory = secConfig.GlobalInfo.EnvironmentInfo.Wd
 	tmp_event.MetaData.SkipScanParameters = secConfig.GlobalInfo.SkipIastScanParameters()
@@ -393,6 +393,25 @@ func SendVulnerableEvent(req *secUtils.Info_req, category, eventCategory string,
 	tracingHeader := tmp_event.HTTPRequest.Headers[NR_CSEC_TRACING_DATA]
 	return &secUtils.EventTracker{APIID: tmp_event.APIID, ID: tmp_event.ID, CaseType: tmp_event.CaseType, TracingHeader: tracingHeader, RequestIdentifier: requestIdentifier.Raw}
 
+}
+
+func SendResponseEvent(req *secUtils.Info_req) {
+
+	if req != nil && secUtils.CaseInsensitiveEquals(req.RequestIdentifier.NextStage, "VULNERABLE") {
+
+		var tmp_event SecHttpResponse
+		tmp_event.ApplicationIdentifiers = getApplicationIdentifiers("sec-http-response")
+		tmp_event.HTTPRequest = nil
+		tmp_event.HTTPResponse = req.Response
+		tmp_event.TraceId = req.TraceId
+		tmp_event.IsIASTRequest = true
+		tmp_event.LinkingMetadata = copyMap(secConfig.GlobalInfo.MetaData.GetLinkingMetadata())
+		tmp_event.LinkingMetadata["trace.id"] = req.TraceId
+		_, err := sendEvent(tmp_event, "", "sec-http-response")
+		if err != nil {
+			logger.Errorln(err)
+		}
+	}
 }
 
 func SendExitEvent(eventTracker *secUtils.EventTracker, requestIdentifier string) {
