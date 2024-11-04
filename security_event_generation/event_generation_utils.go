@@ -166,6 +166,14 @@ type ApplicationIdentifiers struct {
 	LinkingMetadata  map[string]string `json:"linkingMetadata"`
 }
 
+type SecHttpResponse struct {
+	ApplicationIdentifiers
+	TraceId       string                `json:"traceId"`
+	HTTPResponse  secUtils.ResponseInfo `json:"httpResponse"`
+	HTTPRequest   interface{}           `json:"httpRequest"`
+	IsIASTRequest bool                  `json:"isIASTRequest"`
+}
+
 type FuzzFailBean struct {
 	ApplicationIdentifiers
 	FuzzHeader string `json:"fuzzHeader"`
