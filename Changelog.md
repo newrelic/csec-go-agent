@@ -1,5 +1,18 @@
 # Changelog
 
+## [v1.5.0] - 2024-10-29
+### Features:
+* Json Version bump to 1.2.9.
+* Add IAST Scan start time and Traffic Start Time in Health Check
+* Add feature to allow IAST Scan Scheduling.
+* Add feature to ignore IAST Scan of certain APIs, categories, or parameters.
+* Add feature to rate limit the IAST replay requests.
+* Add trace.id in event json.
+* Add request uri in application runtime error event.
+
+### Fixes
+* Fix for wrong user file name for RXSS event in windows environment.
+
 ## [v1.4.0] - 2024-08-27
 ### Features:
 * Added new key identifiers to all event JSONs.

@@ -70,6 +70,7 @@ type metaData struct {
 		ApplicationDirectory string `json:"applicationDirectory"`
 		ServerBaseDirectory  string `json:"serverBaseDirectory"`
 	} `json:"appServerInfo"`
+	SkipScanParameters interface{} `json:"skipScanParameters"`
 }
 
 // ---------------------------------------------------
@@ -117,6 +118,9 @@ type healthcheck struct {
 	WebSocketConnectionStats secConfig.WebSocketConnectionStats `json:"webSocketConnectionStats"`
 	IastReplayRequest        secConfig.IastReplayRequest        `json:"iastReplayRequest"`
 	EventStats               secConfig.EventStats               `json:"eventStats"`
+	ProcStartTime            int64                              `json:"procStartTime"`
+	TrafficStartedTime       int64                              `json:"trafficStartedTime"`
+	ScanStartTime            int64                              `json:"scanStartTime"`
 }
 
 type ThreadPoolStats struct {
@@ -144,22 +148,22 @@ type Exitevent struct {
 }
 
 type ApplicationIdentifiers struct {
-	ApplicationUUID  string      `json:"applicationUUID"`
-	CollectorVersion string      `json:"collectorVersion"`
-	GroupName        string      `json:"groupName"`
-	BuildNumber      string      `json:"buildNumber"`
-	NodeID           string      `json:"nodeId"`
-	CollectorType    string      `json:"collectorType"`
-	PolicyVersion    string      `json:"policyVersion"`
-	Language         string      `json:"language"`
-	Framework        string      `json:"framework"`
-	JSONVersion      string      `json:"jsonVersion"`
-	JSONName         string      `json:"jsonName"`
-	Pid              string      `json:"pid"`
-	StartTime        string      `json:"startTime"`
-	AppAccountId     string      `json:"appAccountId"`
-	AppEntityGuid    string      `json:"appEntityGuid"`
-	LinkingMetadata  interface{} `json:"linkingMetadata"`
+	ApplicationUUID  string            `json:"applicationUUID"`
+	CollectorVersion string            `json:"collectorVersion"`
+	GroupName        string            `json:"groupName"`
+	BuildNumber      string            `json:"buildNumber"`
+	NodeID           string            `json:"nodeId"`
+	CollectorType    string            `json:"collectorType"`
+	PolicyVersion    string            `json:"policyVersion"`
+	Language         string            `json:"language"`
+	Framework        string            `json:"framework"`
+	JSONVersion      string            `json:"jsonVersion"`
+	JSONName         string            `json:"jsonName"`
+	Pid              string            `json:"pid"`
+	StartTime        string            `json:"startTime"`
+	AppAccountId     string            `json:"appAccountId"`
+	AppEntityGuid    string            `json:"appEntityGuid"`
+	LinkingMetadata  map[string]string `json:"linkingMetadata"`
 }
 
 type FuzzFailBean struct {

@@ -29,7 +29,7 @@ type Logger interface {
 
 // New creates a basic Logger.
 func UpdateLogger(w io.Writer, mode string, pid int, logF *logFile, rotateFileHook *RotateFileHook, isDefault bool) {
-	logF.logger = log.New(w, fmt.Sprintf("%d", pid), log.Ldate|log.Ltime|log.Lmsgprefix|log.LstdFlags|log.LUTC|log.Lshortfile)
+	logF.logger = log.New(w, fmt.Sprintf("%d", pid), log.Ldate|log.LUTC|log.Lmsgprefix|log.LstdFlags|log.LUTC|log.Lshortfile)
 	logF.isActive = true
 	logF.iscache = false
 	logF.rotateFileHook = rotateFileHook
