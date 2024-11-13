@@ -16,6 +16,7 @@ import (
 var GlobalInfo *Info_struct = new(Info_struct)
 var Secure secUtils.Secureiface
 var SecureWS secUtils.SecureWSiface
+var Sampler sampling
 
 type Info_struct struct {
 	ApiData             *sync.Map
@@ -607,6 +608,10 @@ func InitDefaultConfig() {
 	GlobalInfo.MetaData = metaData{}
 	GlobalInfo.MetaData.linkingMetadata = map[string]string{}
 	GlobalInfo.WebSocketConnectionStats = WebSocketConnectionStats{}
+	Sampler = sampling{
+		currentHarvest:  8,
+		previousHarvest: 0,
+	}
 
 }
 

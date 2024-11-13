@@ -33,6 +33,10 @@ func IsRxssDisabled() bool {
 	return secConfig.GlobalInfo.IsRxssDisabled()
 }
 
+func IsHookProcessingActive() bool {
+	return true
+}
+
 func RequestBodyReadLimit() int {
 	return secConfig.GlobalInfo.BodyLimit()
 }
@@ -325,11 +329,23 @@ func isSkipIastScanApi(url, route string) (bool, string) {
 }
 
 func InitLowSeverityEventScheduler() {
+	go InitLowSeverityEventScheduler1()
+
 	t := time.NewTicker(30 * time.Minute)
 	for {
 		select {
 		case <-t.C:
 			secConfig.Secure.CleanLowSeverityEvent()
+		}
+	}
+}
+
+func InitLowSeverityEventScheduler1() {
+	t := time.NewTicker(5 * time.Second)
+	for {
+		select {
+		case <-t.C:
+			secConfig.Sampler.Reset()
 		}
 	}
 }

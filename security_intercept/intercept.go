@@ -696,6 +696,12 @@ func SendEvent(caseType string, data ...interface{}) interface{} {
 }
 
 func inboundcallHandler(data ...interface{}) {
+	if a, b, c, d := secConfig.Sampler.CalculateSampling(); !a {
+		logger.Info("no need to sample data quota is end", b, c, d)
+		return
+	} else {
+		logger.Info("OK do sampling", b, c, d)
+	}
 
 	csecAttributes := map[string]any{}
 	traceId := ""
