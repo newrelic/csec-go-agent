@@ -20,11 +20,11 @@ func (s *sampling) CalculateSampling() (bool, uint, uint, uint) {
 	defer s.mu.Unlock()
 	if s.currentHarvest > 0 {
 		s.currentHarvest--
-		return true, s.currentHarvest, s.previousHarvest, 0
+		return false, s.currentHarvest, s.previousHarvest, 0
 	}
 	if s.previousHarvest > 0 {
 		s.previousHarvest--
-		return true, s.currentHarvest, s.previousHarvest, 1
+		return false, s.currentHarvest, s.previousHarvest, 1
 	}
 	return false, s.currentHarvest, s.previousHarvest, 2
 }
