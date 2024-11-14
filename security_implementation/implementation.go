@@ -79,7 +79,7 @@ func (k Secureimpl) AssociateInboundRequest(r *secUtils.Info_req) {
 
 	}
 	//UpdateHttpConnsIn(r)
-	associate(goroutineID, r)
+	associate(goroutineID, r.TraceId, r)
 }
 
 func (k Secureimpl) DissociateInboundRequest() {
@@ -193,6 +193,7 @@ func (k Secureimpl) GetTmpFiles() []string {
 	if request == nil {
 		return make([]string, 0)
 	} else {
+		disassociate(request.TraceId)
 		return request.RequestIdentifier.TempFiles
 	}
 }
@@ -330,8 +331,9 @@ func sendEvent(eventId, caseType, eventCategory string, args interface{}, isLowS
  */
 
 // associate request with goroutines ID
-func associate(id string, a *secUtils.Info_req) {
+func associate(id, id1 string, a *secUtils.Info_req) {
 	requestMap.Store(id, a)
+	requestMap.Store(id1, a)
 }
 
 // disassociate request with goroutines ID
