@@ -5,15 +5,18 @@ package security_utils
 
 import (
 	"net"
+	"net/http"
 )
 
 type Secureiface interface {
 	AssociateOutboundRequest(string, string, string)
 	SecurePrepareStatement(string, string)
 	SecureExecPrepareStatement(string, interface{}) *EventTracker
-	GetRequest() *Info_req
+	// GetRequest() *Info_req
+	AssociateResponseHeader(traceID string, header http.Header)
+	AssociateResponseBody(traceID, body string)
 	AssociateInboundRequest(*Info_req)
-	DissociateInboundRequest()
+	DissociateInboundRequest(traceId string) []string
 	HookWrap(interface{}, interface{}, interface{}) error
 	HookWrapInterface(interface{}, interface{}, interface{}) error
 	HookWrapRaw(uintptr, interface{}, interface{}) error
@@ -22,7 +25,7 @@ type Secureiface interface {
 	AssociateGrpcDataBytes([]byte) bool
 	AssociateGrpcInfo(bool, bool)
 	InitSyms() error
-	CalculateOutboundApiId()
+	// CalculateOutboundApiId()
 	AssociateGrpcData(string, string)
 	DisassociateGrpcData()
 	AssociateGrpcQueryParam(interface{}, string, string)
@@ -33,7 +36,6 @@ type Secureiface interface {
 	SendEvent(caseType, eventCategory string, args interface{}) *EventTracker
 	SendLowSeverityEvent(caseType, eventCategory string, args interface{}) *EventTracker
 	GetFuzzHeader() string
-	GetTmpFiles() []string
 	NewGoroutineLinker(interface{})
 	NewGoroutine() interface{}
 	SendPanicEvent(string)

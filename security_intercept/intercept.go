@@ -335,22 +335,6 @@ func TraceIncommingRequest(url, host string, hdrMap map[string][]string, method 
 	secConfig.Secure.AssociateInboundRequest(infoReq)
 }
 
-func associateResponseBody(body string) {
-	r := secConfig.Secure.GetRequest()
-	if r != nil {
-		r.ResponseBody = r.ResponseBody + body
-		secConfig.Secure.CalculateOutboundApiId()
-	}
-}
-
-func associateResponseHeader(header http.Header) {
-	r := secConfig.Secure.GetRequest()
-	if r != nil {
-		r.ResponseHeader = header
-		r.ResponseContentType = header.Get("content-type")
-	}
-}
-
 /**
  * Handling for FastHttp framework
  */
@@ -397,14 +381,14 @@ func AssociateGrpcDataBytes(data []byte) {
 
 }
 
-func ProcessGrpcResponse(service, method, reply string) {
-	if !isAgentInitialized() {
-		return
-	}
-	logger.Infoln("intercept grpc.Response: service", service, ",method:", method, ",args:", reply)
-	//Don't need to process this data for XSS
-	secConfig.Secure.DissociateInboundRequest()
-}
+// func ProcessGrpcResponse(service, method, reply string) {
+// 	if !isAgentInitialized() {
+// 		return
+// 	}
+// 	logger.Infoln("intercept grpc.Response: service", service, ",method:", method, ",args:", reply)
+// 	//Don't need to process this data for XSS
+// 	// secConfig.Secure.DissociateInboundRequest()
+// }
 
 func AssociateGrpcConnectionData(remoteAddr string) {
 	if !isAgentInitialized() {
@@ -439,85 +423,22 @@ func AssociateGoRoutine(caller, callee int64) {
 	secConfig.Secure.AssociateGoRoutine(caller, callee)
 }
 
-func DissociateInboundRequest() {
-	tmpFiles := secConfig.Secure.GetTmpFiles()
-	secConfig.Secure.DissociateInboundRequest()
-	removeFuzzFile(tmpFiles)
-}
+// func dissociateInboundRequest() {
+// 	tmpFiles := secConfig.Secure.DissociateInboundRequest("")
+// 	removeFuzzFile(tmpFiles)
+// }
 
-func traceResponseOperations() {
-	if !isAgentInitialized() {
-		return
-	}
+// func traceResponseOperations() {
+// 	if !isAgentInitialized() {
+// 		return
+// 	}
 
-	r := secConfig.Secure.GetRequest()
-	if r != nil {
-		checkSecureCookies(r.ResponseHeader)
-		xssCheck(r)
-	}
-}
-
-func checkSecureCookies(responseHeader http.Header) {
-
-	if secConfig.GlobalInfo.IsInsecureSettingsDisabled() {
-		return
-	}
-	if responseHeader != nil {
-		logger.Debugln("Verifying SecureCookies, response header", responseHeader)
-		tmpRes := http.Response{Header: responseHeader}
-		cookies := tmpRes.Cookies()
-		var arg []map[string]interface{}
-		check := false
-		for _, cookie := range cookies {
-			check = true
-			arg = append(arg, map[string]interface{}{
-				"name":       cookie.Name,
-				"isHttpOnly": cookie.HttpOnly,
-				"isSecure":   cookie.Secure,
-				"value":      cookie.Value,
-			})
-		}
-		if check {
-			secConfig.Secure.SendLowSeverityEvent("SECURE_COOKIE", "SECURE_COOKIE", arg)
-		}
-	}
-}
-
-func xssCheck(r *secUtils.Info_req) {
-	if !IsRxssDisabled() && r.ResponseBody != "" {
-
-		contentType := r.ResponseContentType
-		if !secUtils.IsContentTypeSupported(contentType) {
-			SendLogMessage(SKIP_RXSS_EVENT+contentType, "XssCheck", "SEVERE")
-			logger.Debugln(SKIP_RXSS_EVENT, contentType)
-			return
-		}
-
-		// Double check befor rxss event validation becouse in some case we don't have contentType in response header.
-		cType := http.DetectContentType([]byte(r.ResponseBody))
-		if !secUtils.IsContentTypeSupported(cType) {
-			SendLogMessage(SKIP_RXSS_EVENT+cType, "XssCheck", "SEVERE")
-			logger.Debugln(SKIP_RXSS_EVENT, cType)
-			return
-		}
-		if r.ResponseContentType == "" {
-			r.ResponseContentType = cType
-		}
-
-		out := secUtils.CheckForReflectedXSS(r)
-		logger.Debugln("RXSS check result: Out value set to ", out)
-
-		if len(out) == 0 && !secConfig.GlobalInfo.IsIASTEnable() {
-			logger.Debugln("No need to send xss event as not attack and dynamic scanning is false")
-		} else {
-			var arg []string
-			arg = append(arg, out)
-			arg = append(arg, r.ResponseBody)
-			secConfig.Secure.SendEvent("REFLECTED_XSS", "REFLECTED_XSS", arg)
-		}
-	}
-
-}
+// 	r := secConfig.Secure.GetRequest()
+// 	if r != nil {
+// 		checkSecureCookies(r.ResponseHeader)
+// 		xssCheck(r)
+// 	}
+// }
 
 /**
  * Handling for IAST mode
@@ -652,8 +573,7 @@ func SendEvent(caseType string, data ...interface{}) interface{} {
 	case "INBOUND":
 		inboundcallHandler(data...)
 	case "INBOUND_END":
-		traceResponseOperations()
-		DissociateInboundRequest()
+		dissociateInboundRequest(data...)
 	case "INBOUND_WRITE":
 		httpresponseHandler(data...)
 	case "INBOUND_RESPONSE_CODE":
@@ -683,7 +603,7 @@ func SendEvent(caseType string, data ...interface{}) interface{} {
 	case "NEW_GOROUTINE":
 		return secConfig.Secure.NewGoroutine()
 	case "NEW_GOROUTINE_END":
-		secConfig.Secure.DissociateInboundRequest()
+		secConfig.Secure.DissociateInboundRequest("")
 	case "APP_INFO":
 		associateApplicationPort(data...)
 	case "DYNAMO_DB":
@@ -696,6 +616,9 @@ func SendEvent(caseType string, data ...interface{}) interface{} {
 }
 
 func inboundcallHandler(data ...interface{}) {
+	// data[0] contains the first parameter
+	// data[1] contains the second parameter
+	// data[2] contains the second parameter
 
 	csecAttributes := map[string]any{}
 	traceId := ""
@@ -726,6 +649,17 @@ func inboundcallHandler(data ...interface{}) {
 
 	reqBodyWriter := secUtils.SecWriter{GetBody: r.GetBody, IsDataTruncated: r.IsDataTruncated}
 	TraceIncommingRequest(r.GetURL().String(), clientHost, r.GetHeader(), r.GetMethod(), "", queryparam, r.GetTransport(), r.GetServerName(), r.Type1(), reqBodyWriter, csecAttributes, traceId)
+}
+
+func dissociateInboundRequest(data ...interface{}) {
+
+	traceId := ""
+	if len(data) >= 1 {
+		traceId, _ = data[0].(string)
+	}
+
+	tmpFiles := secConfig.Secure.DissociateInboundRequest(traceId)
+	removeFuzzFile(tmpFiles)
 }
 
 // merge inboundcallHandler and inboundcallHandlerv1 in the next major release(v1.0.0)
@@ -779,9 +713,15 @@ func httpresponseHandler(data ...interface{}) {
 	}
 
 	contentType := ""
+	traceId := ""
+
+	if len(data) >= 3 {
+		traceId, _ = data[2].(string)
+	}
+
 	if hdr, ok := data[1].(http.Header); ok && hdr != nil {
 		contentType = hdr.Get("content-type")
-		associateResponseHeader(hdr)
+		secConfig.Secure.AssociateResponseHeader(traceId, hdr)
 	}
 
 	if contentType != "" && !secUtils.IsContentTypeSupported(contentType) {
@@ -796,7 +736,7 @@ func httpresponseHandler(data ...interface{}) {
 			logger.Debugln("Skipping RXSS event transmission: Content type not supported for RXSS event validation", contentType)
 			return
 		}
-		associateResponseBody(responseBody)
+		secConfig.Secure.AssociateResponseBody(traceId, responseBody)
 	}
 }
 
@@ -804,8 +744,13 @@ func httpresponseHeader(data ...interface{}) {
 	if len(data) < 1 {
 		return
 	}
+	traceId := ""
+
+	if len(data) >= 2 {
+		traceId, _ = data[1].(string)
+	}
 	if hdr, ok := data[0].(http.Header); ok && hdr != nil {
-		associateResponseHeader(hdr)
+		secConfig.Secure.AssociateResponseHeader(traceId, hdr)
 	}
 }
 
@@ -927,11 +872,11 @@ func mongoHandler(data ...interface{}) *secUtils.EventTracker {
 			return nil
 		}
 		arg11 = append(arg11, jsonMap)
-		tmp_map1 := map[string]interface{}{
+		tmpMap := map[string]interface{}{
 			"payloadType": queryType,
 			"payload":     arg11,
 		}
-		arg12 = append(arg12, tmp_map1)
+		arg12 = append(arg12, tmpMap)
 		return secConfig.Secure.SendEvent("NOSQL_DB_COMMAND", "MONGO", arg12)
 	}
 	return nil

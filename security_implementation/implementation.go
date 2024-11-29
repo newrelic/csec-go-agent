@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"fmt"
 	"net"
+	"net/http"
 	"runtime"
 	"runtime/debug"
 	"strconv"
@@ -28,7 +29,8 @@ var requestMap = sync.Map{}
 var lowSeverityEventMap = sync.Map{}
 
 const (
-	identity = "github.com/newrelic/csec-go-agent"
+	identity        = "github.com/newrelic/csec-go-agent"
+	SKIP_RXSS_EVENT = "Skipping RXSS event transmission: Content type not supported for RXSS event validation"
 )
 
 type grpcConn struct {
@@ -47,16 +49,16 @@ func (k Secureimpl) SecurePrepareStatement(q, p string) {
 	prepareQuery.Store(p, q)
 }
 
-func (k Secureimpl) SecureExecPrepareStatement(q_address string, qargs interface{}) *secUtils.EventTracker {
-	qurey, _ := prepareQuery.Load(q_address)
-	prepareQuery.Delete(q_address)
+func (k Secureimpl) SecureExecPrepareStatement(qAddress string, qargs interface{}) *secUtils.EventTracker {
+	qurey, _ := prepareQuery.Load(qAddress)
+	prepareQuery.Delete(qAddress)
 	var arg11 []interface{}
 
-	tmp_map := map[string]interface{}{
+	tmpMap := map[string]interface{}{
 		"query":      qurey,
 		"parameters": qargs,
 	}
-	arg11 = append(arg11, tmp_map)
+	arg11 = append(arg11, tmpMap)
 	return k.SendEvent("SQL_DB_COMMAND", "SQLITE", arg11)
 }
 
@@ -82,18 +84,38 @@ func (k Secureimpl) AssociateInboundRequest(r *secUtils.Info_req) {
 	associate(goroutineID, r.TraceId, r)
 }
 
-func (k Secureimpl) DissociateInboundRequest() {
-	if !isAgentReady() {
-		return
+func (k Secureimpl) AssociateResponseBody(traceID, body string) {
+	r := getRequestDoubleCheck(traceID)
+	if r != nil {
+		r.ResponseBody = r.ResponseBody + body
+
+		// Calculate API ID and vulnerability details for RXSS event at the time of the last response.
+		if r.VulnerabilityDetails.APIID == "" {
+			r.VulnerabilityDetails = presentStack(r.Request.Method, "REFLECTED_XSS")
+		}
 	}
-	disassociate(getID())
 }
+
+func (k Secureimpl) AssociateResponseHeader(traceID string, header http.Header) {
+	r := getRequestDoubleCheck(traceID)
+	if r != nil && len(header) > 0 {
+		r.ResponseHeader = header
+		r.ResponseContentType = header.Get("content-type")
+	}
+}
+
+// func (k Secureimpl) DissociateInboundRequest() {
+// 	if !isAgentReady() {
+// 		return
+// 	}
+// 	disassociate(getID())
+// }
 
 func (k Secureimpl) AssociateOutboundRequest(dest, dport, urlx string) {
 	//UpdateHttpConnsOut(dest, dport, urlx)
 }
 
-func (k Secureimpl) CalculateOutboundApiId() {
+func (k Secureimpl) calculateOutboundApiId() {
 	request := getRequest(getID())
 	if request.VulnerabilityDetails.APIID == "" {
 		vulnerabilityDetails := presentStack(request.Request.Method, "REFLECTED_XSS")
@@ -101,13 +123,13 @@ func (k Secureimpl) CalculateOutboundApiId() {
 	}
 }
 
-func (k Secureimpl) GetRequest() *secUtils.Info_req {
-	req, ok := requestMap.Load(getID())
-	if ok && req != nil {
-		return req.(*secUtils.Info_req)
-	}
-	return nil
-}
+// func (k Secureimpl) GetRequest() *secUtils.Info_req {
+// 	req, ok := requestMap.Load(getID())
+// 	if ok && req != nil {
+// 		return req.(*secUtils.Info_req)
+// 	}
+// 	return nil
+// }
 
 /**
  * Implementation for gRPC frameworks
@@ -188,15 +210,15 @@ func (k Secureimpl) GetFuzzHeader() string {
 	}
 }
 
-func (k Secureimpl) GetTmpFiles() []string {
-	request := getRequest(getID())
-	if request == nil {
-		return make([]string, 0)
-	} else {
-		disassociate(request.TraceId)
-		return request.RequestIdentifier.TempFiles
-	}
-}
+// func (k Secureimpl) GetTmpFiles() []string {
+// 	request := getRequest(getID())
+// 	if request == nil {
+// 		return make([]string, 0)
+// 	} else {
+// 		disassociate(getID())
+// 		return request.RequestIdentifier.TempFiles
+// 	}
+// }
 
 /**
  * Implementation for goroutines (created and deleted)
@@ -337,13 +359,26 @@ func associate(id, id1 string, a *secUtils.Info_req) {
 }
 
 // disassociate request with goroutines ID
-func disassociate(id string) {
+func disassociate(id, id1 string) {
+	requestMap.Delete(id)
 	requestMap.Delete(id)
 }
 
 // get Http request with goroutines ID
 func getRequest(id string) *secUtils.Info_req {
 	req, ok := requestMap.Load(id)
+	if ok && req != nil {
+		return req.(*secUtils.Info_req)
+	}
+	return nil
+}
+
+func getRequestDoubleCheck(traceId string) *secUtils.Info_req {
+
+	if traceId == "" {
+		return getRequest(getID())
+	}
+	req, ok := requestMap.Load(traceId)
 	if ok && req != nil {
 		return req.(*secUtils.Info_req)
 	}
