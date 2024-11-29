@@ -361,7 +361,9 @@ func associate(id, id1 string, a *secUtils.Info_req) {
 // disassociate request with goroutines ID
 func disassociate(id, id1 string) {
 	requestMap.Delete(id)
-	requestMap.Delete(id)
+	if id1 != "" {
+		requestMap.Delete(id1)
+	}
 }
 
 // get Http request with goroutines ID
