@@ -53,6 +53,7 @@ type Security struct {
 	} `yaml:"scan_schedule"`
 	ScanControllers struct {
 		IastScanRequestRateLimit int `yaml:"iast_scan_request_rate_limit"`
+		ScanInstanceCount        int `yaml:"scan_instance_count"`
 	} `yaml:"scan_controllers"`
 }
 
