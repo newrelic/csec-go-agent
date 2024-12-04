@@ -380,7 +380,7 @@ func getConnectionHeader() http.Header {
 		"NR-CSEC-PROCESS-START-TIME":      []string{secUtils.Int64ToString(secConfig.GlobalInfo.ApplicationInfo.GetStarttimestr().Unix() * 1000)},
 	}
 
-	if env := os.Getenv("NEW_RELIC_SECURITY_IAST_TEST_IDENTIFIER"); env != "" {
+	if env := secConfig.GlobalInfo.GetIastTestIdentifier(); env != "" {
 		connectionHeader.Add("NR-CSEC-IAST-TEST-IDENTIFIER", env)
 		connectionHeader.Add("NR-CSEC-IAST-SCAN-INSTANCE-COUNT", secUtils.IntToString(secConfig.GlobalInfo.ScanInstanceCount()))
 	}

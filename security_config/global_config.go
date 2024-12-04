@@ -238,6 +238,10 @@ func (info *Info_struct) SetScanInstanceCount(scanInstanceCount int) {
 	info.security.ScanControllers.ScanInstanceCount = scanInstanceCount
 }
 
+func (info *Info_struct) GetIastTestIdentifier() string {
+	return info.security.IastTestIdentifier
+}
+
 func (info *Info_struct) GetApiData() []any {
 	urlmappings := []any{}
 
