@@ -7,6 +7,7 @@ type Security struct {
 	Enabled               bool   `json:"enabled"`
 	Mode                  string `json:"mode"`
 	Validator_service_url string `json:"validator_service_url"`
+	IastTestIdentifier    string `json:"iast_test_identifier" yaml:"iast_test_identifier"`
 	Agent                 struct {
 		Enabled bool `json:"enabled"`
 	} `json:"agent"`
@@ -53,6 +54,7 @@ type Security struct {
 	} `yaml:"scan_schedule"`
 	ScanControllers struct {
 		IastScanRequestRateLimit int `yaml:"iast_scan_request_rate_limit"`
+		ScanInstanceCount        int `yaml:"scan_instance_count"`
 	} `yaml:"scan_controllers"`
 }
 

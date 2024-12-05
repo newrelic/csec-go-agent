@@ -231,6 +231,17 @@ func (info *Info_struct) SetscanControllersIastLoadInterval(iastLoadInterval int
 	info.security.ScanControllers.IastScanRequestRateLimit = iastLoadInterval
 }
 
+func (info *Info_struct) ScanInstanceCount() int {
+	return info.security.ScanControllers.ScanInstanceCount
+}
+func (info *Info_struct) SetScanInstanceCount(scanInstanceCount int) {
+	info.security.ScanControllers.ScanInstanceCount = scanInstanceCount
+}
+
+func (info *Info_struct) GetIastTestIdentifier() string {
+	return info.security.IastTestIdentifier
+}
+
 func (info *Info_struct) GetApiData() []any {
 	urlmappings := []any{}
 
