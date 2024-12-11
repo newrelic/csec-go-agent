@@ -616,11 +616,9 @@ func SendEvent(caseType string, data ...interface{}) interface{} {
 }
 
 func inboundcallHandler(data ...interface{}) {
-	if a, b := secConfig.Sampler.CalculateSampling(); !a {
-		logger.Info("no need to sample data quota is end", b)
+	if ok, count := secConfig.Sampler.CalculateSampling(); !ok {
+		logger.Debugln("No need to sample data; the http request event quota has ended.", count)
 		return
-	} else {
-		logger.Info("OK do sampling", b)
 	}
 
 	csecAttributes := map[string]any{}

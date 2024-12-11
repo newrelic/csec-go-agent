@@ -609,8 +609,7 @@ func InitDefaultConfig() {
 	GlobalInfo.MetaData.linkingMetadata = map[string]string{}
 	GlobalInfo.WebSocketConnectionStats = WebSocketConnectionStats{}
 	Sampler = sampling{
-		currentHarvest:  8,
-		previousHarvest: 0,
+		currentHarvest: 5,
 	}
 
 }

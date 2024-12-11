@@ -344,6 +344,11 @@ func sendEvent(eventId, caseType, eventCategory string, args interface{}, isLowS
 		}
 	}
 
+	if ok := secConfig.Sampler.CalculateEventSampling(vulnerabilityDetails.APIID); !ok {
+		logger.Debugln("No need to sample data; the event quota has ended.")
+		return nil
+	}
+
 	return eventGeneration.SendVulnerableEvent(req, caseType, eventCategory, args, vulnerabilityDetails, getEventID(eventId, id))
 
 }
