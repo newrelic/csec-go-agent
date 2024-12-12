@@ -15,6 +15,6 @@ func init() {
 	initmd5Hook()
 	initblake2sHook()
 
-	PluginStart_aes()
-	PluginStart_rsa()
+	initAesHook()
+	initRsaHook()
 }

@@ -25,7 +25,7 @@ func NewCipher_s(key []byte) (cipher.Block, error) {
 	return NewCipher_s(key)
 }
 
-func PluginStart_aes() {
+func initAesHook() {
 	if !secIntercept.IsAgentInitializedForHook() || secIntercept.IsForceDisable() || !secIntercept.IsHookingoIsSupported() {
 		return
 	}

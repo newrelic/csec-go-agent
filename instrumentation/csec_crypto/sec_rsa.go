@@ -13,7 +13,7 @@ func encryptOAEP(hash hash.Hash, random io.Reader, pub *rsa.PublicKey, msg []byt
 	if secIntercept.IsDisable() {
 		return encryptOAEP_s(hash, random, pub, msg, label)
 	}
-	secIntercept.TraceCryptoOperation("RSA/OAEP")
+	secIntercept.TraceCryptoOperation("RSA")
 
 	return encryptOAEP_s(hash, random, pub, msg, label)
 }
@@ -23,7 +23,7 @@ func encryptOAEP_s(hash hash.Hash, random io.Reader, pub *rsa.PublicKey, msg []b
 	if secIntercept.IsDisable() {
 		return encryptOAEP_s(hash, random, pub, msg, label)
 	}
-	secIntercept.TraceCryptoOperation("RSA/OAEP")
+	secIntercept.TraceCryptoOperation("RSA")
 
 	return encryptOAEP_s(hash, random, pub, msg, label)
 }
@@ -33,7 +33,7 @@ func encryptPKCS1v15(random io.Reader, pub *rsa.PublicKey, msg []byte) ([]byte, 
 	if secIntercept.IsDisable() {
 		return encryptPKCS1v15_s(random, pub, msg)
 	}
-	secIntercept.TraceCryptoOperation("RSA/PKC")
+	secIntercept.TraceCryptoOperation("RSA/ECB/PKCS1Padding")
 
 	return encryptPKCS1v15_s(random, pub, msg)
 }
@@ -43,11 +43,11 @@ func encryptPKCS1v15_s(random io.Reader, pub *rsa.PublicKey, msg []byte) ([]byte
 	if secIntercept.IsDisable() {
 		return encryptPKCS1v15_s(random, pub, msg)
 	}
-	secIntercept.TraceCryptoOperation("RSA/PKC")
+	secIntercept.TraceCryptoOperation("RSA/ECB/PKCS1Padding")
 	return encryptPKCS1v15_s(random, pub, msg)
 }
 
-func PluginStart_rsa() {
+func initRsaHook() {
 	e := secIntercept.HookWrap(rsa.EncryptOAEP, encryptOAEP, encryptOAEP_s)
 	secIntercept.IsHookedLog("rsa.EncryptOAEP", e)
 
