@@ -66,6 +66,11 @@ type metaData struct {
 	IsClientDetectedFromXFF   bool        `json:"isClientDetectedFromXFF"`
 	APIBlocked                bool        `json:"apiBlocked"`
 	ReflectedMetaData         interface{} `json:"reflectedMetaData"`
+	AppServerInfo             struct {
+		ApplicationDirectory string `json:"applicationDirectory"`
+		ServerBaseDirectory  string `json:"serverBaseDirectory"`
+	} `json:"appServerInfo"`
+	SkipScanParameters interface{} `json:"skipScanParameters"`
 }
 
 // ---------------------------------------------------
@@ -106,18 +111,17 @@ type userProvidedApplicationInfo struct {
 
 type healthcheck struct {
 	ApplicationIdentifiers
-	EventType        string               `json:"eventType"`
-	ProtectedServer  string               `json:"protectedServer"`
-	EventDropCount   uint64               `json:"eventDropCount"`
-	EventProcessed   uint64               `json:"eventProcessed"`
-	EventSentCount   uint64               `json:"eventSentCount"`
-	HTTPRequestCount uint64               `json:"httpRequestCount"`
-	Stats            interface{}          `json:"stats"`
-	ServiceStatus    interface{}          `json:"serviceStatus"`
-	IastEventStats   secConfig.EventStats `json:"iastEventStats"`
-	RaspEventStats   secConfig.EventStats `json:"raspEventStats"`
-	ExitEventStats   secConfig.EventStats `json:"exitEventStats"`
-	ThreadPoolStats  ThreadPoolStats      `json:"threadPoolStats"`
+	EventType                string                             `json:"eventType"`
+	ProtectedServer          string                             `json:"protectedServer"`
+	Stats                    interface{}                        `json:"stats"`
+	ServiceStatus            interface{}                        `json:"serviceStatus"`
+	WebSocketConnectionStats secConfig.WebSocketConnectionStats `json:"webSocketConnectionStats"`
+	IastReplayRequest        secConfig.IastReplayRequest        `json:"iastReplayRequest"`
+	EventStats               secConfig.EventStats               `json:"eventStats"`
+	ProcStartTime            int64                              `json:"procStartTime"`
+	TrafficStartedTime       int64                              `json:"trafficStartedTime"`
+	ScanStartTime            int64                              `json:"scanStartTime"`
+	IastTestIdentifier       string                             `json:"iastTestIdentifer"`
 }
 
 type ThreadPoolStats struct {
@@ -145,20 +149,22 @@ type Exitevent struct {
 }
 
 type ApplicationIdentifiers struct {
-	ApplicationUUID  string      `json:"applicationUUID"`
-	CollectorVersion string      `json:"collectorVersion"`
-	GroupName        string      `json:"groupName"`
-	BuildNumber      string      `json:"buildNumber"`
-	NodeID           string      `json:"nodeId"`
-	CollectorType    string      `json:"collectorType"`
-	PolicyVersion    string      `json:"policyVersion"`
-	Language         string      `json:"language"`
-	Framework        string      `json:"framework"`
-	JSONVersion      string      `json:"jsonVersion"`
-	JSONName         string      `json:"jsonName"`
-	Pid              string      `json:"pid"`
-	StartTime        string      `json:"startTime"`
-	LinkingMetadata  interface{} `json:"linkingMetadata"`
+	ApplicationUUID  string            `json:"applicationUUID"`
+	CollectorVersion string            `json:"collectorVersion"`
+	GroupName        string            `json:"groupName"`
+	BuildNumber      string            `json:"buildNumber"`
+	NodeID           string            `json:"nodeId"`
+	CollectorType    string            `json:"collectorType"`
+	PolicyVersion    string            `json:"policyVersion"`
+	Language         string            `json:"language"`
+	Framework        string            `json:"framework"`
+	JSONVersion      string            `json:"jsonVersion"`
+	JSONName         string            `json:"jsonName"`
+	Pid              string            `json:"pid"`
+	StartTime        string            `json:"startTime"`
+	AppAccountId     string            `json:"appAccountId"`
+	AppEntityGuid    string            `json:"appEntityGuid"`
+	LinkingMetadata  map[string]string `json:"linkingMetadata"`
 }
 
 type FuzzFailBean struct {
@@ -167,8 +173,7 @@ type FuzzFailBean struct {
 }
 
 type IASTDataRequestBeen struct {
-	JSONName          string      `json:"jsonName"`
-	ApplicationUUID   string      `json:"applicationUUID"`
+	ApplicationIdentifiers
 	BatchSize         int         `json:"batchSize"`
 	CompletedRequests interface{} `json:"completedRequests"`
 	PendingRequestIds []string    `json:"pendingRequestIds"`
@@ -187,21 +192,36 @@ type Urlmappings struct {
 }
 
 type LogMessage struct {
-	JSONName        string      `json:"jsonName"`
-	ApplicationUUID string      `json:"applicationUUID"`
-	Timestamp       int64       `json:"timestamp"`
-	Level           string      `json:"level"`
-	Message         string      `json:"message"`
-	Caller          string      `json:"caller"`
-	Exception       Exception   `json:"exception"`
-	ThreadName      string      `json:"threadName"`
-	LinkingMetadata interface{} `json:"linkingMetadata"`
+	ApplicationIdentifiers
+	Timestamp  int64     `json:"timestamp"`
+	Level      string    `json:"level"`
+	Message    string    `json:"message"`
+	Caller     string    `json:"caller"`
+	Exception  Exception `json:"exception"`
+	ThreadName string    `json:"threadName"`
 }
 
 type Exception struct {
 	Message    string      `json:"message"`
 	Cause      interface{} `json:"cause"`
 	StackTrace []string    `json:"stackTrace"`
+}
+
+type Panic struct {
+	Message    any         `json:"message"`
+	Cause      interface{} `json:"cause"`
+	Type       string      `json:"type"`
+	Stacktrace []string    `json:"stackTrace"`
+}
+
+type PanicReport struct {
+	ApplicationIdentifiers
+	HTTPRequest  secUtils.RequestInfo `json:"httpRequest"`
+	Counter      int                  `json:"counter"`
+	ResponseCode int                  `json:"responseCode"`
+	Category     string               `json:"category"`
+	Exception    any                  `json:"exception"`
+	TraceId      string               `json:"traceId"`
 }
 
 //status utils function

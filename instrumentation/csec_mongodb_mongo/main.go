@@ -5,11 +5,14 @@ package csec_mongodb_mongo
 
 import (
 	"context"
+	"strconv"
+	"strings"
 
 	secIntercept "github.com/newrelic/csec-go-agent/security_intercept"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/version"
 )
 
 var logger = secIntercept.GetLogger("mongohook")
@@ -262,6 +265,40 @@ func (coll *SecCollection) secFind(ctx context.Context, filter interface{}, opts
 }
 
 //go:noinline
+func (coll *SecCollection) secFindOne_s(ctx context.Context, filter interface{}, opts ...*options.FindOptions) *mongo.SingleResult {
+	if secIntercept.IsDisable() {
+		return coll.secFindOne_s(ctx, filter, opts...)
+	}
+	logger.Debugln("------------ mongoCollectionFindOne-hook" + "in hook")
+	var eventID = secIntercept.GetDummyEventTracker()
+	if filter != nil {
+		eventID = secIntercept.TraceMongoOperation(getParam(filter, ""), "find")
+	}
+	result := coll.secFindOne_s(ctx, filter, opts...)
+	if result != nil {
+		secIntercept.SendExitEvent(eventID, nil)
+	}
+	return result
+}
+
+//go:noinline
+func (coll *SecCollection) secFindOne(ctx context.Context, filter interface{}, opts ...*options.FindOptions) *mongo.SingleResult {
+	if secIntercept.IsDisable() {
+		return coll.secFindOne_s(ctx, filter, opts...)
+	}
+	logger.Debugln("------------ mongoCollectionFindOne-hook" + "in hook")
+	var eventID = secIntercept.GetDummyEventTracker()
+	if filter != nil {
+		eventID = secIntercept.TraceMongoOperation(getParam(filter, ""), "find")
+	}
+	result := coll.secFindOne_s(ctx, filter, opts...)
+	if result != nil {
+		secIntercept.SendExitEvent(eventID, nil)
+	}
+	return result
+}
+
+//go:noinline
 func (coll *SecCollection) findOneAndDelete_s(ctx context.Context, filter interface{}, opts ...*options.FindOneAndDeleteOptions) *mongo.SingleResult {
 	if secIntercept.IsDisable() {
 		return coll.findOneAndDelete_s(ctx, filter, opts...)
@@ -386,6 +423,18 @@ func traceMongoHookError(name string, e error) {
 	}
 }
 
+func getMinorVersion() int {
+	version := version.Driver
+	versions := strings.Split(version, ".")
+	if len(versions) > 2 {
+		minorVersion, err := strconv.Atoi(versions[1])
+		if err == nil {
+			return minorVersion
+		}
+	}
+	return 1
+}
+
 func PluginStart() {
 
 	//insert
@@ -397,6 +446,12 @@ func PluginStart() {
 	//find
 	e = secIntercept.HookWrapInterface((*mongo.Collection).Find, (*SecCollection).secFind, (*SecCollection).secFind_s)
 	traceMongoHookError("(*mongo.Collection).Find", e)
+
+	if getMinorVersion() >= 15 {
+		e = secIntercept.HookWrapInterface((*mongo.Collection).FindOne, (*SecCollection).secFindOne, (*SecCollection).secFindOne_s)
+		traceMongoHookError("(*mongo.Collection).FindOne", e)
+	}
+
 	e = secIntercept.HookWrapInterface((*mongo.Collection).FindOneAndReplace, (*SecCollection).secFindOneAndReplace, (*SecCollection).secFindOneAndReplace_s)
 	traceMongoHookError("(*mongo.Collection).FindOneAndReplace", e)
 	e = secIntercept.HookWrapInterface((*mongo.Collection).FindOneAndUpdate, (*SecCollection).secFindOneAndUpdate, (*SecCollection).secFindOneAndUpdate_s)

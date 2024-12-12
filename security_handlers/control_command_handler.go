@@ -57,10 +57,12 @@ func parseControlCommand(arg []byte) (error, bool) {
 	case STARTUP_WELCOME_MSG:
 		logger.Infoln("CC10", string(arg))
 	case FUZZ_REQUEST:
+		secConfig.GlobalInfo.IastReplayRequest.IncreaseReceivedControlCommands()
 		if FuzzHandler.threadPool == nil {
 			initRestRequestThreadPool()
 		}
 		if len(cc.Arguments) <= 1 {
+			secConfig.GlobalInfo.IastReplayRequest.IncreaseReplayRequestRejected()
 			return errors.New("unable to process cc11, need minimum 2 arguments "), false
 		}
 		dsFilePath := filepath.Join(secConfig.GlobalInfo.SecurityHomePath(), "nr-security-home", "tmp")
@@ -71,11 +73,13 @@ func parseControlCommand(arg []byte) (error, bool) {
 		var cc11 FuzzRequrestHandler
 		err = json.Unmarshal(arg, &cc11)
 		if err != nil {
+			secConfig.GlobalInfo.IastReplayRequest.IncreaseReplayRequestRejected()
 			eventGeneration.SendLogMessage("Unable to unmarshall cc11 : "+err.Error(), "parseControlCommand", "SEVERE")
 			return errors.New("Unable to unmarshall cc11 : " + err.Error()), false
 		} else {
 			logger.Debugln("Fuzz request received :", cc.Id, cc.Arguments[1], string(arg))
 			logger.Debugln("will fuzz, parsedOK ..")
+			secConfig.GlobalInfo.IastReplayRequest.IncreaseProcessedControlCommands()
 			cc11.MetaData = cc.ReflectedMetaData
 			registerFuzzTask(&cc11, cc.Arguments[1], cc.Id)
 			break
@@ -96,10 +100,9 @@ func parseControlCommand(arg []byte) (error, bool) {
 			logger.Errorln("Unable to unmarshall cc100 ", err)
 		} else {
 			logger.Debugln("defaultPolicy", defaultPolicy.Data)
-			policy := secConfig.UpdateGlobalConf(defaultPolicy.Data, string(arg))
-			eventGeneration.SendUpdatedPolicy(policy)
+			secConfig.UpdateGlobalConf(defaultPolicy.Data, string(arg))
+
 		}
-		FuzzHandler.InitFuzzScheduler()
 	case POLICY_UPDATE_FAILED_DUE_TO_VALIDATION_ERROR:
 		logger.Warnln("Updated policy failed validation. Reverting to default policy for the mode", cc.Data)
 		secConfig.InstantiateDefaultPolicy()

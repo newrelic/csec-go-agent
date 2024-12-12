@@ -19,7 +19,10 @@ const (
 	maxPoolSize = 3
 )
 
-var FuzzHandler = RestRequestThreadPool{fuzzedApi: sync.Map{}}
+var (
+	FuzzHandler    = RestRequestThreadPool{fuzzedApi: sync.Map{}}
+	fuzzcontroller = false
+)
 
 type FuzzTask struct {
 	fuzzRequrestHandler *FuzzRequrestHandler
@@ -27,10 +30,17 @@ type FuzzTask struct {
 	requestID           string
 }
 
+var firstIastReplay = true
+
 func (fTask *FuzzTask) Run() {
 
 	if !secConfig.SecureWS.GetStatus() {
 		logger.Infoln("WS not connected drop FuzzTask ")
+	}
+
+	if firstIastReplay {
+		secConfig.GlobalInfo.ApplicationInfo.SetScanStartTime(time.Now())
+		firstIastReplay = false
 	}
 
 	if fTask.fuzzRequrestHandler.IsGRPC {
@@ -38,7 +48,9 @@ func (fTask *FuzzTask) Run() {
 			eventGeneration.SendLogMessage("gRPC rest client not initialised", "security_handlers", "SEVERE")
 			logger.Errorln("gRPC rest client not initialised")
 			FuzzHandler.AppendCompletedRequestIds(fTask.requestID, "")
+			secConfig.GlobalInfo.IastReplayRequest.IncreaseReplayRequestRejected()
 		} else {
+			secConfig.GlobalInfo.IastReplayRequest.IncreaseReplayRequestGenerated()
 			FuzzHandler.grpsFuzzRestClient.ExecuteFuzzRequest(fTask.fuzzRequrestHandler, fTask.caseType, fTask.requestID)
 			FuzzHandler.RemovePendingRequestIds(fTask.requestID)
 		}
@@ -47,7 +59,9 @@ func (fTask *FuzzTask) Run() {
 			eventGeneration.SendLogMessage("http rest client not initialised", "security_handlers", "SEVERE")
 			logger.Errorln("http rest client not initialised")
 			FuzzHandler.AppendCompletedRequestIds(fTask.requestID, "")
+			secConfig.GlobalInfo.IastReplayRequest.IncreaseReplayRequestRejected()
 		} else {
+			secConfig.GlobalInfo.IastReplayRequest.IncreaseReplayRequestGenerated()
 			FuzzHandler.httpFuzzRestClient.ExecuteFuzzRequest(fTask.fuzzRequrestHandler, fTask.caseType, fTask.requestID)
 			FuzzHandler.RemovePendingRequestIds(fTask.requestID)
 		}
@@ -65,9 +79,11 @@ func registerFuzzTask(kcc11 *FuzzRequrestHandler, caseType, requestID string) {
 		printlogs := fmt.Sprintf("IAST Scan for API %s with ID : %s started.", kcc11.RequestURI, ids[0])
 		logger.Infoln(printlogs)
 	}
-	secConfig.GlobalInfo.EventData.IncreaseFuzzRequestCount()
 	FuzzHandler.AppendPendingRequestIds(requestID)
-	FuzzHandler.threadPool.RegisterTask(task)
+	err := FuzzHandler.threadPool.RegisterTask(task)
+	if err != nil {
+		secConfig.GlobalInfo.IastReplayRequest.IncreaseReplayRequestRejected()
+	}
 	FuzzHandler.SetLastFuzzRequestTime()
 }
 
@@ -86,16 +102,29 @@ func initRestRequestThreadPool() {
 	FuzzHandler.threadPool = threadpool.NewThreadPool(queueSize, maxPoolSize, logger, "RestRequestThreadPool")
 }
 
-func InitFuzzScheduler() {
-	if !secConfig.GlobalInfo.IsIASTEnable() {
+func CloseFuzzScheduler() {
+	fuzzcontroller = true
+}
+
+func (r *RestRequestThreadPool) initFuzzScheduler() {
+	if !secConfig.GlobalInfo.IsIastMode() {
+		r.isFuzzSchedulerInitialized = false
 		return
 	}
 	if FuzzHandler.threadPool == nil {
 		initRestRequestThreadPool()
 	}
 	eventGeneration.SendLogMessage("initializing fuzz request scheduler", "InitFuzzScheduler", "INFO")
+	fuzzcontroller = false
 	for {
-		time.Sleep(1 * time.Second)
+		if fuzzcontroller {
+			r.isFuzzSchedulerInitialized = false
+			logger.Info("WebSocket Fuzz scheduler thread stopped")
+			return
+		}
+		iastProbingInterval := secConfig.GlobalInfo.IastProbingInterval()
+		logger.Debugln("iastProbingInterval SleepTime", iastProbingInterval)
+		time.Sleep(time.Duration(iastProbingInterval) * time.Second)
 		if !secConfig.SecureWS.GetStatus() {
 			logger.Debugln("WS not connected sleep FuzzScheduler for 5 sec")
 			time.Sleep(5 * time.Second)
@@ -113,16 +142,21 @@ func InitFuzzScheduler() {
 			//logger.Debugln("LastFuzzRequestTime", FuzzHandler.LastFuzzRequestTime(), currentTime)
 			continue
 		}
+		currentFetchThreshold := secConfig.GlobalInfo.ScanControllersIastLoadInterval() / 12
 
-		currentFetchThreshold := 300 //SECURITY_POLICY_VULNERABILITY_SCAN_IAST_SCAN_PROBING_THRESHOLD
+		if currentFetchThreshold <= 0 {
+			return
+		}
+
+		fetchRatio := 300 / currentFetchThreshold
 		remainingRecordCapacity := FuzzHandler.threadPool.RemainingCapacity()
 		currentRecordBacklog := FuzzHandler.threadPool.PendingTask()
 		batchSize := currentFetchThreshold - currentRecordBacklog
 		logger.Debugln("InitFuzzScheduler test ", batchSize, remainingRecordCapacity, currentRecordBacklog, currentFetchThreshold)
 
-		if batchSize > 100 && remainingRecordCapacity > batchSize {
-			logger.Debugln("InitFuzzScheduler", batchSize*2)
-			eventGeneration.IASTDataRequest(batchSize*2, FuzzHandler.CompletedRequestIds(), FuzzHandler.PendingRequestIds())
+		if batchSize > 100/fetchRatio && remainingRecordCapacity > batchSize {
+			logger.Debugln("InitFuzzScheduler", batchSize)
+			eventGeneration.IASTDataRequest(batchSize, FuzzHandler.CompletedRequestIds(), FuzzHandler.PendingRequestIds())
 		}
 	}
 }

@@ -11,16 +11,15 @@ type Info_req struct {
 	ResponseBody         string
 	ResponseHeader       http.Header
 	ResponseContentType  string
-	GrpcByte             [][]byte
 	GrpcBody             []interface{}
 	ReqTraceData         string
-	RequestIdentifier    string
+	RequestIdentifier    NrRequestIdentifier
 	Request              RequestInfo
 	VulnerabilityDetails VulnerabilityDetails
-	TmpFiles             []string
 	ReflectedMetaData    ReflectedMetaData
 	ParentID             string
 	BodyLimit            int
+	TraceId              string
 }
 
 type ReflectedMetaData struct {
@@ -35,22 +34,25 @@ type ResponseInfo struct {
 }
 
 type RequestInfo struct {
-	Body          string              `json:"body"`
-	Headers       map[string]string   `json:"headers"`
-	URL           string              `json:"url"`
-	RawRequest    string              `json:"rawRequest"`
-	Method        string              `json:"method"`
-	ContentType   string              `json:"contentType"`
-	ContextPath   string              `json:"contextPath"`
-	ClientIP      string              `json:"clientIP"`
-	ClientPort    string              `json:"clientPort"`
-	ServerPort    string              `json:"serverPort"`
-	Protocol      string              `json:"protocol"`
-	ParameterMap  map[string][]string `json:"parameterMap"`
-	IsGRPC        bool                `json:"isGrpc"`
-	ServerName    string              `json:"serverName"`
-	DataTruncated bool                `json:"dataTruncated"`
-	BodyReader    SecWriter           `json:"-"`
+	Body           string              `json:"body"`
+	Headers        map[string]string   `json:"headers"`
+	URL            string              `json:"url"`
+	RawRequest     string              `json:"rawRequest"`
+	Method         string              `json:"method"`
+	ContentType    string              `json:"contentType"`
+	ContextPath    string              `json:"contextPath"`
+	ClientIP       string              `json:"clientIP"`
+	ClientPort     string              `json:"clientPort"`
+	ServerPort     string              `json:"serverPort"`
+	Protocol       string              `json:"protocol"`
+	ParameterMap   map[string][]string `json:"parameterMap"`
+	IsGRPC         bool                `json:"isGrpc"`
+	ServerName     string              `json:"serverName"`
+	DataTruncated  bool                `json:"dataTruncated"`
+	BodyReader     SecWriter           `json:"-"`
+	Route          string              `json:"route"`
+	URI            string              `json:"requestURI"`
+	CustomDataType map[string]string   `json:"customDataType"`
 }
 
 type SecWriter struct {
@@ -78,6 +80,18 @@ type VulnerabilityDetails struct {
 	LineNumber     string   `json:"lineNumber"`
 	APIID          string   `json:"apiId"`
 	Stacktrace     []string `json:"stacktrace"`
+}
+
+type NrRequestIdentifier struct {
+	Raw         string
+	RefID       string
+	RefValue    string
+	APIRecordID string
+	NrRequest   bool
+	NextStage   string
+	RecordIndex string
+	RefKey      string
+	TempFiles   []string
 }
 
 var CaCert = `

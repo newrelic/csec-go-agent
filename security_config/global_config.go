@@ -4,7 +4,6 @@
 package security_config
 
 import (
-	"math"
 	"os"
 	"strconv"
 	"sync"
@@ -19,9 +18,7 @@ var Secure secUtils.Secureiface
 var SecureWS secUtils.SecureWSiface
 
 type Info_struct struct {
-	EventData           eventData
-	ApiData             []Urlmappings
-	ApiDataMutex        sync.Mutex
+	ApiData             *sync.Map
 	EnvironmentInfo     EnvironmentInfo
 	ApplicationInfo     runningApplicationInfo
 	InstrumentationData Instrumentation
@@ -35,6 +32,12 @@ type Info_struct struct {
 	isForceDisable bool
 
 	MetaData metaData
+
+	WebSocketConnectionStats WebSocketConnectionStats
+	IastReplayRequest        IastReplayRequest
+	EventStats               EventStats
+	DroppedEvent             DroppedEvent
+	dealyAgentTill           time.Time
 }
 
 func (info *Info_struct) GetCurrentPolicy() Policy {
@@ -100,10 +103,92 @@ func (info *Info_struct) SetSecurity(security Security) {
 	info.security = security
 }
 
-func (info *Info_struct) IsRxssEnabled() bool {
+func (info *Info_struct) IsInsecureSettingsDisabled() bool {
 	info.securityMutex.Lock()
 	defer info.securityMutex.Unlock()
-	return info.security.Detection.Rxss.Enabled
+	return info.security.ExcludeFromIastScan.IastDetectionCategory.InsecureSettings
+}
+func (info *Info_struct) IsInvalidFileAccessDisabled() bool {
+	info.securityMutex.Lock()
+	defer info.securityMutex.Unlock()
+	return info.security.ExcludeFromIastScan.IastDetectionCategory.InvalidFileAccess
+}
+
+func (info *Info_struct) IsSQLInjectionDisabled() bool {
+	info.securityMutex.Lock()
+	defer info.securityMutex.Unlock()
+	return info.security.ExcludeFromIastScan.IastDetectionCategory.SQLInjection
+}
+func (info *Info_struct) IsNosqlInjectionDisabled() bool {
+	info.securityMutex.Lock()
+	defer info.securityMutex.Unlock()
+	return info.security.ExcludeFromIastScan.IastDetectionCategory.NosqlInjection
+}
+func (info *Info_struct) IsLdapInjectionDisabled() bool {
+	info.securityMutex.Lock()
+	defer info.securityMutex.Unlock()
+	return info.security.ExcludeFromIastScan.IastDetectionCategory.LdapInjection
+}
+func (info *Info_struct) IsJavascriptInjectionDisabled() bool {
+	info.securityMutex.Lock()
+	defer info.securityMutex.Unlock()
+	return info.security.ExcludeFromIastScan.IastDetectionCategory.JavascriptInjection
+}
+func (info *Info_struct) IsCommandInjectionDisabled() bool {
+	info.securityMutex.Lock()
+	defer info.securityMutex.Unlock()
+	return info.security.ExcludeFromIastScan.IastDetectionCategory.CommandInjection
+}
+func (info *Info_struct) IsXpathInjectionDisabled() bool {
+	info.securityMutex.Lock()
+	defer info.securityMutex.Unlock()
+	return info.security.ExcludeFromIastScan.IastDetectionCategory.XpathInjection
+}
+func (info *Info_struct) IsSsrfDisabled() bool {
+	info.securityMutex.Lock()
+	defer info.securityMutex.Unlock()
+	return info.security.ExcludeFromIastScan.IastDetectionCategory.Ssrf
+}
+func (info *Info_struct) IsRxssDisabled() bool {
+	info.securityMutex.Lock()
+	defer info.securityMutex.Unlock()
+	return info.security.ExcludeFromIastScan.IastDetectionCategory.Rxss
+}
+
+func (info *Info_struct) SkipIastScanParameters() interface{} {
+	info.securityMutex.Lock()
+	defer info.securityMutex.Unlock()
+	return info.security.ExcludeFromIastScan.HttpRequestParameters
+}
+
+func (info *Info_struct) SkipIastScanApi() []string {
+	info.securityMutex.Lock()
+	defer info.securityMutex.Unlock()
+	return info.security.ExcludeFromIastScan.API
+}
+
+func (info *Info_struct) ScanScheduleDuration() int {
+	info.securityMutex.Lock()
+	defer info.securityMutex.Unlock()
+	return info.security.ScanSchedule.Duration
+}
+
+func (info *Info_struct) ScanScheduleDelay() int {
+	info.securityMutex.Lock()
+	defer info.securityMutex.Unlock()
+	return info.security.ScanSchedule.Delay
+}
+
+func (info *Info_struct) ScanScheduleAllowIastSampleCollection() bool {
+	info.securityMutex.Lock()
+	defer info.securityMutex.Unlock()
+	return info.security.ScanSchedule.AllowIastSampleCollection
+}
+
+func (info *Info_struct) ScanScheduleSchedule() string {
+	info.securityMutex.Lock()
+	defer info.securityMutex.Unlock()
+	return info.security.ScanSchedule.Schedule
 }
 
 func (info *Info_struct) SecurityHomePath() string {
@@ -114,7 +199,10 @@ func (info *Info_struct) SetSecurityHomePath(path string) {
 }
 
 func (info *Info_struct) ValidatorServiceUrl() string {
-	return info.security.Validator_service_url
+	if info.security.Validator_service_url != "" {
+		return info.security.Validator_service_url
+	}
+	return ValidatorDefaultEndpoint
 }
 func (info *Info_struct) SetValidatorServiceUrl(path string) {
 	info.security.Validator_service_url = path
@@ -123,6 +211,9 @@ func (info *Info_struct) SetValidatorServiceUrl(path string) {
 func (info *Info_struct) SecurityMode() string {
 	return info.security.Mode
 }
+func (info *Info_struct) IsIastMode() bool {
+	return secUtils.CaseInsensitiveEquals(info.security.Mode, "IAST")
+}
 
 func (info *Info_struct) BodyLimit() int {
 	return info.security.Request.BodyLimit * 1000
@@ -130,24 +221,64 @@ func (info *Info_struct) BodyLimit() int {
 
 func (info *Info_struct) SetBodyLimit(bodyLimit int) {
 	info.security.Request.BodyLimit = bodyLimit
-	return
 }
 
-func (info *Info_struct) GetApiData() []Urlmappings {
-	info.ApiDataMutex.Lock()
-	defer info.ApiDataMutex.Unlock()
-	return info.ApiData
+func (info *Info_struct) ScanControllersIastLoadInterval() int {
+	return info.security.ScanControllers.IastScanRequestRateLimit
+}
+
+func (info *Info_struct) SetscanControllersIastLoadInterval(iastLoadInterval int) {
+	info.security.ScanControllers.IastScanRequestRateLimit = iastLoadInterval
+}
+
+func (info *Info_struct) ScanInstanceCount() int {
+	return info.security.ScanControllers.ScanInstanceCount
+}
+func (info *Info_struct) SetScanInstanceCount(scanInstanceCount int) {
+	info.security.ScanControllers.ScanInstanceCount = scanInstanceCount
+}
+
+func (info *Info_struct) GetIastTestIdentifier() string {
+	return info.security.IastTestIdentifier
+}
+
+func (info *Info_struct) GetApiData() []any {
+	urlmappings := []any{}
+
+	if info.ApiData != nil {
+		info.ApiData.Range(func(key, value interface{}) bool {
+			urlmappings = append(urlmappings, value)
+			return true
+		})
+	}
+
+	return urlmappings
 }
 
 func (info *Info_struct) SetApiData(data Urlmappings) {
-	info.ApiDataMutex.Lock()
-	defer info.ApiDataMutex.Unlock()
-	info.ApiData = append(info.ApiData, data)
-	return
+	key := data.Path + data.Method
+
+	if info.ApiData == nil {
+		info.ApiData = &sync.Map{}
+	}
+	if _, ok := info.ApiData.Load(key); !ok {
+		info.ApiData.Store(key, data)
+		return
+	}
+}
+
+func (info *Info_struct) IastProbingInterval() int {
+	info.ploicyMutex.Lock()
+	defer info.ploicyMutex.Unlock()
+	if GlobalInfo.currentPolicy.VulnerabilityScan.IastScan.Probing.Interval <= 0 {
+		return 5
+	} else {
+		return GlobalInfo.currentPolicy.VulnerabilityScan.IastScan.Probing.Interval
+	}
 }
 
 type metaData struct {
-	linkingMetadata interface{}
+	linkingMetadata map[string]string
 	accountID       string
 	agentRunId      string
 	entityGuid      string
@@ -203,13 +334,13 @@ func (m *metaData) SetAgentRunId(value string) {
 	m.agentRunId = value
 }
 
-func (m *metaData) GetLinkingMetadata() interface{} {
+func (m *metaData) GetLinkingMetadata() map[string]string {
 	m.Lock()
 	defer m.Unlock()
 	return m.linkingMetadata
 }
 
-func (m *metaData) SetLinkingMetadata(value interface{}) {
+func (m *metaData) SetLinkingMetadata(value map[string]string) {
 	m.Lock()
 	defer m.Unlock()
 	m.linkingMetadata = value
@@ -217,11 +348,9 @@ func (m *metaData) SetLinkingMetadata(value interface{}) {
 
 // EventData used to track number of request
 type eventData struct {
-	httpRequestCount uint64
-	fuzzRequestCount uint64
-	iastEventStats   EventStats
-	raspEventStats   EventStats
-	exitEventStats   EventStats
+	iastEventStats EventStats
+	raspEventStats EventStats
+	exitEventStats EventStats
 	sync.Mutex
 }
 
@@ -250,70 +379,6 @@ func (e *eventData) GetExitEventStats() *EventStats {
 	return &e.exitEventStats
 }
 
-func (e *eventData) GetHttpRequestCount() uint64 {
-	var out uint64
-	if e == nil {
-		return out
-	}
-	e.Lock()
-	defer e.Unlock()
-	return e.httpRequestCount
-}
-
-func (e *eventData) SetHttpRequestCount(value uint64) {
-	if e == nil {
-		return
-	}
-	e.Lock()
-	defer e.Unlock()
-	e.httpRequestCount = value
-}
-
-func (e *eventData) IncreaseHttpRequestCount() {
-	if e == nil {
-		return
-	}
-	e.Lock()
-	defer e.Unlock()
-
-	e.httpRequestCount++
-	if e.httpRequestCount == 0 {
-		e.httpRequestCount = math.MaxUint64
-	}
-}
-
-func (e *eventData) GetFuzzRequestCount() uint64 {
-	var out uint64
-	if e == nil {
-		return out
-	}
-	e.Lock()
-	defer e.Unlock()
-	return e.fuzzRequestCount
-}
-
-func (e *eventData) SetFuzzRequestCount(value uint64) {
-	if e == nil {
-		return
-	}
-	e.Lock()
-	defer e.Unlock()
-	e.fuzzRequestCount = value
-}
-
-func (e *eventData) IncreaseFuzzRequestCount() {
-	if e == nil {
-		return
-	}
-	e.Lock()
-	defer e.Unlock()
-
-	e.fuzzRequestCount++
-	if e.fuzzRequestCount == 0 {
-		e.fuzzRequestCount = math.MaxUint64
-	}
-}
-
 func (e *eventData) ResetEventStats() {
 	if e == nil {
 		return
@@ -324,55 +389,7 @@ func (e *eventData) ResetEventStats() {
 	e.iastEventStats = EventStats{}
 	e.raspEventStats = EventStats{}
 	e.exitEventStats = EventStats{}
-	return
-}
 
-type EventStats struct {
-	Processed  uint64 `json:"processed"`
-	Sent       uint64 `json:"sent"`
-	Rejected   uint64 `json:"rejected"`
-	ErrorCount uint64 `json:"errorCount"`
-}
-
-func (e *EventStats) IncreaseEventProcessedCount() {
-	if e == nil {
-		return
-	}
-	e.Processed++
-	if e.Processed == 0 {
-		e.Processed = math.MaxUint64
-	}
-}
-
-func (e *EventStats) IncreaseEventSentCount() {
-	if e == nil {
-		return
-	}
-	e.Sent++
-	if e.Sent == 0 {
-		e.Sent = math.MaxUint64
-	}
-}
-
-func (e *EventStats) IncreaseEventRejectedCount() {
-	if e == nil {
-		return
-	}
-
-	e.Rejected++
-	if e.Rejected == 0 {
-		e.Rejected = math.MaxUint64
-	}
-}
-
-func (e *EventStats) IncreaseEventErrorCount() {
-	if e == nil {
-		return
-	}
-	e.ErrorCount++
-	if e.ErrorCount == 0 {
-		e.ErrorCount = math.MaxUint64
-	}
 }
 
 type Urlmappings struct {
@@ -408,21 +425,23 @@ type EnvironmentInfo struct {
 
 type runningApplicationInfo struct {
 	sync.Mutex
-	appName          string
-	apiAccessorToken string
-	protectedServer  string
-	appUUID          string
-	sha256           string
-	size             string
-	contextPath      string
-	pid              string
-	Cmd              string
-	cmdline          []string
-	ports            []int
-	ServerIp         string
-	starttimestr     time.Time
-	binaryPath       string
-	serverName       []string
+	appName            string
+	apiAccessorToken   string
+	protectedServer    string
+	appUUID            string
+	sha256             string
+	size               string
+	contextPath        string
+	pid                string
+	Cmd                string
+	cmdline            []string
+	ports              []int
+	ServerIp           string
+	starttimestr       time.Time
+	trafficStartedTime time.Time
+	scanStartTime      time.Time
+	binaryPath         string
+	serverName         []string
 }
 
 func (r *runningApplicationInfo) GetAppName() string {
@@ -553,6 +572,32 @@ func (r *runningApplicationInfo) SetServerName(value string) {
 	r.serverName = append(r.serverName, value)
 }
 
+func (r *runningApplicationInfo) GetTrafficStartedTime() int64 {
+
+	if r.trafficStartedTime.IsZero() {
+		return 0
+	} else {
+		return r.trafficStartedTime.Unix() * 1000
+	}
+}
+
+func (r *runningApplicationInfo) SetTrafficStartedTime(value time.Time) {
+	r.trafficStartedTime = value
+}
+
+func (r *runningApplicationInfo) GetScanStartTime() int64 {
+
+	if r.trafficStartedTime.IsZero() {
+		return 0
+	} else {
+		return r.scanStartTime.Unix() * 1000
+	}
+}
+
+func (r *runningApplicationInfo) SetScanStartTime(value time.Time) {
+	r.scanStartTime = value
+}
+
 type Instrumentation struct {
 	HookCalledCount   uint64
 	Hooked            bool
@@ -566,12 +611,13 @@ type traceHooksApplied struct {
 
 func InitDefaultConfig() {
 	//init default info
-	GlobalInfo.EventData = eventData{}
+	GlobalInfo.EventStats = EventStats{}
 	GlobalInfo.InstrumentationData = Instrumentation{}
 	GlobalInfo.EnvironmentInfo = EnvironmentInfo{}
 	GlobalInfo.ApplicationInfo = runningApplicationInfo{}
 	GlobalInfo.MetaData = metaData{}
 	GlobalInfo.MetaData.linkingMetadata = map[string]string{}
+	GlobalInfo.WebSocketConnectionStats = WebSocketConnectionStats{}
 
 }
 

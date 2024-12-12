@@ -33,6 +33,14 @@ func checkDefaultConfig() {
 	if secConfig.GlobalInfo.BodyLimit() == 0 {
 		secConfig.GlobalInfo.SetBodyLimit(300)
 	}
+
+	if secConfig.GlobalInfo.ScanControllersIastLoadInterval() < 12 {
+		secConfig.GlobalInfo.SetscanControllersIastLoadInterval(12)
+	}
+	if secConfig.GlobalInfo.ScanControllersIastLoadInterval() > 3600 {
+		secConfig.GlobalInfo.SetscanControllersIastLoadInterval(3600)
+	}
+
 }
 
 func initLogger(logFilePath string, isDebugLog bool) {
@@ -121,5 +129,9 @@ func initSecurityAgent(applicationName, licenseKey string, isDebugLog bool, secu
 	logging.EndStage("1", "Security agent is starting")
 	initEnvironmentInfo()
 	initApplicationInfo(applicationName)
+	go secIntercept.InitLowSeverityEventScheduler()
+	logger.Infoln("Security HOME:", secConfig.GlobalInfo.SecurityHomePath())
+	logger.Infoln("Agent location ", secConfig.GlobalInfo.EnvironmentInfo.Gopath)
+	logger.Infoln("Current working directory: ", filepath.Dir(secConfig.GlobalInfo.ApplicationInfo.GetBinaryPath()))
 
 }

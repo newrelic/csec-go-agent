@@ -6,6 +6,7 @@ package security_intercept
 import (
 	"fmt"
 	"net/http"
+	"net/textproto"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -13,7 +14,9 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
+	"time"
 
+	"github.com/dlclark/regexp2"
 	logging "github.com/newrelic/csec-go-agent/internal/security_logs"
 	secUtils "github.com/newrelic/csec-go-agent/internal/security_utils"
 	secConfig "github.com/newrelic/csec-go-agent/security_config"
@@ -26,8 +29,8 @@ func IsForceDisable() bool {
 func IsDisable() bool {
 	return !secConfig.GlobalInfo.IsSecurityEnabled()
 }
-func IsRXSSDisable() bool {
-	return !secConfig.GlobalInfo.IsRxssEnabled()
+func IsRxssDisabled() bool {
+	return secConfig.GlobalInfo.IsRxssDisabled()
 }
 
 func RequestBodyReadLimit() int {
@@ -71,7 +74,7 @@ func getServerPort() string {
 	if serverPort != nil && len(serverPort) > 0 {
 		return strconv.Itoa(serverPort[0])
 	}
-	return ""
+	return "-1"
 }
 
 func IsFileExist(name string) bool {
@@ -164,19 +167,15 @@ func recoverFromPanic(functionName string) {
 	}
 }
 
-func getContentType(header map[string]string) string {
-
-	for key, v := range header {
-		if secUtils.CaseInsensitiveEquals(key, "Content-type") {
-			return v
-		}
-	}
-	return ""
+func getContentType(header map[string][]string) string {
+	return getHeaderValue(header, "Content-type")
 }
 
-func getIpAndPort(data string) (string, string) {
-	var port = ""
-	var ip = ""
+func getHeaderValue(header map[string][]string, key string) string {
+	return textproto.MIMEHeader(header).Get(key)
+}
+
+func getIpAndPort(data string) (ip string, port string) {
 	if data == "" {
 		return ip, port
 	}
@@ -226,4 +225,119 @@ func IsDataTruncated() bool {
 type parameters struct {
 	Payload     interface{} `json:"payload"`
 	PayloadType interface{} `json:"payloadType"`
+}
+
+func parseFuzzRequestIdentifierHeader(requestHeaderVal string) (nrRequestIdentifier secUtils.NrRequestIdentifier) {
+	nrRequestIdentifier.Raw = requestHeaderVal
+	if secUtils.IsBlank(requestHeaderVal) {
+		return
+	}
+	data := strings.Split(requestHeaderVal, IAST_SEP)
+
+	if len(data) >= 6 {
+		nrRequestIdentifier.APIRecordID = data[0]
+		nrRequestIdentifier.RefID = data[1]
+		nrRequestIdentifier.RefValue = data[2]
+		nrRequestIdentifier.NextStage = data[3]
+		nrRequestIdentifier.RecordIndex = data[4]
+		nrRequestIdentifier.RefKey = data[5]
+		nrRequestIdentifier.NrRequest = true
+
+	}
+	if len(data) >= 8 && !secUtils.IsAnyBlank(data[6], data[7]) {
+
+		encryptedData := data[6]
+		hashVerifier := data[7]
+		logger.Debugln("Request Identifier, Encrypted Files = ", encryptedData)
+
+		filesToCreate, err := secUtils.Decrypt(secConfig.GlobalInfo.MetaData.GetEntityGuid(), encryptedData, hashVerifier)
+
+		if err != nil {
+			logger.Errorln("Request Identifier, decryption of files failed ", err)
+			SendLogMessage("Request Identifier, decryption of files failed "+err.Error(), "parseFuzzRequestIdentifierHeader", "SEVERE")
+			return
+		}
+		logger.Debugln("Request Identifier, Decrypted Files = ", filesToCreate)
+		nrRequestIdentifier.TempFiles = createFuzzFileTemp(filesToCreate)
+	}
+
+	return
+}
+
+func createFuzzFileTemp(filesToCreate string) (tmpFiles []string) {
+
+	allFiles := strings.Split(filesToCreate, COMMA_DELIMETER)
+
+	for i := range allFiles {
+		fileName := allFiles[i]
+		dsFilePath := filepath.Join(secConfig.GlobalInfo.SecurityHomePath(), "nr-security-home", "tmp")
+		fileName = strings.Replace(fileName, "{{NR_CSEC_VALIDATOR_HOME_TMP}}", dsFilePath, -1)
+		fileName = strings.Replace(fileName, "%7B%7BNR_CSEC_VALIDATOR_HOME_TMP%7D%7D", dsFilePath, -1)
+
+		absfileName, _ := filepath.Abs(fileName)
+		if absfileName != "" {
+			fileName = absfileName
+		}
+
+		tmpFiles = append(tmpFiles, fileName)
+		dir := filepath.Dir(fileName)
+		if dir != "" {
+			err := os.MkdirAll(dir, 0770)
+			if err != nil {
+				logger.Debugln("Failed to create directory : ", err.Error())
+			}
+		}
+		emptyFile, err := os.Create(fileName)
+		if err != nil {
+			logger.Debugln("Failed to create file : ", err.Error(), fileName)
+		}
+		emptyFile.Close()
+	}
+	return tmpFiles
+}
+
+func ToOneValueMap(header map[string][]string) (filterHeader map[string]string) {
+	if header == nil {
+		return
+	}
+	filterHeader = map[string]string{}
+	for k, v := range header {
+		filterHeader[k] = strings.Join(v, ",")
+	}
+	return
+}
+
+func isSkipIastScanApi(url, route string) (bool, string) {
+	regexp := secConfig.GlobalInfo.SkipIastScanApi()
+	for i := range regexp {
+		if !strings.HasPrefix(regexp[i], "^") {
+			regexp[i] = "^" + regexp[i]
+		}
+		if !strings.HasSuffix(regexp[i], "$") {
+			regexp[i] = regexp[i] + "$"
+		}
+		re := regexp2.MustCompile(regexp[i], 0)
+		if isMatch, _ := re.MatchString(url); isMatch {
+			return true, regexp[i]
+		}
+	}
+	return false, ""
+}
+
+func InitLowSeverityEventScheduler() {
+	t := time.NewTicker(30 * time.Minute)
+	for {
+		select {
+		case <-t.C:
+			secConfig.Secure.CleanLowSeverityEvent()
+		}
+	}
+}
+
+func getRequestUri(url string) string {
+	idx := strings.Index(url, "?")
+	if idx != -1 {
+		return url[:idx]
+	}
+	return url
 }

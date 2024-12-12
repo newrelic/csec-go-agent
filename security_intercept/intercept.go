@@ -37,6 +37,9 @@ const (
 	NR_CSEC_TRACING_DATA    = "NR-CSEC-TRACING-DATA"
 	NR_CSEC_FUZZ_REQUEST_ID = "nr-csec-fuzz-request-id"
 	NR_CSEC_PARENT_ID       = "NR-CSEC-PARENT-ID"
+	COMMA_DELIMETER         = ","
+	AttributeCsecRoute      = "ROUTE"
+	SKIP_RXSS_EVENT         = "Skipping RXSS event transmission: Content type not supported for RXSS event validation"
 )
 
 /**
@@ -84,6 +87,9 @@ func HookWrapRawNamed(from string, to, toc interface{}) (string, error) {
  */
 
 func TraceFileOperation(fname string, flag int, isFileOpen bool) *secUtils.EventTracker {
+	if secConfig.GlobalInfo.IsInvalidFileAccessDisabled() {
+		return nil
+	}
 	securityHomePath := secConfig.GlobalInfo.SecurityHomePath()
 	if securityHomePath != "" && secUtils.CaseInsensitiveContains(fname, filepath.Join(securityHomePath, "nr-security-home", "logs")) {
 		// here dont put logger, will cause issue with logrus and hook
@@ -105,9 +111,9 @@ func TraceFileOperation(fname string, flag int, isFileOpen bool) *secUtils.Event
 		args = append(args, absolutePath)
 	}
 	if isFileOpen && isFileModified(flag) && fileInApplicationPath(fname) && fileExecByExtension(fname) {
-		return secConfig.Secure.SendEvent("FILE_INTEGRITY", args)
+		return secConfig.Secure.SendEvent("FILE_INTEGRITY", "FILE_INTEGRITY", args)
 	} else {
-		return secConfig.Secure.SendEvent("FILE_OPERATION", args)
+		return secConfig.Secure.SendEvent("FILE_OPERATION", "FILE_INTEGRITY", args)
 	}
 }
 
@@ -142,12 +148,12 @@ func TraceCryptoOperation(fname string) {
  */
 
 func TraceSystemCommand(command string) *secUtils.EventTracker {
-	if !isAgentInitialized() || command == "" {
+	if !isAgentInitialized() || command == "" || secConfig.GlobalInfo.IsCommandInjectionDisabled() {
 		return nil
 	}
 	var arg []string
 	arg = append(arg, command)
-	return secConfig.Secure.SendEvent("SYSTEM_COMMAND", arg)
+	return secConfig.Secure.SendEvent("SYSTEM_COMMAND", "SYSTEM_COMMAND", arg)
 
 }
 
@@ -162,7 +168,7 @@ func TraceMongoHooks(e error) {
 }
 
 func TraceMongoOperation(arguments []byte, queryType string) *secUtils.EventTracker {
-	if !isAgentInitialized() {
+	if !isAgentInitialized() || secConfig.GlobalInfo.IsNosqlInjectionDisabled() {
 		return nil
 	}
 	if len(arguments) == 0 {
@@ -183,7 +189,7 @@ func TraceMongoOperation(arguments []byte, queryType string) *secUtils.EventTrac
 	}
 
 	arg12 = append(arg12, tmp_map1)
-	return secConfig.Secure.SendEvent("NOSQL_DB_COMMAND", arg12)
+	return secConfig.Secure.SendEvent("NOSQL_DB_COMMAND", "MONGO", arg12)
 
 }
 
@@ -198,7 +204,7 @@ func TraceSqlHooks(e error) {
 }
 
 func TraceSqlOperation(query string, args ...interface{}) *secUtils.EventTracker {
-	if !isAgentInitialized() {
+	if !isAgentInitialized() || secConfig.GlobalInfo.IsSQLInjectionDisabled() {
 		return nil
 	}
 	if query == "" {
@@ -216,11 +222,11 @@ func TraceSqlOperation(query string, args ...interface{}) *secUtils.EventTracker
 	}
 	arg11 = append(arg11, tmp_map)
 
-	return secConfig.Secure.SendEvent("SQL_DB_COMMAND", arg11)
+	return secConfig.Secure.SendEvent("SQL_DB_COMMAND", "SQLITE", arg11)
 }
 
 func TracePrepareStatement(q, p string) {
-	if !isAgentInitialized() {
+	if !isAgentInitialized() || secConfig.GlobalInfo.IsSQLInjectionDisabled() {
 		return
 	}
 	if q == "" {
@@ -230,7 +236,7 @@ func TracePrepareStatement(q, p string) {
 }
 
 func TraceExecPrepareStatement(q_address string, args ...interface{}) *secUtils.EventTracker {
-	if !isAgentInitialized() {
+	if !isAgentInitialized() || secConfig.GlobalInfo.IsSQLInjectionDisabled() {
 		return nil
 	}
 	parameters := map[int]interface{}{}
@@ -247,12 +253,12 @@ func TraceExecPrepareStatement(q_address string, args ...interface{}) *secUtils.
  */
 
 func TraceXpathOperation(a string) *secUtils.EventTracker {
-	if !isAgentInitialized() || a == "" {
+	if !isAgentInitialized() || a == "" || secConfig.GlobalInfo.IsXpathInjectionDisabled() {
 		return nil
 	}
 	var arg []string
 	arg = append(arg, a)
-	return secConfig.Secure.SendEvent("XPATH", arg)
+	return secConfig.Secure.SendEvent("XPATH", "XPATH", arg)
 }
 
 /**
@@ -260,12 +266,12 @@ func TraceXpathOperation(a string) *secUtils.EventTracker {
  */
 
 func TraceLdapOperation(a map[string]string) *secUtils.EventTracker {
-	if !isAgentInitialized() {
+	if !isAgentInitialized() || secConfig.GlobalInfo.IsLdapInjectionDisabled() {
 		return nil
 	}
 	var arg []interface{}
 	arg = append(arg, a)
-	return secConfig.Secure.SendEvent("LDAP", arg)
+	return secConfig.Secure.SendEvent("LDAP", "LDAP", arg)
 }
 
 /**
@@ -273,13 +279,13 @@ func TraceLdapOperation(a map[string]string) *secUtils.EventTracker {
  */
 
 func TraceJsOperation(a string) *secUtils.EventTracker {
-	if !isAgentInitialized() || a == "" {
+	if !isAgentInitialized() || a == "" || secConfig.GlobalInfo.IsJavascriptInjectionDisabled() {
 		return nil
 	}
 	var arg []string
 	arg = append(arg, a)
 
-	return secConfig.Secure.SendEvent("JAVASCRIPT_INJECTION", arg)
+	return secConfig.Secure.SendEvent("JAVASCRIPT_INJECTION", "JAVASCRIPT_INJECTION", arg)
 }
 
 /**
@@ -314,79 +320,61 @@ func AssociateApplicationPort(data string) {
 
 // TraceIncommingRequest - interception of incoming request
 
-func TraceIncommingRequest(url, host string, hdrMap map[string][]string, method string, body string, queryparam map[string][]string, protocol, serverName, type1 string, bodyReader secUtils.SecWriter) {
+func TraceIncommingRequest(url, host string, hdrMap map[string][]string, method string, body string, queryparam map[string][]string, protocol, serverName, reqtype string, bodyReader secUtils.SecWriter, csecAttributes map[string]any, traceId string) {
 	if !isAgentInitialized() {
 		return
 	}
-	clientIp := ""
-	clientPort := ""
-	if host != "" {
-		clientIp, clientPort = getIpAndPort(host)
-	}
-
-	// filter request headers
-	filterHeader := map[string]string{}
-	RequestIdentifier := ""
-	traceData := ""
-	parentID := ""
-
-	for k, v := range hdrMap {
-		if secUtils.CaseInsensitiveEquals(k, NR_CSEC_TRACING_DATA) {
-			traceData = strings.Join(v, ",")
-		} else if secUtils.CaseInsensitiveEquals(k, NR_CSEC_FUZZ_REQUEST_ID) {
-			RequestIdentifier = strings.Join(v, ",")
-		} else if secUtils.CaseInsensitiveEquals(k, NR_CSEC_PARENT_ID) {
-			parentID = strings.Join(v, ",")
-		} else {
-			filterHeader[k] = strings.Join(v, ",")
+	route := ""
+	for k, v := range csecAttributes {
+		if secUtils.CaseInsensitiveEquals(k, AttributeCsecRoute) {
+			route, _ = v.(string)
 		}
 	}
-	if traceData != "" {
-		filterHeader[NR_CSEC_TRACING_DATA] = traceData
+
+	if ok, _ := isSkipIastScanApi(url, route); ok {
+		return
 	}
-	if RequestIdentifier != "" {
-		filterHeader[NR_CSEC_FUZZ_REQUEST_ID] = RequestIdentifier
-	}
-	if parentID != "" {
-		filterHeader[NR_CSEC_PARENT_ID] = parentID
-	}
-	// record incoming request
+
 	infoReq := new(secUtils.Info_req)
-	(*infoReq).Request.URL = url
-	(*infoReq).Request.ParameterMap = queryparam
-	(*infoReq).Request.ClientIP = clientIp
-	(*infoReq).Request.ClientPort = clientPort
-	(*infoReq).Request.ServerPort = getServerPort()
-	(*infoReq).Request.IsGRPC = false
-	(*infoReq).Request.Headers = filterHeader
-	(*infoReq).GrpcByte = make([][]byte, 0)
-	(*infoReq).Request.Method = method
-	(*infoReq).Request.Body = body
-	(*infoReq).Request.BodyReader = bodyReader
-	(*infoReq).Request.Protocol = protocol
-	(*infoReq).Request.ContentType = getContentType(filterHeader)
-	(*infoReq).ReqTraceData = traceData
-	(*infoReq).RequestIdentifier = RequestIdentifier
-	(*infoReq).Request.ServerName = serverName
-	(*infoReq).BodyLimit = secConfig.GlobalInfo.BodyLimit()
-	(*infoReq).TmpFiles = createFuzzFile(RequestIdentifier)
-	(*infoReq).ParentID = parentID
-	if type1 == "gRPC" {
-		(*infoReq).Request.IsGRPC = true
+	infoReq.Request.URL = url
+	infoReq.Request.Route = route
+	infoReq.Request.ParameterMap = queryparam
+	infoReq.Request.ClientIP, infoReq.Request.ClientPort = getIpAndPort(host)
+	infoReq.Request.ServerPort = getServerPort()
+	infoReq.Request.Headers = ToOneValueMap(hdrMap)
+	infoReq.Request.Method = method
+	infoReq.Request.Body = body
+	infoReq.Request.BodyReader = bodyReader
+	infoReq.Request.Protocol = protocol
+	infoReq.Request.ContentType = getContentType(hdrMap)
+	infoReq.ReqTraceData = getHeaderValue(hdrMap, NR_CSEC_TRACING_DATA)
+	infoReq.RequestIdentifier = parseFuzzRequestIdentifierHeader(getHeaderValue(hdrMap, NR_CSEC_FUZZ_REQUEST_ID))
+	infoReq.Request.ServerName = serverName
+	infoReq.BodyLimit = secConfig.GlobalInfo.BodyLimit()
+	infoReq.ParentID = getHeaderValue(hdrMap, NR_CSEC_PARENT_ID)
+	infoReq.Request.URI = getRequestUri(url)
+	infoReq.TraceId = traceId
+
+	if reqtype == "gRPC" {
+		infoReq.Request.IsGRPC = true
 	}
+
 	secConfig.Secure.AssociateInboundRequest(infoReq)
 }
 
-func AssociateResponseBody(body, contentType string, header http.Header) {
-	if !isAgentInitialized() {
-		return
-	}
+func associateResponseBody(body string) {
 	r := secConfig.Secure.GetRequest()
 	if r != nil {
 		r.ResponseBody = r.ResponseBody + body
-		r.ResponseContentType = contentType
-		r.ResponseHeader = header
 		secConfig.Secure.CalculateOutboundApiId()
+	}
+}
+
+func associateResponseHeader(header http.Header) {
+	r := secConfig.Secure.GetRequest()
+	if r != nil {
+		r.ResponseHeader = header
+		r.ResponseContentType = header.Get("content-type")
 	}
 }
 
@@ -463,59 +451,7 @@ func DissociateGrpcConnectionData() {
 }
 
 func tracerpcRequestWithHeader(header map[string]string, data []byte) {
-	if !isAgentInitialized() {
-		return
-	}
-	infoReq := &secUtils.Info_req{}
-
-	(*infoReq).Request.Headers = make(map[string]string)
-	(*infoReq).Request.ParameterMap = make(map[string][]string, 0)
-	(*infoReq).Request.Method = "gRPC"
-	(*infoReq).Request.ServerPort = getServerPort()
-	(*infoReq).Request.IsGRPC = true
-
-	if data != nil {
-		(*infoReq).GrpcByte = append((*infoReq).GrpcByte, data)
-	}
-
-	host := ""
-
-	for k, v := range header {
-
-		if k == ":method" {
-			(*infoReq).Request.Method = v
-		} else if k == ":path" {
-			(*infoReq).Request.URL = v
-		} else if k == ":scheme" {
-			(*infoReq).Request.Protocol = v
-		} else if k == "content-type" {
-			(*infoReq).Request.ContentType = v
-		} else if secUtils.CaseInsensitiveEquals(k, NR_CSEC_TRACING_DATA) {
-			(*infoReq).ReqTraceData = v
-			delete(header, k)
-		} else if secUtils.CaseInsensitiveEquals(k, NR_CSEC_FUZZ_REQUEST_ID) {
-			(*infoReq).RequestIdentifier = v
-			delete(header, k)
-		} else if secUtils.CaseInsensitiveEquals(k, ":authority") {
-			(*infoReq).Request.ServerName = k
-		} else if secUtils.CaseInsensitiveEquals(k, ":host") {
-			host = k
-		}
-	}
-
-	// reassign all deleted header
-	if (*infoReq).ReqTraceData != "" {
-		header[NR_CSEC_TRACING_DATA] = (*infoReq).ReqTraceData
-	}
-	if (*infoReq).RequestIdentifier != "" {
-		header[NR_CSEC_FUZZ_REQUEST_ID] = (*infoReq).RequestIdentifier
-	}
-	(*infoReq).TmpFiles = createFuzzFile((*infoReq).RequestIdentifier)
-	if (*infoReq).Request.ServerName == "" {
-		(*infoReq).Request.ServerName = host
-	}
-	(*infoReq).Request.Headers = header
-	secConfig.Secure.AssociateInboundRequest(infoReq)
+	// deprecated
 }
 
 /**
@@ -536,87 +472,83 @@ func DissociateInboundRequest() {
 	removeFuzzFile(tmpFiles)
 }
 
-func XssCheck() {
+func traceResponseOperations() {
 	if !isAgentInitialized() {
 		return
 	}
+
 	r := secConfig.Secure.GetRequest()
-
 	if r != nil {
-		if r.ResponseBody != "" && !IsRXSSDisable() {
+		checkSecureCookies(r.ResponseHeader)
+		xssCheck(r)
+	}
+}
 
-			if r.ResponseContentType != "" && !secUtils.IsContentTypeSupported(r.ResponseContentType) {
-				SendLogMessage("No need to send RXSS event ContentType not supported for rxss event validation "+r.ResponseContentType, "XssCheck", "SEVERE")
-				logger.Debugln("No need to send RXSS event ContentType not supported for rxss event validation", r.ResponseContentType)
-				return
-			}
+func checkSecureCookies(responseHeader http.Header) {
 
-			// Double check befor rxss event validation becouse in some case we don't have contentType in response header.
-			cType := http.DetectContentType([]byte(r.ResponseBody))
-			if !secUtils.IsContentTypeSupported(cType) {
-				SendLogMessage("No need to send RXSS event ContentType not supported for rxss event validation "+cType, "XssCheck", "SEVERE")
-				logger.Debugln("No need to send RXSS event ContentType not supported for rxss event validation", cType)
-				return
-			}
-			if r.ResponseContentType == "" {
-				r.ResponseContentType = cType
-			}
-
-			out := secUtils.CheckForReflectedXSS(r)
-			logger.Debugln("CheckForReflectedXSS out value is : ", out)
-
-			if len(out) == 0 && !secConfig.GlobalInfo.IsIASTEnable() {
-				logger.Debugln("No need to send xss event as not attack and dynamic scanning is false")
-			} else {
-				logger.Debugln("return value of reflected xss string : ", out)
-				var arg []string
-				arg = append(arg, out)
-				arg = append(arg, r.ResponseBody)
-				secConfig.Secure.SendEvent("REFLECTED_XSS", arg)
-			}
-			logger.Debugln("Called check for reflected XSS" + out)
+	if secConfig.GlobalInfo.IsInsecureSettingsDisabled() {
+		return
+	}
+	if responseHeader != nil {
+		logger.Debugln("Verifying SecureCookies, response header", responseHeader)
+		tmpRes := http.Response{Header: responseHeader}
+		cookies := tmpRes.Cookies()
+		var arg []map[string]interface{}
+		check := false
+		for _, cookie := range cookies {
+			check = true
+			arg = append(arg, map[string]interface{}{
+				"name":       cookie.Name,
+				"isHttpOnly": cookie.HttpOnly,
+				"isSecure":   cookie.Secure,
+				"value":      cookie.Value,
+			})
+		}
+		if check {
+			secConfig.Secure.SendLowSeverityEvent("SECURE_COOKIE", "SECURE_COOKIE", arg)
 		}
 	}
+}
+
+func xssCheck(r *secUtils.Info_req) {
+	if !IsRxssDisabled() && r.ResponseBody != "" {
+
+		contentType := r.ResponseContentType
+		if !secUtils.IsContentTypeSupported(contentType) {
+			SendLogMessage(SKIP_RXSS_EVENT+contentType, "XssCheck", "SEVERE")
+			logger.Debugln(SKIP_RXSS_EVENT, contentType)
+			return
+		}
+
+		// Double check befor rxss event validation becouse in some case we don't have contentType in response header.
+		cType := http.DetectContentType([]byte(r.ResponseBody))
+		if !secUtils.IsContentTypeSupported(cType) {
+			SendLogMessage(SKIP_RXSS_EVENT+cType, "XssCheck", "SEVERE")
+			logger.Debugln(SKIP_RXSS_EVENT, cType)
+			return
+		}
+		if r.ResponseContentType == "" {
+			r.ResponseContentType = cType
+		}
+
+		out := secUtils.CheckForReflectedXSS(r)
+		logger.Debugln("RXSS check result: Out value set to ", out)
+
+		if len(out) == 0 && !secConfig.GlobalInfo.IsIASTEnable() {
+			logger.Debugln("No need to send xss event as not attack and dynamic scanning is false")
+		} else {
+			var arg []string
+			arg = append(arg, out)
+			arg = append(arg, r.ResponseBody)
+			secConfig.Secure.SendEvent("REFLECTED_XSS", "REFLECTED_XSS", arg)
+		}
+	}
+
 }
 
 /**
  * Handling for IAST mode
  */
-
-// create a remove fuzz file for verfy file acesss attack
-func createFuzzFile(fuzzheaders string) (tmpFiles []string) {
-	DSON := true
-	if DSON && fuzzheaders != "" {
-		additionalData := strings.Split(fuzzheaders, IAST_SEP)
-		logger.Debugln("additionalData:", additionalData)
-		if len(additionalData) >= 7 {
-			for i := 6; i < len(additionalData); i++ {
-				fileName := additionalData[i]
-				dsFilePath := filepath.Join(secConfig.GlobalInfo.SecurityHomePath(), "nr-security-home", "tmp")
-				fileName = strings.Replace(fileName, "{{NR_CSEC_VALIDATOR_HOME_TMP}}", dsFilePath, -1)
-				fileName = strings.Replace(fileName, "%7B%7BNR_CSEC_VALIDATOR_HOME_TMP%7D%7D", dsFilePath, -1)
-				absfileName, _ := filepath.Abs(fileName)
-				if absfileName != "" {
-					fileName = absfileName
-				}
-				tmpFiles = append(tmpFiles, fileName)
-				dir := filepath.Dir(fileName)
-				if dir != "" {
-					err := os.MkdirAll(dir, 0770)
-					if err != nil {
-						logger.Debugln("Error while creating file : ", err.Error())
-					}
-				}
-				emptyFile, err := os.Create(fileName)
-				if err != nil {
-					logger.Debugln("Error while creating file : ", err.Error(), fileName)
-				}
-				emptyFile.Close()
-			}
-		}
-	}
-	return tmpFiles
-}
 
 func removeFuzzFile(tmpFiles []string) {
 	for _, path := range tmpFiles {
@@ -674,7 +606,7 @@ func SendExitEvent(exitEvent interface{}, err error) {
 func ProcessInit(server_name string) {
 	secConfig.GlobalInfo.ApplicationInfo.SetServerName(server_name)
 
-	if secConfig.GlobalInfo.MetaData.GetAccountID() != "" {
+	if secConfig.GlobalInfo.MetaData.GetAccountID() != "" && secConfig.SecureWS != nil {
 		eventGeneration.SendApplicationInfo()
 	}
 }
@@ -710,7 +642,7 @@ func UpdateLinkData(linkingMetadata map[string]string) {
 			secConfig.GlobalInfo.MetaData.SetEntityName(entityname)
 		}
 		if !IsDisable() && !IsForceDisable() {
-			go secWs.InitializeWsConnecton()
+			go StartWsConnection()
 		}
 	} else {
 		secConfig.GlobalInfo.MetaData.SetLinkingMetadata(linkingMetadata)
@@ -720,7 +652,7 @@ func UpdateLinkData(linkingMetadata map[string]string) {
 		}
 		if secConfig.SecureWS != nil {
 			SendLogMessage("Reconnect security agent at refresh call", "UpdateLinkData", "INFO")
-			secConfig.SecureWS.ReconnectAtAgentRefresh()
+			go secConfig.SecureWS.ReconnectAtAgentRefresh()
 		}
 	}
 
@@ -745,14 +677,20 @@ func SendEvent(caseType string, data ...interface{}) interface{} {
 
 	switch caseType {
 	case "INBOUND":
-		inboundcallHandler(data[0])
+		inboundcallHandler(data...)
 	case "INBOUND_END":
-		XssCheck()
+		traceResponseOperations()
 		DissociateInboundRequest()
 	case "INBOUND_WRITE":
 		httpresponseHandler(data...)
+	case "INBOUND_RESPONSE_CODE":
+		httpresponseCodeHandler(data...)
+	case "RESPONSE_HEADER":
+		httpresponseHeader(data...)
 	case "OUTBOUND":
 		return outboundcallHandler(data[0])
+	case "RECORD_PANICS":
+		panicHandler(data)
 	case "API_END_POINTS":
 		apiEndPointsHandler(data...)
 	case "GRPC":
@@ -779,14 +717,31 @@ func SendEvent(caseType string, data ...interface{}) interface{} {
 		dynamodbHandler(data...)
 	case "REDIS":
 		redisHandler(data...)
+	case "GRAPHQL":
+		graphqlHandler(data...)
+
 	}
 	return nil
 }
 
-func inboundcallHandler(request interface{}) {
+func inboundcallHandler(data ...interface{}) {
+
+	csecAttributes := map[string]any{}
+	traceId := ""
+	if len(data) >= 3 {
+		traceId, _ = data[2].(string)
+	}
+	if len(data) >= 2 {
+		csecAttributes, _ = data[1].(map[string]any)
+	}
+	if len(data) < 1 {
+		return
+	}
+	request := data[0]
+
 	r, ok := request.(webRequestv2)
 	if !ok || r == nil {
-		inboundcallHandlerv1(request)
+		inboundcallHandlerv1(request, csecAttributes, traceId)
 		return
 	}
 	queryparam := map[string][]string{}
@@ -799,11 +754,11 @@ func inboundcallHandler(request interface{}) {
 	}
 
 	reqBodyWriter := secUtils.SecWriter{GetBody: r.GetBody, IsDataTruncated: r.IsDataTruncated}
-	TraceIncommingRequest(r.GetURL().String(), clientHost, r.GetHeader(), r.GetMethod(), "", queryparam, r.GetTransport(), r.GetServerName(), r.Type1(), reqBodyWriter)
+	TraceIncommingRequest(r.GetURL().String(), clientHost, r.GetHeader(), r.GetMethod(), "", queryparam, r.GetTransport(), r.GetServerName(), r.Type1(), reqBodyWriter, csecAttributes, traceId)
 }
 
 // merge inboundcallHandler and inboundcallHandlerv1 in the next major release(v1.0.0)
-func inboundcallHandlerv1(request interface{}) {
+func inboundcallHandlerv1(request interface{}, csecAttributes map[string]any, traceId string) {
 	r, ok := request.(webRequest)
 	if !ok || r == nil {
 		SendLogMessage("ERROR: Request is not a type of webRequest and webRequestv2 ", "security_intercept", "SEVERE")
@@ -820,11 +775,11 @@ func inboundcallHandlerv1(request interface{}) {
 	}
 
 	reqBodyWriter := secUtils.SecWriter{GetBody: r.GetBody, IsDataTruncated: IsDataTruncated}
-	TraceIncommingRequest(r.GetURL().String(), clientHost, r.GetHeader(), r.GetMethod(), "", queryparam, r.GetTransport(), r.GetServerName(), r.Type1(), reqBodyWriter)
+	TraceIncommingRequest(r.GetURL().String(), clientHost, r.GetHeader(), r.GetMethod(), "", queryparam, r.GetTransport(), r.GetServerName(), r.Type1(), reqBodyWriter, csecAttributes, traceId)
 }
 
 func outboundcallHandler(req interface{}) *secUtils.EventTracker {
-	if req == nil || !isAgentInitialized() {
+	if req == nil || !isAgentInitialized() || secConfig.GlobalInfo.IsSsrfDisabled() {
 		return nil
 	}
 	r, ok := req.(*http.Request)
@@ -833,41 +788,53 @@ func outboundcallHandler(req interface{}) *secUtils.EventTracker {
 	}
 	var args []interface{}
 	args = append(args, r.URL.String())
-	event := secConfig.Secure.SendEvent("HTTP_REQUEST", args)
+	event := secConfig.Secure.SendEvent("HTTP_REQUEST", "HTTP_REQUEST", args)
 	return event
+}
+
+func httpresponseCodeHandler(data ...interface{}) {
+	if len(data) < 1 {
+		return
+	}
+	rescode, _ := data[0].(int)
+	if rescode >= 500 {
+		secConfig.Secure.Send5xxEvent(rescode)
+	}
 }
 
 func httpresponseHandler(data ...interface{}) {
 	if len(data) < 2 {
 		return
 	}
-	res := data[0]
-	header := data[1]
 
-	if res == nil || !isAgentInitialized() {
-		return
-	}
 	contentType := ""
-	responseHeader := http.Header{}
-	if hdr, ok := header.(http.Header); ok && hdr != nil {
+	if hdr, ok := data[1].(http.Header); ok && hdr != nil {
 		contentType = hdr.Get("content-type")
-		responseHeader = hdr
+		associateResponseHeader(hdr)
 	}
 
 	if contentType != "" && !secUtils.IsContentTypeSupported(contentType) {
-		logger.Debugln("No need to send RXSS event ContentType not supported for rxss event validation", contentType)
+		logger.Debugln("Skipping RXSS event transmission: Content type not supported for RXSS event validation", contentType)
 		return
 	}
 
-	if responseBody, ok := res.(string); ok {
+	if responseBody, ok := data[0].(string); ok {
 		// Double check befor rxss event validation becouse in some case we don't have contentType in response header.
-		cType := http.DetectContentType([]byte(responseBody))
-		if !secUtils.IsContentTypeSupported(cType) {
-			logger.Debugln("No need to send RXSS event ContentType not supported for rxss event validation", cType)
+		contentType = http.DetectContentType([]byte(responseBody))
+		if !secUtils.IsContentTypeSupported(contentType) {
+			logger.Debugln("Skipping RXSS event transmission: Content type not supported for RXSS event validation", contentType)
 			return
 		}
+		associateResponseBody(responseBody)
+	}
+}
 
-		AssociateResponseBody(responseBody, contentType, responseHeader)
+func httpresponseHeader(data ...interface{}) {
+	if len(data) < 1 {
+		return
+	}
+	if hdr, ok := data[0].(http.Header); ok && hdr != nil {
+		associateResponseHeader(hdr)
 	}
 }
 
@@ -963,7 +930,7 @@ func associateApplicationPort(data ...interface{}) {
 }
 
 func mongoHandler(data ...interface{}) *secUtils.EventTracker {
-	if !isAgentInitialized() {
+	if !isAgentInitialized() || secConfig.GlobalInfo.IsNosqlInjectionDisabled() {
 		return nil
 	}
 	if len(data) < 2 {
@@ -994,7 +961,7 @@ func mongoHandler(data ...interface{}) *secUtils.EventTracker {
 			"payload":     arg11,
 		}
 		arg12 = append(arg12, tmp_map1)
-		return secConfig.Secure.SendEvent("NOSQL_DB_COMMAND", arg12)
+		return secConfig.Secure.SendEvent("NOSQL_DB_COMMAND", "MONGO", arg12)
 	}
 	return nil
 }
@@ -1010,7 +977,7 @@ func DistributedTraceHeaders(hdrs *http.Request, secureAgentevent interface{}) {
 		}
 		value = GetFuzzHeader()
 		if value != "" {
-			hdrs.Header.Add("NR_CSEC_FUZZ_REQUEST_ID", value)
+			hdrs.Header.Add(NR_CSEC_FUZZ_REQUEST_ID, value)
 		}
 	}
 
@@ -1019,7 +986,7 @@ func dynamodbHandler(data ...interface{}) {
 	if data == nil || !isAgentInitialized() {
 		return
 	}
-	secConfig.Secure.SendEvent("DYNAMO_DB_COMMAND", data[0])
+	secConfig.Secure.SendEvent("DYNAMO_DB_COMMAND", "DQL", data[0])
 }
 
 func redisHandler(data ...interface{}) {
@@ -1027,12 +994,40 @@ func redisHandler(data ...interface{}) {
 		return
 	}
 
-	secConfig.Secure.SendEvent("REDIS_DB_COMMAND", data)
+	secConfig.Secure.SendEvent("REDIS_DB_COMMAND", "REDIS", data)
+}
+
+func graphqlHandler(data ...interface{}) {
+	if data == nil || !isAgentInitialized() {
+		return
+	}
+	if len(data) < 2 {
+		return
+	}
+	query, ok := data[0].(bool)
+	variable, ok1 := data[1].(bool)
+	if ok && ok1 {
+		secConfig.Secure.AssociategraphqlInfo(query, variable)
+	}
+
+}
+
+func panicHandler(data ...interface{}) {
+
+	if nil == data || len(data) == 0 || !isAgentInitialized() {
+		return
+	}
+	panic := data[0]
+
+	tmp := fmt.Sprintf("%s", panic)
+	secConfig.Secure.SendPanicEvent(tmp)
+
 }
 
 func DeactivateSecurity() {
 	SendLogMessage("deactivating security agent", "DeactivateSecurity", "INFO")
 	eventGeneration.RemoveHcScheduler()
+	eventGeneration.RemovePanicReportScheduler()
 	secConfig.GlobalInfo.SetSecurityEnabled(false)
 	secConfig.GlobalInfo.SetSecurityAgentEnabled(false)
 	if secConfig.SecureWS != nil {

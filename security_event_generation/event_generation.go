@@ -6,10 +6,12 @@ package security_event_generation
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"errors"
@@ -31,32 +33,75 @@ const (
 )
 
 var (
-	initlogs      = true
-	firstEvent    = true
-	HcBuffer      *secUtils.Cring
-	logger        = logging.GetLogger("hook")
-	removeChannel = make(chan string)
-	errorBuffer   = secUtils.NewCring(15)
+	initlogs              = true
+	firstEvent            = true
+	HcBuffer              *secUtils.Cring
+	logger                = logging.GetLogger("hook")
+	hcChannel             chan bool
+	panicChannel          chan bool
+	errorBuffer           = secUtils.NewCring(15)
+	applicationPanic      = make(map[string]*PanicReport)
+	applicationPanicMutex = sync.Mutex{}
 )
 
-func InitHcScheduler() {
+func SendInitEvents() {
 	logging.EndStage("5", "Security agent components started")
-	SendSecHealthCheck()
 	sendBufferLogMessage()
 	sendUrlMappingEvent()
-	t := time.NewTicker(5 * time.Minute)
-	for {
-		select {
-		case <-t.C:
-			SendSecHealthCheck()
-		case <-removeChannel:
-			return
-		}
+
+}
+
+func InitScheduler() {
+	if hcChannel == nil {
+		hcChannel = initHcScheduler()
+	}
+	if panicChannel == nil {
+		panicChannel = initPanicReportScheduler()
 	}
 }
 
+func initHcScheduler() chan bool {
+	quit := make(chan bool, 5)
+	t := time.NewTicker(5 * time.Minute)
+	go func() {
+		SendSecHealthCheck()
+		for {
+			select {
+			case <-t.C:
+				SendSecHealthCheck()
+			case <-quit:
+				return
+			}
+		}
+	}()
+	return quit
+}
+
 func RemoveHcScheduler() {
-	removeChannel <- "end"
+	hcChannel <- true
+	hcChannel = nil
+}
+
+func initPanicReportScheduler() chan bool {
+	quit := make(chan bool, 5)
+	t := time.NewTicker(30 * time.Second)
+	go func() {
+		sendApplicationRuntimeError()
+		for {
+			select {
+			case <-t.C:
+				sendApplicationRuntimeError()
+			case <-quit:
+				return
+			}
+		}
+	}()
+	return quit
+}
+
+func RemovePanicReportScheduler() {
+	panicChannel <- true
+	panicChannel = nil
 }
 
 func initHcBuffer() {
@@ -80,6 +125,8 @@ func getApplicationIdentifiers(jsonName string) ApplicationIdentifiers {
 	applicationIdentifier.Pid = secConfig.GlobalInfo.ApplicationInfo.GetPid()
 	agentStartTime := secConfig.GlobalInfo.ApplicationInfo.GetStarttimestr().Unix() * 1000
 	applicationIdentifier.StartTime = secUtils.Int64ToString(agentStartTime)
+	applicationIdentifier.AppAccountId = secConfig.GlobalInfo.MetaData.GetAccountID()
+	applicationIdentifier.AppEntityGuid = secConfig.GlobalInfo.MetaData.GetEntityGuid()
 	applicationIdentifier.LinkingMetadata = secConfig.GlobalInfo.MetaData.GetLinkingMetadata()
 	return applicationIdentifier
 
@@ -93,23 +140,19 @@ func SendSecHealthCheck() {
 	hc.EventType = "sec_health_check_lc"
 	hc.ApplicationIdentifiers = getApplicationIdentifiers("LAhealthcheck")
 	hc.ProtectedServer = secConfig.GlobalInfo.ApplicationInfo.GetProtectedServer()
-	hc.IastEventStats = *secConfig.GlobalInfo.EventData.GetIastEventStats()
-	hc.RaspEventStats = *secConfig.GlobalInfo.EventData.GetRaspEventStats()
-	hc.ExitEventStats = *secConfig.GlobalInfo.EventData.GetExitEventStats()
+	hc.WebSocketConnectionStats = secConfig.GlobalInfo.WebSocketConnectionStats
+	hc.IastReplayRequest = secConfig.GlobalInfo.IastReplayRequest
+	hc.EventStats = secConfig.GlobalInfo.EventStats
+	hc.IastTestIdentifier = secConfig.GlobalInfo.GetIastTestIdentifier()
 
-	var threadPoolStats ThreadPoolStats
+	hc.ProcStartTime = secConfig.GlobalInfo.ApplicationInfo.GetStarttimestr().Unix() * 1000
+	hc.TrafficStartedTime = secConfig.GlobalInfo.ApplicationInfo.GetTrafficStartedTime()
+	hc.ScanStartTime = secConfig.GlobalInfo.ApplicationInfo.GetScanStartTime()
+
 	if secConfig.SecureWS != nil {
-		threadPoolStats.FuzzRequestQueueSize = secConfig.SecureWS.PendingFuzzTask()
-		threadPoolStats.FuzzRequestCount = secConfig.GlobalInfo.EventData.GetFuzzRequestCount()
-		threadPoolStats.EventSendQueueSize = secConfig.SecureWS.PendingEvent()
+		hc.IastReplayRequest.PendingControlCommands = secConfig.SecureWS.PendingFuzzTask()
 	}
-	hc.ThreadPoolStats = threadPoolStats
 
-	hc.EventDropCount = hc.IastEventStats.Rejected + hc.RaspEventStats.Rejected + hc.ExitEventStats.Rejected
-	hc.EventProcessed = hc.IastEventStats.Processed + hc.RaspEventStats.Processed + hc.ExitEventStats.Processed
-	hc.EventSentCount = hc.IastEventStats.Sent + hc.RaspEventStats.Sent + hc.ExitEventStats.Sent
-
-	hc.HTTPRequestCount = secConfig.GlobalInfo.EventData.GetHttpRequestCount()
 	stats := sysInfo.GetStats(secConfig.GlobalInfo.ApplicationInfo.GetPid(), secConfig.GlobalInfo.ApplicationInfo.GetBinaryPath())
 	hc.Stats = stats
 	serviceStatus := getServiceStatus()
@@ -117,11 +160,11 @@ func SendSecHealthCheck() {
 
 	healthCheck, _ := sendPriorityEvent(hc)
 	HcBuffer.ForceInsert(healthCheck)
-	populateStatusLogs(serviceStatus, stats)
+	// populateStatusLogs(serviceStatus, stats)
 
-	secConfig.GlobalInfo.EventData.SetHttpRequestCount(0)
-	secConfig.GlobalInfo.EventData.SetFuzzRequestCount(0)
-	secConfig.GlobalInfo.EventData.ResetEventStats()
+	secConfig.GlobalInfo.WebSocketConnectionStats.Reset()
+	secConfig.GlobalInfo.IastReplayRequest.Reset()
+	secConfig.GlobalInfo.EventStats.Reset()
 }
 
 func SendApplicationInfo() {
@@ -242,6 +285,7 @@ func SendApplicationInfo() {
 
 }
 
+// deprecated
 func SendFuzzFailEvent(fuzzHeader string) {
 	var fuzzFailEvent FuzzFailBean
 	fuzzFailEvent.FuzzHeader = fuzzHeader
@@ -267,43 +311,45 @@ func sendUrlMappingEvent() {
 	}
 }
 
-func SendVulnerableEvent(req *secUtils.Info_req, category string, args interface{}, vulnerabilityDetails secUtils.VulnerabilityDetails, eventId string) *secUtils.EventTracker {
+func SendVulnerableEvent(req *secUtils.Info_req, category, eventCategory string, args interface{}, vulnerabilityDetails secUtils.VulnerabilityDetails, eventId string) *secUtils.EventTracker {
 	var tmp_event eventJson
-
-	eventCategory := category
-	if eventCategory == "SQL_DB_COMMAND" {
-		eventCategory = "SQLITE"
-	} else if category == "NOSQL_DB_COMMAND" {
-		eventCategory = "MONGO"
-	} else if category == "REDIS_DB_COMMAND" {
-		eventCategory = "REDIS"
-		category = "SQL_DB_COMMAND"
-	} else if category == "DYNAMO_DB_COMMAND" {
-		eventCategory = "DQL"
-	}
 
 	tmp_event.ID = eventId
 	tmp_event.CaseType = category
 	tmp_event.EventCategory = eventCategory
 	tmp_event.Parameters = args
-	tmp_event.EventGenerationTime = strconv.FormatInt(time.Now().Unix()*1000, 10)
 	tmp_event.BlockingProcessingTime = "1"
 	tmp_event.HTTPRequest = req.Request
-	tmp_event.HTTPResponse = secUtils.ResponseInfo{ContentType: req.ResponseContentType}
-	if req.Request.BodyReader.GetBody != nil {
-		tmp_event.HTTPRequest.Body = string(req.Request.BodyReader.GetBody())
-	}
-	if req.Request.BodyReader.IsDataTruncated != nil {
-		tmp_event.HTTPRequest.DataTruncated = req.Request.BodyReader.IsDataTruncated()
-	}
+	tmp_event.ParentId = req.ParentID
 	tmp_event.VulnerabilityDetails = vulnerabilityDetails
 	tmp_event.ApplicationIdentifiers = getApplicationIdentifiers("Event")
+	tmp_event.EventGenerationTime = strconv.FormatInt(time.Now().Unix()*1000, 10)
+	tmp_event.HTTPResponse = secUtils.ResponseInfo{ContentType: req.ResponseContentType}
+	tmp_event.MetaData.AppServerInfo.ApplicationDirectory = secConfig.GlobalInfo.EnvironmentInfo.Wd
+	tmp_event.MetaData.AppServerInfo.ServerBaseDirectory = secConfig.GlobalInfo.EnvironmentInfo.Wd
+	tmp_event.MetaData.SkipScanParameters = secConfig.GlobalInfo.SkipIastScanParameters()
+	tmp_event.LinkingMetadata = copyMap(secConfig.GlobalInfo.MetaData.GetLinkingMetadata())
+	tmp_event.LinkingMetadata["trace.id"] = req.TraceId
+	if !req.Request.IsGRPC {
 
-	fuzzHeader := (*req).RequestIdentifier
-	// if (*req).RequestIdentifier != "" {
-	// 	tmp_event.Stacktrace = []string{}
-	// }
-	if req.Request.IsGRPC {
+		if req.Request.BodyReader.GetBody != nil {
+			tmp_event.HTTPRequest.Body = string(req.Request.BodyReader.GetBody())
+		}
+		if req.Request.BodyReader.IsDataTruncated != nil {
+			tmp_event.HTTPRequest.DataTruncated = req.Request.BodyReader.IsDataTruncated()
+		}
+
+	} else {
+
+		body := req.GrpcBody
+		grpc_body_json, err1 := json.Marshal(body)
+		if err1 != nil {
+			logger.Errorln("Error parsing gRPC request body: Invalid JSON format detected" + string(grpc_body_json))
+			return nil
+		} else {
+			tmp_event.HTTPRequest.Body = string(grpc_body_json)
+		}
+
 		tmp_event.MetaData.ReflectedMetaData = secUtils.ReflectedMetaData{
 			IsGrpcClientStream: req.ReflectedMetaData.IsGrpcClientStream,
 			IsServerStream:     req.ReflectedMetaData.IsServerStream,
@@ -313,34 +359,22 @@ func SendVulnerableEvent(req *secUtils.Info_req, category string, args interface
 	}
 
 	requestType := "raspEvent"
-	if secConfig.GlobalInfo.GetCurrentPolicy().VulnerabilityScan.Enabled && secConfig.GlobalInfo.GetCurrentPolicy().VulnerabilityScan.IastScan.Enabled {
-		if fuzzHeader != "" {
+
+	requestIdentifier := req.RequestIdentifier
+
+	if secConfig.GlobalInfo.IsIASTEnable() {
+		tmp_event.IsIASTEnable = true
+		if requestIdentifier.NrRequest {
+			tmp_event.HTTPRequest.Route = ""
 			requestType = "iastEvent"
 			tmp_event.IsIASTRequest = true
-		}
-		tmp_event.IsIASTEnable = true
-	}
 
-	if tmp_event.HTTPRequest.ServerPort == "" {
-		tmp_event.HTTPRequest.ServerPort = "-1"
-	}
-
-	if tmp_event.HTTPRequest.IsGRPC {
-		body := (*req).GrpcBody
-		grpc_bodyJson, err1 := json.Marshal(body)
-		if err1 != nil {
-			logger.Errorln("grpc_body JSON invalid" + string(grpc_bodyJson))
-			return nil
-		} else {
-			tmp_event.HTTPRequest.Body = string(grpc_bodyJson)
-		}
-	}
-
-	if req.ParentID != "" && req.RequestIdentifier != "" {
-		tmp_event.ParentId = req.ParentID
-		apiId := strings.Split(req.RequestIdentifier, ":")[0]
-		if apiId == vulnerabilityDetails.APIID {
-			(secConfig.SecureWS).AddCompletedRequests(req.ParentID, eventId)
+			if !secUtils.IsBlank(req.ParentID) {
+				apiId := requestIdentifier.APIRecordID
+				if apiId == vulnerabilityDetails.APIID {
+					(secConfig.SecureWS).AddCompletedRequests(req.ParentID, eventId)
+				}
+			}
 		}
 	}
 
@@ -351,13 +385,14 @@ func SendVulnerableEvent(req *secUtils.Info_req, category string, args interface
 	}
 
 	if firstEvent {
+		secConfig.GlobalInfo.ApplicationInfo.SetTrafficStartedTime(time.Now())
 		logging.EndStage("8", "First event sent for validation. Security agent started successfully.")
 		logging.PrintInitlog("First event processed : " + string(event_json))
 		firstEvent = false
 		logging.Disableinitlogs()
 	}
 	tracingHeader := tmp_event.HTTPRequest.Headers[NR_CSEC_TRACING_DATA]
-	return &secUtils.EventTracker{APIID: tmp_event.APIID, ID: tmp_event.ID, CaseType: tmp_event.CaseType, TracingHeader: tracingHeader, RequestIdentifier: fuzzHeader}
+	return &secUtils.EventTracker{APIID: tmp_event.APIID, ID: tmp_event.ID, CaseType: tmp_event.CaseType, TracingHeader: tracingHeader, RequestIdentifier: requestIdentifier.Raw}
 
 }
 
@@ -374,29 +409,69 @@ func SendExitEvent(eventTracker *secUtils.EventTracker, requestIdentifier string
 	}
 }
 
-func SendUpdatedPolicy(policy secConfig.Policy) {
-	logger.Infoln("Sending Updated policy ", policy.Version)
-	type policy1 struct {
-		JSONName string `json:"jsonName"`
-		secConfig.Policy
-	}
-
-	_, err := sendEvent(policy1{"lc-policy", policy}, "", "")
-	if err != nil {
-		logger.Errorln(err)
-	}
-}
-
 func IASTDataRequest(batchSize int, completedRequestIds interface{}, pendingRequestIds []string) {
 	var tmp_event IASTDataRequestBeen
 	tmp_event.CompletedRequests = completedRequestIds
 	tmp_event.PendingRequestIds = pendingRequestIds
 	tmp_event.BatchSize = batchSize
-	tmp_event.ApplicationUUID = secConfig.GlobalInfo.ApplicationInfo.GetAppUUID()
-	tmp_event.JSONName = "iast-data-request"
+	tmp_event.ApplicationIdentifiers = getApplicationIdentifiers("iast-data-request")
 	_, err := sendEvent(tmp_event, "", "")
 	if err != nil {
 		logger.Errorln(err)
+	}
+}
+
+func sendApplicationRuntimeError() {
+	applicationPanicMutex.Lock()
+	defer applicationPanicMutex.Unlock()
+	for _, event := range applicationPanic {
+		sendEvent(event, "", "LogMessage")
+	}
+	applicationPanic = make(map[string]*PanicReport)
+
+}
+
+func StoreApplicationRuntimeError(req *secUtils.Info_req, panic Panic, id string) {
+	applicationPanicMutex.Lock()
+	defer applicationPanicMutex.Unlock()
+	if p, ok := applicationPanic[id]; ok {
+		p.Counter++
+	} else {
+		r := req.Request.Route
+		if r == "" {
+			r = req.Request.URL
+		}
+		applicationPanic[id] = &PanicReport{
+			ApplicationIdentifiers: getApplicationIdentifiers("application-runtime-error"),
+			HTTPRequest:            req.Request,
+			Exception:              panic,
+			Category:               "Panic",
+			Counter:                1,
+			TraceId:                secUtils.StringSHA256("Panic" + r + req.Request.Method + strings.Join(panic.Stacktrace, " ")),
+		}
+	}
+}
+
+func Store5xxError(req *secUtils.Info_req, id string, responseCode int) {
+	applicationPanicMutex.Lock()
+	defer applicationPanicMutex.Unlock()
+	if p, ok := applicationPanic[id]; ok {
+		p.Counter++
+	} else {
+		r := req.Request.Route
+		if r == "" {
+			r = req.Request.URL
+		}
+		category := http.StatusText(responseCode)
+		applicationPanic[id] = &PanicReport{
+			ApplicationIdentifiers: getApplicationIdentifiers("application-runtime-error"),
+			HTTPRequest:            req.Request,
+			Exception:              nil,
+			ResponseCode:           responseCode,
+			Category:               category,
+			Counter:                1,
+			TraceId:                secUtils.StringSHA256(category + r + req.Request.Method),
+		}
 	}
 }
 
@@ -407,7 +482,7 @@ func sendBufferLogMessage() {
 		if secConfig.SecureWS != nil {
 			tmp_event, ok := i.(LogMessage)
 			if ok {
-				tmp_event.ApplicationUUID = secConfig.GlobalInfo.ApplicationInfo.GetAppUUID()
+				tmp_event.ApplicationIdentifiers = getApplicationIdentifiers("critical-messages")
 				tmp_event.LinkingMetadata = secConfig.GlobalInfo.MetaData.GetLinkingMetadata()
 				sendEvent(tmp_event, "", "LogMessage")
 			}
@@ -420,8 +495,7 @@ func SendLogMessage(log, caller, logLevel string) {
 
 	var tmp_event LogMessage
 
-	tmp_event.ApplicationUUID = secConfig.GlobalInfo.ApplicationInfo.GetAppUUID()
-	tmp_event.JSONName = "critical-messages"
+	tmp_event.ApplicationIdentifiers = getApplicationIdentifiers("critical-messages")
 	tmp_event.Timestamp = time.Now().Unix() * 1000
 	tmp_event.Level = logLevel
 	tmp_event.Message = log
@@ -486,4 +560,12 @@ func getServiceStatus() map[string]interface{} {
 	ServiceStatus["iastRestClient"] = iastRestClientStatus()
 	return ServiceStatus
 
+}
+
+func copyMap(originalMap map[string]string) map[string]string {
+	targetMap := make(map[string]string)
+	for key, value := range originalMap {
+		targetMap[key] = value
+	}
+	return targetMap
 }

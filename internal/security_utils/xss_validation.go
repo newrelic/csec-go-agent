@@ -324,7 +324,9 @@ func decodeRequestData(rq *Info_req) []string {
 				processedData = append(processedData, string(value))
 			}
 		case "application/xml":
-			processedData = append(processedData, body)
+			processedData = append(processedData, html.UnescapeString(body))
+		case "text/xml":
+			processedData = append(processedData, html.UnescapeString(body))
 		case "application/x-www-form-urlencoded":
 			unescapedString, err := url.QueryUnescape(body)
 			if err != nil {

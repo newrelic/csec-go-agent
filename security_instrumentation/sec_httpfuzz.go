@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"net"
 	"net/http"
-	"net/url"
 	"strconv"
 	"strings"
 	"sync"
@@ -16,7 +15,6 @@ import (
 
 	secUtils "github.com/newrelic/csec-go-agent/internal/security_utils"
 	secConfig "github.com/newrelic/csec-go-agent/security_config"
-	eventGeneration "github.com/newrelic/csec-go-agent/security_event_generation"
 	sechandler "github.com/newrelic/csec-go-agent/security_handlers"
 	secIntercept "github.com/newrelic/csec-go-agent/security_intercept"
 )
@@ -56,6 +54,8 @@ func getHttpsClient() *http.Client {
 }
 
 func (httpFuzz SecHttpFuzz) ExecuteFuzzRequest(fuzzRequest *sechandler.FuzzRequrestHandler, caseType string, fuzzId string) {
+	secConfig.GlobalInfo.IastReplayRequest.IncreaseReplayRequestExecuted()
+
 	fuzzRequestID := fmt.Sprintf("%v", fuzzRequest.Headers[secIntercept.NR_CSEC_FUZZ_REQUEST_ID])
 	applicationPort := ":" + strconv.Itoa(fuzzRequest.ServerPort)
 	fuzzRequestURL := secConfig.GlobalInfo.ApplicationInfo.GetServerIp() + applicationPort + fuzzRequest.Url
@@ -75,22 +75,25 @@ func (httpFuzz SecHttpFuzz) ExecuteFuzzRequest(fuzzRequest *sechandler.FuzzRequr
 
 	req, err = http.NewRequest(fuzzRequest.Method, fuzzRequestURL, strings.NewReader(fuzzRequest.Body))
 	if req == nil || err != nil {
-		eventGeneration.SendFuzzFailEvent(fuzzRequestID)
 		logger.Infoln("ERROR: request type", fuzzRequest.Method, err)
 		secIntercept.SendLogMessage(err.Error(), "security_instrumentation", "SEVERE")
+		secConfig.GlobalInfo.IastReplayRequest.IncreaseReplayRequestFailed()
 		return
 	}
-
-	v, err := url.ParseQuery(req.URL.RawQuery)
-	if err == nil {
-		req.URL.RawQuery = v.Encode()
-	}
+	req, _ = http.NewRequest(fuzzRequest.Method, fuzzRequestURL, strings.NewReader(fuzzRequest.Body))
+	// v, err := url.ParseQuery(req.URL.RawQuery)
+	// if err == nil {
+	// 	req.URL.RawQuery = v.Encode()
+	// }
 
 	for headerKey, headerValue := range fuzzRequest.Headers {
 		value := fmt.Sprintf("%v", headerValue)
 		req.Header.Set(headerKey, value)
 	}
-	req.Header.Set("Content-Type", fuzzRequest.ContentType)
+
+	if !secUtils.IsBlank(fuzzRequest.ContentType) {
+		req.Header.Set("Content-Type", fuzzRequest.ContentType)
+	}
 	req.Header.Set("nr-csec-parent-id", fuzzId)
 
 	if fuzzRequestClient == nil {
@@ -99,10 +102,11 @@ func (httpFuzz SecHttpFuzz) ExecuteFuzzRequest(fuzzRequest *sechandler.FuzzRequr
 	response, err := fuzzRequestClient.Do(req)
 	if err != nil {
 		logger.Debugln("ERROR: fuzz request fail : ", fuzzRequestID, err.Error())
+		secConfig.GlobalInfo.IastReplayRequest.IncreaseReplayRequestFailed()
 		//secIntercept.SendLogMessage("fuzz request fail :"+err.Error(), "security_instrumentation", "SEVERE")
-		eventGeneration.SendFuzzFailEvent(fuzzRequestID)
 	} else {
 		defer response.Body.Close()
+		secConfig.GlobalInfo.IastReplayRequest.IncreaseReplayRequestSucceeded()
 		logger.Debugln("fuzz request successful : ", fuzzRequestID)
 	}
 }

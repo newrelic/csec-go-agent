@@ -31,7 +31,7 @@ type RestRequestThreadPool struct {
 
 func (r *RestRequestThreadPool) InitFuzzScheduler() {
 	if !r.isFuzzSchedulerInitialized {
-		go InitFuzzScheduler()
+		go r.initFuzzScheduler()
 		r.isFuzzSchedulerInitialized = true
 	}
 }

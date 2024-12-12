@@ -1,5 +1,59 @@
 # Changelog
 
+## [v1.5.0] - 2024-10-29
+### Features:
+* Json Version bump to 1.2.9.
+* Add IAST Scan start time and Traffic Start Time in Health Check
+* Add feature to allow IAST Scan Scheduling.
+* Add feature to ignore IAST Scan of certain APIs, categories, or parameters.
+* Add feature to rate limit the IAST replay requests.
+* Add trace.id in event json.
+* Add request uri in application runtime error event.
+
+### Fixes
+* Fix for wrong user file name for RXSS event in windows environment.
+
+## [v1.4.0] - 2024-08-27
+### Features:
+* Added new key identifiers to all event JSONs.
+* Introduced detailed IAST scan metric reporting via HealthCheck for better insights.
+* Added support for Secure Cookie event reporting to provide detailed vulnerability information.
+* Added support for application/xml and text/xml content-types for RXSS vulnerability detection.
+* Implemented a new mechanism to uniquely generate low severity events based on API ID, with a 30-minute time interval
+
+### Changes:
+* Update IAST Header Parsing Minimum Expected Length Set to 8.
+* Updated API ID generation to utilize both stacktrace and route information.
+* Performed comprehensive code refactoring and cleanup for improved system efficiency and maintainability.
+* Json Version bump to 1.2.5
+
+### Deprecations:
+* Status File Used for Debugging: This feature has been deprecated. All debugging capabilities have been moved to either Init Logging or Error Inbox and will be removed in a future agent release
+
+## [v1.3.0] - 2024-06-24
+### Features
+* Added functionality to report panics in user code.
+* Added support to report 5xx status code.
+* Added support to detect gRPC API endpoint.
+* Added support for MongoDB latest version v1.15.0
+* Added feature to detect route of an incoming request for all supported frameworks.
+* Added support to detect server web directory
+* Added generic code to run agent on os like OpenBSD, FreeBSD
+### Miscellaneous chores
+* Fixed for incorrect system memory reporting on darwin
+* Fixed for duplicate URL mapping reporting issue
+* No Longer Sending Fuzz Fail Events
+* Json Version bump to 1.2.3
+
+## [v1.2.0] - 2024-04-12
+### Features
+* IAST replay header decryption due to Security Findings.
+* Json Version bump to 1.2.0
+### Miscellaneous chores
+* Prepended the vulnerability case type with apiId.
+* Updated time interval for IAST pull request.
+* Bumped golang.org/x/net from v0.17.0 to v0.23.0
+
 ## [v1.1.0] - 2024-03-26
 ### Features
 * Functionality to report API endpoints of the application

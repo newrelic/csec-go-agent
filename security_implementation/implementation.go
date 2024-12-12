@@ -25,6 +25,7 @@ var logger = logging.GetLogger("impl")
 var grpcMap = sync.Map{}
 var fastHttpMap = sync.Map{}
 var requestMap = sync.Map{}
+var lowSeverityEventMap = sync.Map{}
 
 const (
 	identity = "github.com/newrelic/csec-go-agent"
@@ -56,7 +57,7 @@ func (k Secureimpl) SecureExecPrepareStatement(q_address string, qargs interface
 		"parameters": qargs,
 	}
 	arg11 = append(arg11, tmp_map)
-	return k.SendEvent("SQL_DB_COMMAND", arg11)
+	return k.SendEvent("SQL_DB_COMMAND", "SQLITE", arg11)
 }
 
 /**
@@ -67,7 +68,6 @@ func (k Secureimpl) AssociateInboundRequest(r *secUtils.Info_req) {
 	if !isAgentReady() {
 		return
 	}
-	secConfig.GlobalInfo.EventData.IncreaseHttpRequestCount()
 	goroutineID := getID()
 	if r.Request.IsGRPC {
 		data, err := grpcMap.Load(goroutineID)
@@ -96,7 +96,7 @@ func (k Secureimpl) AssociateOutboundRequest(dest, dport, urlx string) {
 func (k Secureimpl) CalculateOutboundApiId() {
 	request := getRequest(getID())
 	if request.VulnerabilityDetails.APIID == "" {
-		vulnerabilityDetails := presentStack(request.Request.Method)
+		vulnerabilityDetails := presentStack(request.Request.Method, "REFLECTED_XSS")
 		request.VulnerabilityDetails = vulnerabilityDetails
 	}
 }
@@ -144,7 +144,7 @@ func (k Secureimpl) AssociateGrpcDataBytes(data []byte) bool {
 		logger.Errorln("(AssociateGrpcDataBytes) GRPC Request Not Found creating new request without headers")
 		return false
 	}
-	request.GrpcByte = append(request.GrpcByte, data)
+	// request.GrpcByte = append(request.GrpcByte, data) // deprecated
 	return true
 }
 
@@ -184,7 +184,7 @@ func (k Secureimpl) GetFuzzHeader() string {
 	if request == nil {
 		return ""
 	} else {
-		return request.RequestIdentifier
+		return request.RequestIdentifier.Raw
 	}
 }
 
@@ -193,7 +193,7 @@ func (k Secureimpl) GetTmpFiles() []string {
 	if request == nil {
 		return make([]string, 0)
 	} else {
-		return request.TmpFiles
+		return request.RequestIdentifier.TempFiles
 	}
 }
 
@@ -224,17 +224,78 @@ func (k Secureimpl) NewGoroutineLinker(req interface{}) {
 	}
 }
 
+func (k Secureimpl) AssociategraphqlInfo(isQuery, isVariable bool) {
+	request := getRequest(getID())
+	if request == nil {
+		logger.Debugln("(AssociategraphqlInfo) Request Not Found")
+		return
+	}
+	if request.Request.CustomDataType == nil {
+		request.Request.CustomDataType = map[string]string{}
+	}
+	if isQuery {
+		request.Request.CustomDataType["*.query"] = "GRAPHQL_QUERY"
+	}
+	if isVariable {
+		request.Request.CustomDataType["*.variables"] = "GRAPHQL_VARIABLE"
+	}
+
+}
+
 /**
  * Implementation for goroutines (created and deleted)
  */
 
-func (k Secureimpl) SendEvent(category string, args interface{}) *secUtils.EventTracker {
-	secConfig.AddEventDataToListener(secConfig.TestArgs{Parameters: fmt.Sprintf("%v", args), CaseType: category})
+func (k Secureimpl) SendPanicEvent(message string) {
+	id := getID()
+	req := getRequest(id)
+	if !isAgentReady() || (req == nil) {
+		logger.Debugln("panic report", "no incoming skipping Event")
+		return
+	}
+
+	stack := getStackTrace()
+	panic := eventGeneration.Panic{
+		Message:    message,
+		Type:       "Panic",
+		Stacktrace: stack,
+	}
+	key := message + stack[0]
+
+	eventGeneration.StoreApplicationRuntimeError(req, panic, key)
+}
+
+func (k Secureimpl) Send5xxEvent(code int) {
+	id := getID()
+	req := getRequest(id)
+	if !isAgentReady() || (req == nil) {
+		logger.Debugln("5xx report", "no incoming skipping Event")
+		return
+	}
+	r := req.Request.Route
+	if r == "" {
+		r = req.Request.URL
+	}
+	key := r + strconv.Itoa(code)
+	eventGeneration.Store5xxError(req, key, code)
+}
+
+func (k Secureimpl) SendEvent(caseType, eventCategory string, args interface{}) *secUtils.EventTracker {
+	secConfig.AddEventDataToListener(secConfig.TestArgs{Parameters: fmt.Sprintf("%v", args), CaseType: caseType})
 	if !isAgentReady() {
 		return nil
 	}
 	eventId := increaseCount()
-	return sendEvent(eventId, category, args)
+	return sendEvent(eventId, caseType, eventCategory, args, false)
+}
+
+func (k Secureimpl) SendLowSeverityEvent(caseType, eventCategory string, args interface{}) *secUtils.EventTracker {
+	secConfig.AddEventDataToListener(secConfig.TestArgs{Parameters: fmt.Sprintf("%v", args), CaseType: caseType})
+	if !isAgentReady() {
+		return nil
+	}
+	eventId := increaseCount()
+	return sendEvent(eventId, caseType, eventCategory, args, true)
 }
 
 func (k Secureimpl) SendExitEvent(event *secUtils.EventTracker) {
@@ -253,21 +314,32 @@ func (k Secureimpl) SendExitEvent(event *secUtils.EventTracker) {
 	eventGeneration.SendExitEvent(event, requestIdentifier)
 }
 
-func sendEvent(eventId, category string, args interface{}) *secUtils.EventTracker {
+func (k Secureimpl) CleanLowSeverityEvent() {
+	lowSeverityEventMap = sync.Map{}
+}
+
+func sendEvent(eventId, caseType, eventCategory string, args interface{}, isLowSeverityEvent bool) *secUtils.EventTracker {
 	id := getID()
 	req := getRequest(id)
 	if !isAgentReady() || (req == nil) {
-		logger.Debugln(category, "no incoming skipping Event")
+		logger.Debugln(caseType, "no incoming skipping Event")
 		return nil
 	}
 	var vulnerabilityDetails secUtils.VulnerabilityDetails
-	if category == "REFLECTED_XSS" && (*req).VulnerabilityDetails.APIID != "" {
+	if caseType == "REFLECTED_XSS" && (*req).VulnerabilityDetails.APIID != "" {
 		vulnerabilityDetails = (*req).VulnerabilityDetails
 	} else {
-		vulnerabilityDetails = presentStack((*req).Request.Method)
+		vulnerabilityDetails = presentStack((*req).Request.Method+"||"+(*req).Request.Route, caseType)
+	}
+	if isLowSeverityEvent {
+		if _, ok := lowSeverityEventMap.Load(vulnerabilityDetails.APIID); ok {
+			return nil
+		} else {
+			lowSeverityEventMap.Store(vulnerabilityDetails.APIID, 1)
+		}
 	}
 
-	return eventGeneration.SendVulnerableEvent(req, category, args, vulnerabilityDetails, getEventID(eventId, id))
+	return eventGeneration.SendVulnerableEvent(req, caseType, eventCategory, args, vulnerabilityDetails, getEventID(eventId, id))
 
 }
 
@@ -347,7 +419,7 @@ func isAgentReady() bool {
 	return secConfig.SecureWS != nil
 }
 
-func presentStack(method string) (vulnerabilityDetails secUtils.VulnerabilityDetails) {
+func presentStack(method, caseType string) (vulnerabilityDetails secUtils.VulnerabilityDetails) {
 	pc := make([]uintptr, 20)
 	n := runtime.Callers(4, pc)
 	frames := runtime.CallersFrames(pc[:n])
@@ -410,7 +482,7 @@ func presentStack(method string) (vulnerabilityDetails secUtils.VulnerabilityDet
 		stackTrace = stackTrace[:120]
 	}
 
-	vulnerabilityDetails.APIID = apiId
+	vulnerabilityDetails.APIID = caseType + "-" + apiId
 	vulnerabilityDetails.Stacktrace = stackTrace
 
 	return vulnerabilityDetails
@@ -427,7 +499,7 @@ func isusercode(name, path string) bool {
 	}
 
 	// handle standard packages
-	return !strings.Contains(path, "go/src")
+	return !secUtils.CaseInsensitiveContains(path, "go/src")
 
 }
 
@@ -448,4 +520,30 @@ func increaseCount() string {
 	eventCount := atomic.LoadUint64(&secConfig.GlobalInfo.InstrumentationData.HookCalledCount)
 	atomic.AddUint64(&secConfig.GlobalInfo.InstrumentationData.HookCalledCount, 1)
 	return strconv.FormatUint(eventCount, 10)
+}
+
+func getStackTrace() []string {
+	pc := make([]uintptr, secConfig.MaxStackTraceFrames)
+	n := runtime.Callers(7, pc)
+	frames := runtime.CallersFrames(pc[:n])
+	id := identity
+	var stackTrace []string
+
+	generateStackTrace := func(funcName, fName, line string) {
+		if !strings.HasPrefix(funcName, id) {
+			tmp := funcName + "(" + fName + ":" + line + ")"
+			stackTrace = append(stackTrace, tmp)
+		}
+	}
+	for {
+		frame, more := frames.Next()
+		functionName := frame.Function
+		fileName := frame.File
+		lineNumber := strconv.Itoa(frame.Line)
+		generateStackTrace(fileName, functionName, lineNumber)
+		if !more {
+			break
+		}
+	}
+	return stackTrace
 }
