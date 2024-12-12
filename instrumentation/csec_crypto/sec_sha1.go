@@ -26,8 +26,7 @@ func secSum1_s(data []byte) [sha1.Size]byte {
 	return secSum1_s(data)
 }
 
-func PluginStart_sha1() {
-
+func initSha1Hook() {
 	e := secIntercept.HookWrap(sha1.Sum, secSum1, secSum1_s)
 	secIntercept.IsHookedLog("sha1.Sum", e)
 }

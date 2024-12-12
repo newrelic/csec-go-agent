@@ -131,7 +131,7 @@ func TraceHashOperation(fname string) {
 	}
 	var arg []string
 	arg = append(arg, fname)
-	secConfig.Secure.SendEvent("HASH", arg)
+	secConfig.Secure.SendEvent("HASH", "HASH", arg)
 }
 
 func TraceCryptoOperation(fname string) {
@@ -140,7 +140,7 @@ func TraceCryptoOperation(fname string) {
 	}
 	var arg []string
 	arg = append(arg, fname)
-	secConfig.Secure.SendEvent("CRYPTO", arg)
+	secConfig.Secure.SendEvent("CRYPTO", "CRYPTO", arg)
 }
 
 /**

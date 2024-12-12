@@ -24,7 +24,7 @@ func secSum_s(data []byte) [md5.Size]byte {
 	return secSum_s(data)
 }
 
-func PluginStart_md5() {
+func initmd5Hook() {
 	e := secIntercept.HookWrap(md5.Sum, secSum, secSum_s)
 	secIntercept.IsHookedLog("md5.Sum", e)
 }

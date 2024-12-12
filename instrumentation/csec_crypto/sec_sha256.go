@@ -47,10 +47,8 @@ func secSum256_s(data []byte) [sha256.Size]byte {
 }
 
 func initSha256Hook() {
-
 	e := secIntercept.HookWrap(sha256.Sum224, secSum224, secSum224_s)
 	secIntercept.IsHookedLog("sha256.Sum224", e)
 	e = secIntercept.HookWrap(sha256.Sum256, secSum256, secSum256_s)
 	secIntercept.IsHookedLog("sha256.Sum256", e)
-
 }

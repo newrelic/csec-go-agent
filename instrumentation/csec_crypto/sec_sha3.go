@@ -77,7 +77,7 @@ func secSha3Sum512_s(data []byte) (digest [64]byte) {
 	return secSha3Sum512_s(data)
 }
 
-func PluginStart_sha3() {
+func initSha3Hook() {
 
 	e := secIntercept.HookWrap(sha3.Sum224, secSha3Sum224, secSha3Sum224_s)
 	secIntercept.IsHookedLog("blake2s.Sum256", e)
