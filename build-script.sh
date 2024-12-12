@@ -26,7 +26,7 @@ for dir in $DIRS; do
 
   go get
   # run tests
-  if [[ $dir  ==  "instrumentation/csec_mongodb_mongo" ]]
+  if [[ $dir  ==  "instrumentation/csec_mongodb_mongo" ]] || [[ $dir  ==  "instrumentation/csec_crypto" ]]
   then
    go test -gcflags "-l" -race -benchtime=1ms -bench=. ./...
   else
