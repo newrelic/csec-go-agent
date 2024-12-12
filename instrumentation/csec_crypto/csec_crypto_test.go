@@ -181,7 +181,7 @@ func Test_RSA_EncryptOAEP(t *testing.T) {
 	publicKey := &privateKey.PublicKey
 	rsa.EncryptOAEP(sha256.New(), rand.Reader, publicKey, []byte(CSEC_GO_AGENT), label)
 	var expectedData = []secConfig.TestArgs{
-		{Parameters: "[RSA/OAEP]", CaseType: secConfig.CRYPTO},
+		{Parameters: "[RSA]", CaseType: secConfig.CRYPTO},
 	}
 	secConfig.ValidateResult(expectedData, t)
 
@@ -194,7 +194,7 @@ func Test_RSA_EncryptPKCS1v15(t *testing.T) {
 	rsa.EncryptPKCS1v15(rand.Reader, publicKey, []byte(CSEC_GO_AGENT))
 
 	var expectedData = []secConfig.TestArgs{
-		{Parameters: "[RSA/PKC]", CaseType: secConfig.CRYPTO},
+		{Parameters: "[RSA/ECB/PKCS1Padding]", CaseType: secConfig.CRYPTO},
 	}
 	secConfig.ValidateResult(expectedData, t)
 
