@@ -28,8 +28,8 @@ jobs:
             dirs: instrumentation/csec_mongodb_mongo
           - go-version: 1.18.x
             dirs: instrumentation/csec_antchfx_xmlquery
-          - go-version: 1.18.x
-            dirs: instrumentation/csec_robertkrimen_otto  
+          - go-version: 1.21.x
+            dirs: instrumentation/csec_crypto
           - go-version: 1.19.x
             dirs: instrumentation/csec_antchfx_htmlquery
           - go-version: 1.19.x
@@ -44,8 +44,8 @@ jobs:
             dirs: instrumentation/csec_mongodb_mongo
           - go-version: 1.19.x
             dirs: instrumentation/csec_antchfx_xmlquery
-          - go-version: 1.19.x
-            dirs: instrumentation/csec_robertkrimen_otto  
+          - go-version: 1.21.x
+            dirs: instrumentation/csec_crypto  
     steps:
     - name: Install Go
       uses: actions/setup-go@v1
