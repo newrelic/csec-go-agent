@@ -34,24 +34,25 @@ type ResponseInfo struct {
 }
 
 type RequestInfo struct {
-	Body          string              `json:"body"`
-	Headers       map[string]string   `json:"headers"`
-	URL           string              `json:"url"`
-	RawRequest    string              `json:"rawRequest"`
-	Method        string              `json:"method"`
-	ContentType   string              `json:"contentType"`
-	ContextPath   string              `json:"contextPath"`
-	ClientIP      string              `json:"clientIP"`
-	ClientPort    string              `json:"clientPort"`
-	ServerPort    string              `json:"serverPort"`
-	Protocol      string              `json:"protocol"`
-	ParameterMap  map[string][]string `json:"parameterMap"`
-	IsGRPC        bool                `json:"isGrpc"`
-	ServerName    string              `json:"serverName"`
-	DataTruncated bool                `json:"dataTruncated"`
-	BodyReader    SecWriter           `json:"-"`
-	Route         string              `json:"route"`
-	URI           string              `json:"requestURI"`
+	Body           string              `json:"body"`
+	Headers        map[string]string   `json:"headers"`
+	URL            string              `json:"url"`
+	RawRequest     string              `json:"rawRequest"`
+	Method         string              `json:"method"`
+	ContentType    string              `json:"contentType"`
+	ContextPath    string              `json:"contextPath"`
+	ClientIP       string              `json:"clientIP"`
+	ClientPort     string              `json:"clientPort"`
+	ServerPort     string              `json:"serverPort"`
+	Protocol       string              `json:"protocol"`
+	ParameterMap   map[string][]string `json:"parameterMap"`
+	IsGRPC         bool                `json:"isGrpc"`
+	ServerName     string              `json:"serverName"`
+	DataTruncated  bool                `json:"dataTruncated"`
+	BodyReader     SecWriter           `json:"-"`
+	Route          string              `json:"route"`
+	URI            string              `json:"requestURI"`
+	CustomDataType map[string]string   `json:"customDataType"`
 }
 
 type SecWriter struct {

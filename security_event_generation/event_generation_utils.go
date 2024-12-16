@@ -121,6 +121,7 @@ type healthcheck struct {
 	ProcStartTime            int64                              `json:"procStartTime"`
 	TrafficStartedTime       int64                              `json:"trafficStartedTime"`
 	ScanStartTime            int64                              `json:"scanStartTime"`
+	IastTestIdentifier       string                             `json:"iastTestIdentifer"`
 }
 
 type ThreadPoolStats struct {

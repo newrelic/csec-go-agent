@@ -380,6 +380,13 @@ func getConnectionHeader() http.Header {
 		"NR-CSEC-PROCESS-START-TIME":      []string{secUtils.Int64ToString(secConfig.GlobalInfo.ApplicationInfo.GetStarttimestr().Unix() * 1000)},
 	}
 
+	if env := secConfig.GlobalInfo.GetIastTestIdentifier(); env != "" {
+		connectionHeader.Add("NR-CSEC-IAST-TEST-IDENTIFIER", env)
+		connectionHeader.Add("NR-CSEC-IAST-SCAN-INSTANCE-COUNT", secUtils.IntToString(1))
+	} else {
+		connectionHeader.Add("NR-CSEC-IAST-SCAN-INSTANCE-COUNT", secUtils.IntToString(secConfig.GlobalInfo.ScanInstanceCount()))
+	}
+
 	printConnectionHeader(connectionHeader)
 	return connectionHeader
 }
