@@ -38,7 +38,7 @@ type Secureiface interface {
 	NewGoroutineLinker(interface{})
 	NewGoroutine() interface{}
 	SendPanicEvent(string)
-	Send5xxEvent(int)
+	Send5xxEvent(int, string)
 	CleanLowSeverityEvent()
 }
 

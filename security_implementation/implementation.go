@@ -265,7 +265,7 @@ func (k Secureimpl) SendPanicEvent(message string) {
 	eventGeneration.StoreApplicationRuntimeError(req, panic, key)
 }
 
-func (k Secureimpl) Send5xxEvent(code int) {
+func (k Secureimpl) Send5xxEvent(code int, category string) {
 	id := getID()
 	req := getRequest(id)
 	if !isAgentReady() || (req == nil) {
@@ -277,7 +277,7 @@ func (k Secureimpl) Send5xxEvent(code int) {
 		r = req.Request.URL
 	}
 	key := r + strconv.Itoa(code)
-	eventGeneration.Store5xxError(req, key, code)
+	eventGeneration.Store5xxError(req, key, code, category)
 }
 
 func (k Secureimpl) SendEvent(caseType, eventCategory string, args interface{}) *secUtils.EventTracker {
