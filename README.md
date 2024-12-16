@@ -39,6 +39,7 @@ For the latest version of the agent, Go 1.17+ is required.
 * julienschmidt/httprouter
 * micro/go-micro
 * valyala/fasthttp
+* graphql-go/graphql
 
 ### Databases
 

@@ -1,5 +1,23 @@
 # Changelog
 
+## [v1.6.0] - 2024-12-16
+
+### Features:
+* Added Support for Graphql framework graphql-go/graphql.
+* Added support for IAST CI/CD and Scan Controllers.
+ Configuration via yaml:
+   ```yaml
+   # This configuration allows users to specify a unique test identifier when running IAST Scan with CI/CD
+   iast_test_identifier: 'run-id'
+
+   scan_controllers:
+      # This configuration allows users to the number of application instances for a specific entity where IAST analysis is performed.
+      scan_instance_count:  0 # Values are 1 or 0, 0 signifies run on all application instances
+  ```
+
+### Fixes
+* Fix query parameter encoding for replaying fuzz requests.
+
 ## [v1.5.0] - 2024-10-29
 ### Features:
 * Json Version bump to 1.2.9.
