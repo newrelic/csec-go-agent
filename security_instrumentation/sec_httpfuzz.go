@@ -80,7 +80,6 @@ func (httpFuzz SecHttpFuzz) ExecuteFuzzRequest(fuzzRequest *sechandler.FuzzRequr
 		secConfig.GlobalInfo.IastReplayRequest.IncreaseReplayRequestFailed()
 		return
 	}
-	req, _ = http.NewRequest(fuzzRequest.Method, fuzzRequestURL, strings.NewReader(fuzzRequest.Body))
 	// v, err := url.ParseQuery(req.URL.RawQuery)
 	// if err == nil {
 	// 	req.URL.RawQuery = v.Encode()
