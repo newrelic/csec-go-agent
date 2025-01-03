@@ -143,6 +143,7 @@ func SendSecHealthCheck() {
 	hc.WebSocketConnectionStats = secConfig.GlobalInfo.WebSocketConnectionStats
 	hc.IastReplayRequest = secConfig.GlobalInfo.IastReplayRequest
 	hc.EventStats = secConfig.GlobalInfo.EventStats
+	hc.IastTestIdentifier = secConfig.GlobalInfo.GetIastTestIdentifier()
 
 	hc.ProcStartTime = secConfig.GlobalInfo.ApplicationInfo.GetStarttimestr().Unix() * 1000
 	hc.TrafficStartedTime = secConfig.GlobalInfo.ApplicationInfo.GetTrafficStartedTime()

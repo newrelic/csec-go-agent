@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"net"
 	"net/http"
-	"net/url"
 	"strconv"
 	"strings"
 	"sync"
@@ -81,11 +80,10 @@ func (httpFuzz SecHttpFuzz) ExecuteFuzzRequest(fuzzRequest *sechandler.FuzzRequr
 		secConfig.GlobalInfo.IastReplayRequest.IncreaseReplayRequestFailed()
 		return
 	}
-
-	v, err := url.ParseQuery(req.URL.RawQuery)
-	if err == nil {
-		req.URL.RawQuery = v.Encode()
-	}
+	// v, err := url.ParseQuery(req.URL.RawQuery)
+	// if err == nil {
+	// 	req.URL.RawQuery = v.Encode()
+	// }
 
 	for headerKey, headerValue := range fuzzRequest.Headers {
 		value := fmt.Sprintf("%v", headerValue)

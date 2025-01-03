@@ -700,6 +700,8 @@ func SendEvent(caseType string, data ...interface{}) interface{} {
 		dynamodbHandler(data...)
 	case "REDIS":
 		redisHandler(data...)
+	case "GRAPHQL":
+		graphqlHandler(data...)
 
 	}
 	return nil
@@ -976,6 +978,21 @@ func redisHandler(data ...interface{}) {
 	}
 
 	secConfig.Secure.SendEvent("REDIS_DB_COMMAND", "REDIS", data)
+}
+
+func graphqlHandler(data ...interface{}) {
+	if data == nil || !isAgentInitialized() {
+		return
+	}
+	if len(data) < 2 {
+		return
+	}
+	query, ok := data[0].(bool)
+	variable, ok1 := data[1].(bool)
+	if ok && ok1 {
+		secConfig.Secure.AssociategraphqlInfo(query, variable)
+	}
+
 }
 
 func panicHandler(data ...interface{}) {
