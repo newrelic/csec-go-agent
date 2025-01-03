@@ -336,18 +336,27 @@ func TraceIncommingRequest(url, host string, hdrMap map[string][]string, method 
 }
 
 func associateResponseBody(body string) {
-	r := secConfig.Secure.GetRequest()
-	if r != nil {
-		r.ResponseBody = r.ResponseBody + body
-		secConfig.Secure.CalculateOutboundApiId()
+	if secConfig.GlobalInfo.ReportHttpResponseBody() {
+		r := secConfig.Secure.GetRequest()
+		if r != nil {
+			if l := len(r.Response.Body); len(body) <= secConfig.HttpResponseBodyLimit-l {
+				r.Response.Body = r.Response.Body + body
+			} else if secConfig.HttpResponseBodyLimit-l > 1 {
+				end := secConfig.HttpResponseBodyLimit - l
+				r.Response.Body = r.Response.Body + body[:end-1]
+			}
+			secConfig.Secure.CalculateOutboundApiId()
+		}
 	}
+
 }
 
 func associateResponseHeader(header http.Header) {
 	r := secConfig.Secure.GetRequest()
 	if r != nil {
-		r.ResponseHeader = header
-		r.ResponseContentType = header.Get("content-type")
+		r.Response.Headers = ToOneValueMap(header)
+		r.Response.HeadersMap = header
+		r.Response.ContentType = header.Get("content-type")
 	}
 }
 
@@ -452,8 +461,9 @@ func traceResponseOperations() {
 
 	r := secConfig.Secure.GetRequest()
 	if r != nil {
-		checkSecureCookies(r.ResponseHeader)
+		checkSecureCookies(r.Response.HeadersMap)
 		xssCheck(r)
+		eventGeneration.SendResponseEvent(r)
 	}
 }
 
@@ -484,9 +494,9 @@ func checkSecureCookies(responseHeader http.Header) {
 }
 
 func xssCheck(r *secUtils.Info_req) {
-	if !IsRxssDisabled() && r.ResponseBody != "" {
+	if !IsRxssDisabled() && r.Response.Body != "" {
 
-		contentType := r.ResponseContentType
+		contentType := r.Response.ContentType
 		if !secUtils.IsContentTypeSupported(contentType) {
 			SendLogMessage(SKIP_RXSS_EVENT+contentType, "XssCheck", "SEVERE")
 			logger.Debugln(SKIP_RXSS_EVENT, contentType)
@@ -494,14 +504,14 @@ func xssCheck(r *secUtils.Info_req) {
 		}
 
 		// Double check befor rxss event validation becouse in some case we don't have contentType in response header.
-		cType := http.DetectContentType([]byte(r.ResponseBody))
+		cType := http.DetectContentType([]byte(r.Response.Body))
 		if !secUtils.IsContentTypeSupported(cType) {
 			SendLogMessage(SKIP_RXSS_EVENT+cType, "XssCheck", "SEVERE")
 			logger.Debugln(SKIP_RXSS_EVENT, cType)
 			return
 		}
-		if r.ResponseContentType == "" {
-			r.ResponseContentType = cType
+		if r.Response.ContentType == "" {
+			r.Response.ContentType = cType
 		}
 
 		out := secUtils.CheckForReflectedXSS(r)
@@ -512,7 +522,7 @@ func xssCheck(r *secUtils.Info_req) {
 		} else {
 			var arg []string
 			arg = append(arg, out)
-			arg = append(arg, r.ResponseBody)
+			arg = append(arg, r.Response.Body)
 			secConfig.Secure.SendEvent("REFLECTED_XSS", "REFLECTED_XSS", arg)
 		}
 	}

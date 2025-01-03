@@ -344,7 +344,7 @@ func decodeRequestData(rq *Info_req) []string {
 
 func decodeResponseData(rq *Info_req) []string {
 	var processedData []string
-	decodedBodyValue := processURLEncodedDataForXSS(rq.ResponseBody)
+	decodedBodyValue := processURLEncodedDataForXSS(rq.Response.Body)
 	processedData = append(processedData, decodedBodyValue...)
 	for _, st := range decodedBodyValue {
 		newprocessedBody := safeDecode(st)

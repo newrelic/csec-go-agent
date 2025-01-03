@@ -53,8 +53,9 @@ type Security struct {
 		AllowIastSampleCollection bool   `yaml:"always_sample_traces"`
 	} `yaml:"scan_schedule"`
 	ScanControllers struct {
-		IastScanRequestRateLimit int `yaml:"iast_scan_request_rate_limit"`
-		ScanInstanceCount        int `yaml:"scan_instance_count"`
+		IastScanRequestRateLimit int  `yaml:"iast_scan_request_rate_limit"`
+		ReportHttpResponseBody   bool `yaml:"report_http_response_body: true"`
+		ScanInstanceCount        int  `yaml:"scan_instance_count"`
 	} `yaml:"scan_controllers"`
 }
 
