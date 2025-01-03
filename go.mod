@@ -6,7 +6,7 @@ require (
 	github.com/adhocore/gronx v1.19.1
 	github.com/dlclark/regexp2 v1.9.0
 	github.com/gorilla/websocket v1.5.0
-	github.com/k2io/hookingo v1.0.5
+	github.com/k2io/hookingo v1.0.6
 	golang.org/x/crypto v0.22.0
 )
 

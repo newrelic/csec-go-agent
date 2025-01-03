@@ -635,7 +635,7 @@ func UpdateLinkData(linkingMetadata map[string]string) {
 		}
 		if secConfig.SecureWS != nil {
 			SendLogMessage("Reconnect security agent at refresh call", "UpdateLinkData", "INFO")
-			secConfig.SecureWS.ReconnectAtAgentRefresh()
+			go secConfig.SecureWS.ReconnectAtAgentRefresh()
 		}
 	}
 
