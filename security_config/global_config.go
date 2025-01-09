@@ -114,21 +114,21 @@ func (info *Info_struct) RestrictionCriteriaAccountIDValue() []string {
 	return info.security.RestrictionCriteria.AccountInfo.AccountIDValue
 }
 
-func (info *Info_struct) RestrictionCriteriaHeader() []string {
+func (info *Info_struct) RestrictionCriteriaHeader() (bool, []string) {
 	info.securityMutex.Lock()
 	defer info.securityMutex.Unlock()
-	return info.security.RestrictionCriteria.MappingParameters.Header
+	return info.security.RestrictionCriteria.MappingParameters.Header.Enabled, info.security.RestrictionCriteria.MappingParameters.Header.Location
 }
-func (info *Info_struct) RestrictionCriteriaQuery() []string {
+func (info *Info_struct) RestrictionCriteriaQuery() (bool, []string) {
 	info.securityMutex.Lock()
 	defer info.securityMutex.Unlock()
-	return info.security.RestrictionCriteria.MappingParameters.Query
+	return info.security.RestrictionCriteria.MappingParameters.Query.Enabled, info.security.RestrictionCriteria.MappingParameters.Query.Location
 }
 
-func (info *Info_struct) RestrictionCriteriaBody() []string {
+func (info *Info_struct) RestrictionCriteriaBody() (bool, []string) {
 	info.securityMutex.Lock()
 	defer info.securityMutex.Unlock()
-	return info.security.RestrictionCriteria.MappingParameters.Body
+	return info.security.RestrictionCriteria.MappingParameters.Body.Enabled, info.security.RestrictionCriteria.MappingParameters.Body.Location
 }
 
 func (info *Info_struct) SecurityHomePath() string {

@@ -296,7 +296,9 @@ func TraceIncommingRequest(url, host string, hdrMap map[string][]string, method 
 	}
 
 	if secConfig.GlobalInfo.SecurityMode() == "IAST_RESTRICTED" {
-		secConfig.HasValidAccountId(hdrMap, queryparam, url)
+		if !secConfig.HasValidAccountId(hdrMap, queryparam, url) {
+			return
+		}
 	}
 
 	infoReq := new(secUtils.Info_req)

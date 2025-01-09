@@ -1,6 +1,7 @@
 package security_config
 
 import (
+	"net/url"
 	"strings"
 
 	secUtils "github.com/newrelic/csec-go-agent/internal/security_utils"
@@ -24,18 +25,19 @@ func HasValidAccountId(requestHeader, query map[string][]string, u string) bool 
 }
 
 func headerRestrictionCheck(requestHeader map[string][]string) bool {
-	restrictedHeaders := GlobalInfo.RestrictionCriteriaHeader()
-	if len(restrictedHeaders) <= 0 {
-		return true
+	isEnabled, restrictedHeaders := GlobalInfo.RestrictionCriteriaHeader()
+	if !isEnabled || len(restrictedHeaders) <= 0 {
+		return false
 	}
-	return matcher(GlobalInfo.RestrictionCriteriaHeader(), requestHeader)
+	return matcher(restrictedHeaders, requestHeader)
 }
 
 func queryRestrictionCheck(query map[string][]string) bool {
-	if len(query) <= 0 {
-		return true
+	isEnabled, restrictedQuery := GlobalInfo.RestrictionCriteriaQuery()
+	if !isEnabled || len(restrictedQuery) <= 0 {
+		return false
 	}
-	return matcher(GlobalInfo.RestrictionCriteriaQuery(), query)
+	return matcher(restrictedQuery, query)
 
 }
 
@@ -56,7 +58,9 @@ func pathRestrictionCheck(u string) bool {
 
 func BodyRestrictionCheck(body, contentType string) bool {
 
-	if body == "" {
+	isEnabled, restrictedBody := GlobalInfo.RestrictionCriteriaBody()
+
+	if !isEnabled || body == "" || len(restrictedBody) <= 0 {
 		return false
 	}
 
@@ -66,7 +70,7 @@ func BodyRestrictionCheck(body, contentType string) bool {
 
 		key_value, err := secUtils.JsonToMapParser(body)
 		if err == nil {
-			return matcher(GlobalInfo.RestrictionCriteriaBody(), key_value)
+			return matcher(restrictedBody, key_value)
 		}
 		break
 	case CONTENT_TYPE_APPLICATION_XML:
@@ -74,20 +78,24 @@ func BodyRestrictionCheck(body, contentType string) bool {
 
 		key_value, err := secUtils.XmlToMapParser([]byte(body))
 		if err == nil {
-			return matcher(GlobalInfo.RestrictionCriteriaBody(), key_value)
+			return matcher(restrictedBody, key_value)
 		}
 		break
 	case CONTENT_TYPE_APPLICATION_X_WWW_FORM_URLENCODED:
+		key_value, err := url.ParseQuery(body)
+		if err == nil {
+			return matcher(restrictedBody, key_value)
+		}
 		break
 	}
 
-	return true
+	return false
 
 }
 
 func matcher(attr []string, query map[string][]string) bool {
 	if len(query) <= 0 {
-		return true
+		return false
 	}
 	for _, key := range attr {
 		value, ok := query[key]

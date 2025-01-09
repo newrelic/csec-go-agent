@@ -10,18 +10,8 @@ type Security struct {
 	Agent                 struct {
 		Enabled bool `json:"enabled"`
 	} `json:"agent"`
-	RestrictionCriteria struct {
-		AccountInfo struct {
-			AccountIDValue []string `yaml:"account_id_value"`
-		} `yaml:"account_info"`
-		MappingParameters struct {
-			Header []string `yaml:"header"`
-			Body   []string `yaml:"body"`
-			Query  []string `yaml:"query"`
-			Path   []string `yaml:"path"`
-		} `yaml:"mapping_parameters"`
-	} `yaml:"restriction_criteria"`
-	Detection struct {
+	RestrictionCriteria RestrictionCriteriaBeen `yaml:"restriction_criteria"`
+	Detection           struct {
 		Rci struct {
 			Enabled bool `json:"enabled"`
 		} `json:"rci"`
@@ -36,6 +26,29 @@ type Security struct {
 	Request          struct {
 		BodyLimit int `yaml:"body_limit"`
 	} `yaml:"request"`
+}
+
+type RestrictionCriteriaBeen struct {
+	AccountInfo struct {
+		AccountIDValue []string `yaml:"account_id_value"`
+	} `yaml:"account_info"`
+	MappingParameters struct {
+		Query struct {
+			Enabled  bool     `yaml:"enabled"`
+			Location []string `yaml:"location"`
+		} `yaml:"query"`
+		Body struct {
+			Enabled  bool     `yaml:"enabled"`
+			Location []string `yaml:"location"`
+		} `yaml:"body"`
+		Header struct {
+			Enabled  bool     `yaml:"enabled"`
+			Location []string `yaml:"location"`
+		} `yaml:"header"`
+		Path struct {
+			Enabled bool `yaml:"enabled"`
+		} `yaml:"path"`
+	} `yaml:"mapping_parameters"`
 }
 
 type Policy struct {
