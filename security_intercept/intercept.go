@@ -360,6 +360,13 @@ func associateResponseHeader(header http.Header) {
 	}
 }
 
+func associateResponseCode(code int) {
+	r := secConfig.Secure.GetRequest()
+	if r != nil {
+		r.Response.StatusCode = code
+	}
+}
+
 /**
  * Handling for FastHttp framework
  */
@@ -783,6 +790,7 @@ func httpresponseCodeHandler(data ...interface{}) {
 	if rescode >= 500 {
 		secConfig.Secure.Send5xxEvent(rescode)
 	}
+	associateResponseCode(rescode)
 }
 
 func httpresponseHandler(data ...interface{}) {
