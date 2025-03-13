@@ -692,6 +692,8 @@ func SendEvent(caseType string, data ...interface{}) interface{} {
 		redisHandler(data...)
 	case "GRAPHQL":
 		graphqlHandler(data...)
+	case "GRPC_ERROR_RESPONSE":
+		grpcresponseCodeHandler(data...)
 
 	}
 	return nil
@@ -771,8 +773,17 @@ func httpresponseCodeHandler(data ...interface{}) {
 	}
 	rescode, _ := data[0].(int)
 	if rescode >= 500 {
-		secConfig.Secure.Send5xxEvent(rescode)
+		category := http.StatusText(rescode)
+		secConfig.Secure.Send5xxEvent(rescode, category)
 	}
+}
+func grpcresponseCodeHandler(data ...interface{}) {
+	if len(data) < 2 {
+		return
+	}
+	resMessage, _ := data[0].(string)
+	rescode, _ := data[1].(int)
+	secConfig.Secure.Send5xxEvent(rescode, resMessage)
 }
 
 func httpresponseHandler(data ...interface{}) {
