@@ -191,6 +191,12 @@ func (info *Info_struct) ScanScheduleSchedule() string {
 	return info.security.ScanSchedule.Schedule
 }
 
+func (info *Info_struct) ReportHttpResponseBody() bool {
+	info.securityMutex.Lock()
+	defer info.securityMutex.Unlock()
+	return info.security.ScanControllers.ReportHttpResponseBody
+}
+
 func (info *Info_struct) SecurityHomePath() string {
 	return info.security.SecurityHomePath
 }

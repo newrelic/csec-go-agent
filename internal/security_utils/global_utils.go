@@ -3,18 +3,14 @@
 
 package security_utils
 
-import "net/http"
-
 const MaxReadBodyLen = 300000
 
 type Info_req struct {
-	ResponseBody         string
-	ResponseHeader       http.Header
-	ResponseContentType  string
 	GrpcBody             []interface{}
 	ReqTraceData         string
 	RequestIdentifier    NrRequestIdentifier
 	Request              RequestInfo
+	Response             ResponseInfo
 	VulnerabilityDetails VulnerabilityDetails
 	ReflectedMetaData    ReflectedMetaData
 	ParentID             string
@@ -30,7 +26,11 @@ type ReflectedMetaData struct {
 }
 
 type ResponseInfo struct {
-	ContentType string `json:"contentType"`
+	ContentType string              `json:"contentType"`
+	StatusCode  int                 `json:"statusCode"`
+	Headers     map[string]string   `json:"headers"`
+	Body        string              `json:"body"`
+	HeadersMap  map[string][]string `json:"-"`
 }
 
 type RequestInfo struct {
